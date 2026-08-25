@@ -1,5 +1,17 @@
 
 document.addEventListener('DOMContentLoaded', function () {
+  try {
+    var j = JSON.parse(sessionStorage.getItem('cc_journey') || '[]');
+    j.push(location.pathname); if (j.length > 40) j = j.slice(-40);
+    sessionStorage.setItem('cc_journey', JSON.stringify(j));
+    if (!sessionStorage.getItem('cc_t0')) sessionStorage.setItem('cc_t0', Date.now());
+    var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
+    set('cc-journey', j.join(' > '));
+    set('cc-ref', document.referrer || 'direct');
+    set('cc-utm', location.search || '');
+    var t = Date.now();
+    setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
+  } catch (e) {}
   var h = document.querySelector('header');
   var onS = function(){ h.classList.toggle('sc', window.scrollY > 8); };
   onS(); window.addEventListener('scroll', onS, {passive: true});

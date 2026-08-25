@@ -243,17 +243,23 @@ main { min-height: 62vh; }
 .rel .card .im { min-height: 0; }
 .rel .card img { max-height: 34vh; }
 
-/* ---------- in-scale room view ---------- */
+/* ---------- in-scale room view: gallery elevation ---------- */
 .vtoggle { display: flex; gap: 22px; margin: 18px 0 0; }
 .vtoggle button { border: 0; background: none; font-family: inherit; cursor: pointer;
   font-size: 7.5px; letter-spacing: .28em; color: var(--mute); text-transform: uppercase;
   padding: 0 0 4px; border-bottom: 1px solid transparent; }
 .vtoggle button.on { color: var(--ink); border-bottom-color: var(--ink); }
-.scale-view { display: none; position: relative; height: 66vh; border-bottom: 1px solid var(--hair); }
+.scale-view { display: none; position: relative; height: 58vh; min-height: 380px;
+  background: linear-gradient(#f8f7f4 0%, #f5f4f0 100%); overflow: hidden; }
 .scale-view.show { display: block; }
-.scale-view img { position: absolute; box-shadow: 0 1px 24px rgba(17,17,17,.07); }
-.scale-view .fig { position: absolute; bottom: 0; }
-.scale-view .cap9 { position: absolute; top: 0; right: 0; font-size: 7px; letter-spacing: .26em; color: var(--mute); }
+.scale-view .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
+  background: linear-gradient(#edebe6, #f2f0ec); border-top: 1px solid #e4e1da; }
+.scale-view .art { position: absolute; box-shadow: 0 3px 14px rgba(17,17,17,.10), 0 14px 44px rgba(17,17,17,.06); }
+.scale-view .fig { position: absolute; }
+.scale-view .fig .bd { fill: #dcd9d2; }
+.scale-view .fig .sh { fill: rgba(17,17,17,.06); }
+.scale-view .cap9 { position: absolute; left: 22px; bottom: 16px; font-size: 7px;
+  letter-spacing: .26em; color: #a09c93; }
 .work-img.hid { display: none; }
 
 /* ---------- mobile inquire bar ---------- */
@@ -295,6 +301,18 @@ footer .col b { color: var(--ink); font-weight: 500; }
 
 JS = """
 document.addEventListener('DOMContentLoaded', function () {
+  try {
+    var j = JSON.parse(sessionStorage.getItem('cc_journey') || '[]');
+    j.push(location.pathname); if (j.length > 40) j = j.slice(-40);
+    sessionStorage.setItem('cc_journey', JSON.stringify(j));
+    if (!sessionStorage.getItem('cc_t0')) sessionStorage.setItem('cc_t0', Date.now());
+    var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
+    set('cc-journey', j.join(' > '));
+    set('cc-ref', document.referrer || 'direct');
+    set('cc-utm', location.search || '');
+    var t = Date.now();
+    setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
+  } catch (e) {}
   var h = document.querySelector('header');
   var onS = function(){ h.classList.toggle('sc', window.scrollY > 8); };
   onS(); window.addEventListener('scroll', onS, {passive: true});
@@ -449,15 +467,24 @@ for p in products:
     scale_html, toggle_html = "", ""
     if d:
         WALL_IN, EYE_IN, FIG_IN = 126.0, 57.0, 68.0
-        top_pct = (WALL_IN - (EYE_IN + d[0] / 2)) / WALL_IN * 100
-        h_pct = d[0] / WALL_IN * 100
-        fig_pct = FIG_IN / WALL_IN * 100
+        # wall = 126in mapped to the 86% above the floor strip; figure stands on the floor line
+        WALL_PCT = 86.0
+        top_pct = (WALL_IN - (EYE_IN + d[0] / 2)) / WALL_IN * WALL_PCT
+        h_pct = d[0] / WALL_IN * WALL_PCT
+        fig_pct = FIG_IN / WALL_IN * WALL_PCT
         scale_html = f"""<div class="scale-view" id="sv">
-          <img src="{imgsrc(p, 1000)}" alt="" style="top:{top_pct:.1f}%;height:{h_pct:.1f}%;width:auto;left:30%;transform:translateX(-50%)">
-          <svg class="fig" viewBox="0 0 40 170" style="height:{fig_pct:.1f}%;right:14%" fill="none" stroke="#c9c6c0" stroke-width="2.5">
-            <circle cx="20" cy="14" r="11"/><path d="M20 25 V96 M20 44 L6 76 M20 44 L34 76 M20 96 L10 166 M20 96 L30 166"/>
+          <div class="floor"></div>
+          <img class="art" src="{imgsrc(p, 1000)}" alt="" style="top:{top_pct:.1f}%;height:{h_pct:.1f}%;width:auto;left:40%;transform:translateX(-50%)">
+          <svg class="fig" viewBox="0 0 56 158" style="height:{fig_pct:.1f}%;left:63%;bottom:{100 - WALL_PCT - 0.5:.1f}%" xmlns="http://www.w3.org/2000/svg">
+            <ellipse class="sh" cx="28" cy="155" rx="25" ry="3"/>
+            <g class="bd"><circle cx="28" cy="11" r="11"/>
+              <rect x="15" y="25" width="26" height="54" rx="11"/>
+              <rect x="7.5" y="27" width="8" height="46" rx="4"/>
+              <rect x="40.5" y="27" width="8" height="46" rx="4"/>
+              <rect x="16.5" y="70" width="10.5" height="88" rx="5.2"/>
+              <rect x="29" y="70" width="10.5" height="88" rx="5.2"/></g>
           </svg>
-          <div class="cap9">SHOWN TO SCALE — {d[0]:g} × {d[1]:g} IN</div>
+          <div class="cap9">SHOWN TO SCALE — {d[0]:g} × {d[1]:g} IN · FIGURE 5&#x2032;8&#x2033;</div>
         </div>"""
         toggle_html = """<div class="vtoggle"><button class="on" id="tb-i" onclick="vmode(0)">IMAGE</button><button id="tb-s" onclick="vmode(1)">IN SCALE</button></div>"""
     body = f"""<div class="wrap">{crumb}<div class="work">
@@ -491,7 +518,17 @@ for p in products:
       <textarea id="f-m">I am interested in {esc(p['title'])} by {esc(p['vendor'])}. Please send availability, additional images, and a condition report.</textarea>
       <label class="ck"><input type="checkbox" checked><span>KEEP ME INFORMED OF NEW WORKS BY {esc(p['vendor'].upper())} AND GALLERY EXHIBITIONS</span></label>
       <label class="ck"><input type="checkbox"><span>I AM AN ART ADVISOR OR INTERIOR DESIGNER (TRADE)</span></label>
+      <input type="hidden" name="artwork_handle" value="{esc(p['handle'])}">
+      <input type="hidden" name="artwork_title" value="{esc(p['title'])}">
+      <input type="hidden" name="artist" value="{esc(p['vendor'])}">
+      <input type="hidden" name="price_band" value="{esc(price_line(p))}">
+      <input type="hidden" name="product_type" value="{esc(p.get('product_type') or 'Artwork')}">
+      <input type="hidden" name="page_journey" id="cc-journey">
+      <input type="hidden" name="referrer" id="cc-ref">
+      <input type="hidden" name="utm" id="cc-utm">
+      <input type="hidden" name="seconds_on_page" id="cc-secs">
       <button class="act" type="submit">SEND INQUIRY</button>
+      <div class="note" style="margin-top:12px">ATTACHED AUTOMATICALLY FOR THE GALLERY: THIS ARTWORK, PRICE BAND, YOUR PATH THROUGH THE SITE, AND HOW YOU ARRIVED.</div>
       <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>

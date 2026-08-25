@@ -33,3 +33,10 @@ OK /artistpage/andres-valencia/tom-and-jenny 20230203203836 774376
 OK /artistpage/andres-valencia/ukrainian-soldier 20230203210031 774333
 OK /artistpage/andres-valencia/venacube 20230203205931 774190
 FAIL /artistpage/andy-warhol 20230203201728 <urlopen error timed out>
+FAIL /artistpage/andy-warhol/work-boots 20230203210219 <urlopen error timed out>
+OK /artistpage/angel-ortiz-la2 20230203192716 1048576
+OK /artistpage/angel-ortiz-la2/silver-on-blue 20230203192552 769051
+OK /artistpage/carole-feuerman 20221208205002 845137
+FAIL /artistpage/carole-feuerman/capri 20221202061019 <urlopen error timed out>
+OK /artistpage/carole-feuerman/general%E2%80%99s-illegitimate-daughter 20221129003759 686384
+OK /artistpage/carole-feuerman/kendall-island 20221202052744 695065
