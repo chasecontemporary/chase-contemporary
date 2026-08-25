@@ -32,7 +32,7 @@ M = 34                      # side margin
 TOTAL = 12
 
 c = canvas.Canvas("/Users/moabot/chase-contemporary/docs/bernie-deck-v1.pdf", pagesize=(W, H))
-c.setTitle("Chase Contemporary — The Plan, In Plain English")
+c.setTitle("Chase Contemporary — Revenue Engine: The Execution Plan")
 
 # ---------- helpers ----------
 def sw(text, font, size, cs=0):
@@ -96,7 +96,7 @@ def hrule(y, dark, x0=M, x1=W-M):
 bg(True)
 draw_center(H-150, "C H A S E", "AN-Bold", 30, LIGHT_ON_D, cs=6)
 draw_center(H-190, "C O N T E M P O R A R Y", "AN-Bold", 21, LIGHT_ON_D, cs=4)
-draw_center(H-268, "THE PLAN, IN PLAIN ENGLISH", "AN-Demi", 9, GOLD_BRIGHT, cs=3)
+draw_center(H-268, "REVENUE ENGINE · THE EXECUTION PLAN", "AN-Demi", 9, GOLD_BRIGHT, cs=3)
 draw_center(H-330, "A NEW WEBSITE.", "AN-UltraLight", 30, LIGHT_ON_D, cs=1)
 draw_center(H-368, "AN ENGINE BEHIND IT.", "AN-UltraLight", 30, LIGHT_ON_D, cs=1)
 para(0, H-425, "What we are building, what it does for the gallery, and the few things we need from you.",
@@ -390,15 +390,16 @@ footer(11, False); c.showPage()
 # =========================================================
 bg(True)
 kicker(H-90, "FROM YOU", True)
-y = title(H-124, ["FOUR THINGS,", "NONE OF THEM HARD"], True)
+y = title(H-124, ["ALL WE NEED", "IS THE KEYS"], True)
 y -= 6
+y = para(M, y-2, "You have already given us the vision and the stories. What is left is execution, and execution starts the day we have access.",
+         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
 needs = [
-    ("AN HOUR OF TALK", "Addresses, who is on the team, which artists are current. The facts only you know."),
-    ("THE KEYS", "Your office manager can hand us the website and email access. We take it from there."),
-    ("YOUR STORIES", "An hour of you talking, like the Schachter interview, becomes pages that sell for years."),
+    ("THE KEYS", "The website, email, and payment logins. Your office manager can hand them over. We take it from there, immediately."),
+    ("A FEW FACTS", "Addresses, the team, which artists are current. Ten minutes with your office manager covers it."),
     ("YOUR EYE", "You approve every design and every word before the world sees it."),
 ]
-yy = y - 4
+yy = y - 16
 for i, (h, b) in enumerate(needs, 1):
     draw(M, yy, f"{i:02d}", "AN-Medium", 13, GOLD_BRIGHT)
     draw(M+34, yy, h, "AN-Demi", 11, LIGHT_ON_D, cs=1.4)
