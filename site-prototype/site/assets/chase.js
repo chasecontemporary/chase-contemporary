@@ -24,9 +24,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
-  if (location.hash === '#inquire' && document.getElementById('inq')) {
-    inq(document.getElementById('inqbtn'));
-    setTimeout(function(){ document.getElementById('inq').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+  if (location.hash === '#inquire' && document.getElementById('drawer')) inq();
+  if (document.getElementById('drawer')) {
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeInq(); });
   }
 
   var links = document.querySelectorAll('a[data-img]');
@@ -107,13 +107,17 @@ function inqPre(kind){
   var artist = (document.querySelector('input[name=artist]')||{}).value || '';
   var by = artist ? ' by ' + artist : '';
   if (t && kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
-  inq(document.getElementById('inqbtn'));
+  inq();
 }
-function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
-  var alts = document.getElementById('altacts'); if (alts) alts.style.display='none';
-  setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
+function inq(){ document.getElementById('scrim').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 480); }
+function closeInq(){ document.getElementById('scrim').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow=''; }
 function sendInq(e){ e.preventDefault();
-  document.getElementById('inq').classList.remove('show');
+  document.getElementById('inq').style.display='none';
   document.getElementById('inq-done').classList.add('show'); }
 function newsl(e){ e.preventDefault(); e.target.innerHTML =
   '<span style="font-size:8px;letter-spacing:.22em;">THANK YOU</span>'; }

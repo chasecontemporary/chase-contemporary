@@ -87,3 +87,6 @@ OK /artistpage/hybycozo 20221202072124 782543
 FAIL /artistpage/hybycozo/ascension 20221202065451 <urlopen error timed out>
 FAIL /artistpage/hybycozo/aura-40 20221129012921 <urlopen error [Errno 54] Connection reset by peer>
 OK /artistpage/hybycozo/octagon 20221208193726 694826
+OK /artistpage/imani-bilal 20221129014946 728016
+OK /artistpage/imani-bilal/a-piece-of-infinity 20221202065055 695075
+OK /artistpage/imani-bilal/all-that-is-left-are-things-we-cannot-explain-with-words 20221208204221 695914

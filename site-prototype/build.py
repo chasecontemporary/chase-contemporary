@@ -46,7 +46,8 @@ def col_preview(c, w=640):
     return ""
 def strip_html(s): return re.sub(r"<[^>]+>", "\n", s or "")
 def details(p):
-    return [l.strip() for l in strip_html(p.get("body_html", "")).splitlines() if l.strip()][:3]
+    lines = [l.strip() for l in strip_html(p.get("body_html", "")).splitlines() if l.strip()][:3]
+    return [re.sub(r"\s*[—–]\s*", ", ", l) for l in lines]
 def is_edition(p): return p.get("product_type") == "Print"
 
 DIM_PAT = re.compile(r'(\d+(?:\.\d+)?)\s*(?:h\b|"|\u201d|in\b|inches)?\s*[x\u00d7]\s*(\d+(?:\.\d+)?)\s*(?:w\b|"|\u201d)?\s*(in\b|inches|cm)?', re.I)
@@ -257,12 +258,22 @@ a.artist:hover::after { transform: scaleX(1); }
 .wnav a { font-size: 8px; letter-spacing: .26em; color: var(--mute); }
 .w
 
-/* inquiry */
-.inq { max-height: 0; overflow: hidden; opacity: 0;
-       transition: max-height .6s cubic-bezier(.2,.6,.2,1), opacity .4s ease .1s; }
-.inq.show { max-height: 1200px; opacity: 1; margin-top: 34px; }
-.inq .fhead { font-size: 8.5px; font-weight: 500; letter-spacing: .28em; margin-top: 26px;
-              padding-top: 22px; border-top: 1px solid var(--hair); }
+/* inquiry drawer */
+.scrim { position: fixed; inset: 0; background: rgba(252,251,249,.72); z-index: 70;
+         opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 460px; max-width: 100vw;
+          background: #fff; border-left: 1px solid var(--hair); z-index: 80; overflow-y: auto;
+          padding: 48px 40px 56px; transform: translateX(102%);
+          transition: transform .5s cubic-bezier(.2,.6,.2,1); }
+.drawer.open { transform: none; }
+.drawer .dx { position: absolute; top: 26px; right: 28px; font-size: 8.5px; letter-spacing: .26em;
+              color: var(--mute); cursor: pointer; background: none; border: 0;
+              font-family: inherit; text-transform: uppercase; }
+.drawer .dx:hover { color: var(--ink); }
+.inq { display: block; }
+.inq .fhead { font-size: 8.5px; font-weight: 500; letter-spacing: .28em; margin-top: 6px;
+              padding-right: 70px; line-height: 2; }
 .inq .row2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; }
 @media (max-width: 1080px) { .inq .row2 { grid-template-columns: 1fr; } }
 .inq select { width: 100%; border: 0; border-bottom: 1px solid var(--ink); font-family: inherit;
@@ -359,9 +370,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
-  if (location.hash === '#inquire' && document.getElementById('inq')) {
-    inq(document.getElementById('inqbtn'));
-    setTimeout(function(){ document.getElementById('inq').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+  if (location.hash === '#inquire' && document.getElementById('drawer')) inq();
+  if (document.getElementById('drawer')) {
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeInq(); });
   }
 
   var links = document.querySelectorAll('a[data-img]');
@@ -442,13 +453,17 @@ function inqPre(kind){
   var artist = (document.querySelector('input[name=artist]')||{}).value || '';
   var by = artist ? ' by ' + artist : '';
   if (t && kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
-  inq(document.getElementById('inqbtn'));
+  inq();
 }
-function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
-  var alts = document.getElementById('altacts'); if (alts) alts.style.display='none';
-  setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
+function inq(){ document.getElementById('scrim').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 480); }
+function closeInq(){ document.getElementById('scrim').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow=''; }
 function sendInq(e){ e.preventDefault();
-  document.getElementById('inq').classList.remove('show');
+  document.getElementById('inq').style.display='none';
   document.getElementById('inq-done').classList.add('show'); }
 function newsl(e){ e.preventDefault(); e.target.innerHTML =
   '<span style="font-size:8px;letter-spacing:.22em;">THANK YOU</span>'; }
@@ -579,10 +594,17 @@ for p in products:
     <div class="meta">{'<br>'.join(esc(l) for l in det)}</div>
     <div class="price">{price_line(p)}</div>
     <div class="status">AVAILABLE</div>
-    <button class="btn-inq" id="inqbtn" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
+    <button class="btn-inq" id="inqbtn" onclick="inq()">{"ACQUIRE" if ed else "INQUIRE"}</button>
     {"" if ed else '<div class="alt-acts" id="altacts"><button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button></div>'}
+    <div class="assure">HAND-SIGNED ORIGINALS · AUTHENTICATED ART<br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
+    {wnav}
+  </div>
+  </div>
+  <div class="scrim" id="scrim" onclick="closeInq()"></div>
+  <div class="drawer" id="drawer" role="dialog" aria-label="Inquiry">
+    <button class="dx" onclick="closeInq()">CLOSE</button>
     <form class="inq" id="inq" onsubmit="sendInq(event)">
-      <div class="fhead">INQUIRE · {esc(p['title'])}</div>
+      <div class="fhead">{"ACQUIRE" if ed else "INQUIRE"} · {esc(p['title'])}</div>
       <div class="row2">
         <div><label for="f-fn">FIRST NAME *</label><input id="f-fn" required autocomplete="given-name"></div>
         <div><label for="f-ln">LAST NAME *</label><input id="f-ln" required autocomplete="family-name"></div>
@@ -616,11 +638,9 @@ for p in products:
       <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
-    <div class="assure">HAND-SIGNED ORIGINALS · AUTHENTICATED ART<br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
-    {wnav}
-  </div></div>
+  </div>
   {rel}</div>
-<div class="mbar"><span class="p">{price_line(p)}</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({{behavior:'smooth',block:'center'}});inq(document.getElementById('inqbtn'))">{"ACQUIRE" if ed else "INQUIRE"}</button></div>
+<div class="mbar"><span class="p">{price_line(p)}</span><button class="act" onclick="inq()">{"ACQUIRE" if ed else "INQUIRE"}</button></div>
 <script>document.addEventListener('DOMContentLoaded',function(){{document.body.classList.add('workpage');
 var l=document.getElementById('lb');
 if(l) l.innerHTML='<img src="{imgsrc(p, 2400)}" alt="{esc(p['title'])}">';
