@@ -180,7 +180,7 @@ main { min-height: 62vh; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--colgap); row-gap: var(--rowgap); }
 @media (max-width: 720px) { .grid { grid-template-columns: 1fr; row-gap: 56px; } }
 .card { display: flex; flex-direction: column; }
-.card .cim { display: flex; flex-direction: column; flex: 1; cursor: crosshair; }
+.card .cim { display: flex; flex-direction: column; flex: 1; }
 .card .im { display: flex; align-items: flex-end; flex: 1; min-height: 34vh; }
 @media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
 .card img { width: 100%; height: auto; max-height: 62vh; object-fit: contain; object-position: left bottom;
@@ -193,7 +193,8 @@ main { min-height: 62vh; }
 a.artist::after { content: ''; display: block; height: 1px; margin-top: 3px; background: currentColor;
                   transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
 a.artist:hover::after { transform: scaleX(1); }
-.cap .wl { display: block; cursor: crosshair; }
+.card:has(.cim:hover) a.artist::after, .card:has(.wl:hover) a.artist::after { transform: scaleX(1); }
+.cap .wl { display: block; }
 .cap .title { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 6px; line-height: 1.9; }
 .cap .price { font-size: 8.5px; letter-spacing: .16em; color: var(--ink); margin-top: 6px; }
 
