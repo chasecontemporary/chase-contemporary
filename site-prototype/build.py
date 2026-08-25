@@ -118,13 +118,14 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 html, body { overflow-x: hidden; }
 header { background: none; padding: 46px 20px 6px; text-align: center; }
 .mark { display: inline-block; font-size: 13px; font-weight: 500; letter-spacing: .4em; white-space: nowrap; }
-nav { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; margin-top: 16px; gap: 0; }
+nav { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; margin-top: 18px; gap: 42px; }
+@media (max-width: 720px) { nav { gap: 22px; } }
 nav .sep { font-size: 8.5px; color: var(--mute); letter-spacing: .26em; white-space: pre; }
 main { padding-top: 0; }
-nav a { font-size: 8.5px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
+nav a { font-size: 8.5px; letter-spacing: .26em; color: var(--ink); transition: color .18s ease; }
 nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
                transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
-nav a:hover { color: var(--ink); }
+
 nav a:hover::after, nav a.on::after { transform: scaleX(1); }
 nav a.on { color: var(--ink); }
 @media (max-width: 720px) { nav a { font-size: 8px; letter-spacing: .18em; } }
@@ -254,7 +255,7 @@ a.artist:hover::after { transform: scaleX(1); }
 .wnav { display: flex; justify-content: space-between; margin-top: 44px; padding-top: 18px;
         border-top: 1px solid var(--hair); }
 .wnav a { font-size: 8px; letter-spacing: .26em; color: var(--mute); }
-.wnav a:hover { color: var(--ink); }
+.w
 
 /* inquiry */
 .inq { max-height: 0; overflow: hidden; opacity: 0;
@@ -463,8 +464,7 @@ def page(title, body, active="", depth=0):
     pre = "../" * depth
     items = [("ARTISTS", "artists/index.html"), ("EXHIBITIONS", "exhibitions/index.html"),
              ("ABOUT", "about.html"), ("CONTACT", "contact.html")]
-    nav = '<span class="sep">,&#x2002;</span>'.join(
-        f'<a href="{pre}{h}" class="{"on" if n == active else ""}">{n}</a>' for n, h in items)
+    nav = "".join(f'<a href="{pre}{h}" class="{"on" if n == active else ""}">{n}</a>' for n, h in items)
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
