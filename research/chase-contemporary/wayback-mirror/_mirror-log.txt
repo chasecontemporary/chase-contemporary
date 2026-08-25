@@ -1,0 +1,15 @@
+OK / 20221203003643 1060344
+OK /about 20190817113752 59975
+FAIL /adam-lucas 20191017130645 <urlopen error timed out>
+OK /andres-valencia 20230319191230 338822
+FAIL /andres-valencia-print 20230203201243 The read operation timed out
+OK /andy-warhol-1 20190723223210 59327
+OK /art-fairs 20200804024837 9756
+OK /art-fairs/art-market-hamptons 20210919160922 38844
+OK /art-fairs/art-miami 20220126115904 42214
+OK /art-fairs/art-miami-2019 20200920194128 22923
+OK /art-fairs/art-new-york-2019 20200920193406 17150
+OK /art-fairs/art-on-paper 20210919175156 22750
+OK /art-fairs/dallas-art-fair 20211207030837 23626
+OK /art-fairs/dallas-art-fair/selected-works 20220702134135 22549
+OK /art-fairs/palm-beach-modern-contemporary 20200920193637 28427
