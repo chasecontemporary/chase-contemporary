@@ -12,16 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var t = Date.now();
     setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
   } catch (e) {}
-  var h = document.querySelector('header');
-  var lastY = window.scrollY;
-  var onS = function(){
-    var y = window.scrollY;
-    h.classList.toggle('sc', y > 8);
-    if (y > lastY + 6 && y > 140) h.classList.add('away');
-    else if (y < lastY - 6 || y <= 140) h.classList.remove('away');
-    lastY = y;
-  };
-  onS(); window.addEventListener('scroll', onS, {passive: true});
 
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) {

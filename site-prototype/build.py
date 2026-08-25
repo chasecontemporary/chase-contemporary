@@ -115,16 +115,11 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 @media (max-width: 720px) { :root { --pad: 20px; } }
 
 /* ---------- header ---------- */
-header { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #fff;
-         border-bottom: 1px solid transparent;
-         transition: transform .38s cubic-bezier(.2,.6,.2,1), border-color .3s ease; }
-header.sc { border-bottom-color: var(--hair); }
-header.away { transform: translateY(-100%); }
+header { background: none; }
 header .wrap { display: flex; justify-content: space-between; align-items: baseline;
-               padding-top: 30px; padding-bottom: 26px; gap: 14px; }
+               padding-top: 40px; padding-bottom: 10px; gap: 14px; }
 .mark { font-size: 13px; font-weight: 500; letter-spacing: .36em; white-space: nowrap; }
-main { padding-top: 86px; }
-main:has(> .hero) { padding-top: 86px; }
+main { padding-top: 0; }
 nav { display: flex; gap: 28px; }
 nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
 nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
@@ -171,7 +166,7 @@ main { min-height: 62vh; }
 .card .num { font-size: 7.5px; letter-spacing: .3em; color: var(--mute); margin-bottom: 12px; }
 
 /* ---------- hero ---------- */
-.hero { display: block; overflow: hidden; }
+.hero { display: block; overflow: hidden; margin-top: 34px; }
 .hero img { width: 100vw; height: 86vh; object-fit: cover; object-position: center 28%;
             transform: scale(1.06); will-change: transform; }
 @media (max-width: 720px) { .hero img { height: 60vh; } }
@@ -336,16 +331,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var t = Date.now();
     setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
   } catch (e) {}
-  var h = document.querySelector('header');
-  var lastY = window.scrollY;
-  var onS = function(){
-    var y = window.scrollY;
-    h.classList.toggle('sc', y > 8);
-    if (y > lastY + 6 && y > 140) h.classList.add('away');
-    else if (y < lastY - 6 || y <= 140) h.classList.remove('away');
-    lastY = y;
-  };
-  onS(); window.addEventListener('scroll', onS, {passive: true});
 
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) {

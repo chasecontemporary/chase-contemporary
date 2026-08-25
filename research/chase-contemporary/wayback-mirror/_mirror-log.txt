@@ -72,3 +72,4 @@ OK /artistpage/cristiano-mangovo 20221202061129 774960
 FAIL /artistpage/cristiano-mangovo/defenders-of-nature 20230203190030 <urlopen error timed out>
 FAIL /artistpage/cristiano-mangovo/signature 20230203205256 <urlopen error timed out>
 OK /artistpage/cristiano-mangovo/the-return-2 20230203200603 771619
+FAIL /artistpage/cristiano-mangovo/the-return-3 20230203203154 <urlopen error timed out>
