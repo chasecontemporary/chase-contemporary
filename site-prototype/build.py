@@ -241,7 +241,7 @@ a.artist:hover::after { transform: scaleX(1); }
   text-align: left; padding: 0; font-size: 8px; letter-spacing: .24em; color: var(--mute); cursor: pointer;
   transition: color .18s ease; }
 .alt-acts button:hover { color: var(--ink); }
-.alt-acts button::before { content: '\2192\00a0\00a0'; color: var(--mute); }
+.alt-acts button::before { content: '→  '; color: var(--mute); }
 .cap { position: relative; }
 .cap .cta { position: absolute; right: 0; bottom: 1px; font-size: 8px; font-weight: 500;
   letter-spacing: .26em; opacity: 0; transform: translateY(3px); transition: opacity .3s ease, transform .3s ease; }
