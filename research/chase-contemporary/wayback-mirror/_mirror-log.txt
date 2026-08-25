@@ -43,3 +43,5 @@ OK /artistpage/carole-feuerman/kendall-island 20221202052744 695065
 OK /artistpage/carole-feuerman/miniature-balance 20221129005947 686170
 OK /artistpage/carole-feuerman/miniature-serena-(blue) 20221208195734 695529
 OK /artistpage/carole-feuerman/miniature-serena-(pink) 20221129014300 686536
+OK /artistpage/carole-feuerman/miniature-serena-(purple) 20221202062611 695442
+FAIL /artistpage/carole-feuerman/miniature-serena-ii 20221129021424 <urlopen error timed out>
