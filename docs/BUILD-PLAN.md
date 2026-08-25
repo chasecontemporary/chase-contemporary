@@ -2,7 +2,7 @@
 
 ## Context
 
-Chase Contemporary (Bernie Chase's gallery) is getting a full web refresh plus all backend and integrations rebuilt to the "Revenue Engine" proposal (`~/chase-contemporary/docs/chase-revenue-engine.pdf`): 8 workstreams, 3 phases over 16 weeks. The current chasecontemporary.com is already on Shopify but leaks revenue exactly as the plan describes — inquiries go to a shared `info@` inbox, prices are hidden yet a cart exists, no CRM, no address on the site, and the entire old editorial site (~50 exhibition archives) was deleted and 404s while still Google-indexed. Research on Bernie and the gallery is complete and committed in `~/chase-contemporary/research/` (29 Bernie sources + ~30 gallery press sources) as GEO raw material.
+Chase Contemporary (Bernie Chase's gallery) is getting a full web refresh plus all backend and integrations rebuilt to the "Revenue Engine" proposal (`~/chase-contemporary/docs/chase-revenue-engine.pdf`): 8 workstreams, 3 phases compressed to ~1 month (Devyn 8/25: AI-accelerated build; proposal's 16-week arc delivered in ~4 weeks). The current chasecontemporary.com is already on Shopify but leaks revenue exactly as the plan describes — inquiries go to a shared `info@` inbox, prices are hidden yet a cart exists, no CRM, no address on the site, and the entire old editorial site (~50 exhibition archives) was deleted and 404s while still Google-indexed. Research on Bernie and the gallery is complete and committed in `~/chase-contemporary/research/` (29 Bernie sources + ~30 gallery press sources) as GEO raw material.
 
 ## Decisions locked (from Devyn)
 
@@ -27,7 +27,7 @@ Hard rules carried from the plan: no chatbots; nothing sends without human appro
 Collect from Devyn/Bernie (the ⛔ items in `docs/QUESTIONNAIRE.md`, answers recorded there):
 Shopify collaborator access + plan tier; DNS/registrar; Google Workspace/info@; locations + addresses; current data sources & inventory; rollout date/contract status. Then: audit Shopify (theme, apps, orders, customers), export inbox history, pull GSC/GA4 if they exist, snapshot Wayback archive of the old site.
 
-## Phase 1 — Stop the Leak (≈ weeks 1–3)
+## Phase 1 — Stop the Leak (week 1)
 
 1. Supabase schema + RLS + seed (artists, works from Shopify export).
 2. W1 embedded inquiry forms on every artwork page (artwork context, price band, page journey, source auto-attached) → Supabase → Slack ping + auto-acknowledgment w/ booking link (drafted templates, approved once).
@@ -36,14 +36,14 @@ Shopify collaborator access + plan tier; DNS/registrar; Google Workspace/info@; 
 5. Follow-up cadence templates (Day 0/2/7/21) + named owner per inquiry.
 6. Baseline metrics captured (real inquiries/mo, close rate, avg deal) to replace placeholder math.
 
-## Phase 2 — Take the Money (≈ weeks 3–8)
+## Phase 2 — Take the Money (weeks 2–3)
 
 1. Payment rails: card (fees priced in), ACH push for $5k–150k, auto-generated wire instructions + reconciliation, financing partner (Q38), payment links mid-call via draft orders.
 2. The Hold: refundable-deposit product + 72-hr expiry automation + policy page.
 3. Automated invoicing; historical sales import; unified pipeline (Artsy, shop, fairs, walk-ins → one table).
 4. Lifecycle email marketing infrastructure live (Devyn 8/25: confirmed Phase 2 priority) — the flagship trigger: new artwork uploaded → CRM matches it to collectors by purchase/inquiry history → drafts a personalized note per collector → human approves → sends. Plus nurture and logistics updates. Nothing auto-sends.
 
-## Phase 3 — Compound (≈ weeks 8–16)
+## Phase 3 — Compound (weeks 3–4)
 
 1. Premium site: full theme rebuild to the approved design bar (Q42), museum-grade presentation, editions self-serve.
 2. GEO: archive restore + 301s, Bernie bio + press index (content approval per Q6/44/45), structured data everywhere, AI-citability pass.
