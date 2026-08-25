@@ -45,3 +45,10 @@ OK /artistpage/carole-feuerman/miniature-serena-(blue) 20221208195734 695529
 OK /artistpage/carole-feuerman/miniature-serena-(pink) 20221129014300 686536
 OK /artistpage/carole-feuerman/miniature-serena-(purple) 20221202062611 695442
 FAIL /artistpage/carole-feuerman/miniature-serena-ii 20221129021424 <urlopen error timed out>
+OK /artistpage/carole-feuerman/miniature-tree-ii 20221208195133 695250
+OK /artistpage/carole-feuerman/perseverance 20221208185100 696348
+FAIL /artistpage/carole-feuerman/table-top-diver 20221202062109 The read operation timed out
+OK /artistpage/carole-feuerman/the-thinker 20221208195237 696258
+FAIL /artistpage/connor-brothers 20221202060312 <urlopen error timed out>
+FAIL /artistpage/connor-brothers/a-dangerous-idea 20221208192500 <urlopen error timed out>
+OK /artistpage/connor-brothers/absence-makes-the-days-grow-longer 20221202065646 695728
