@@ -490,7 +490,7 @@ def card(p, depth=0, cls="", num=None, max_w=None):
     pre = "../" * depth
     n = f'<div class="num">{num:02d}</div>' if num else ""
     d = phys(p)
-    dims = f' — {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
+    dims = f' · {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
     ah = artist_href(p, depth)
     artist = (f'<a class="artist" href="{ah}">{esc(p["vendor"])}</a>' if ah
               else f'<span class="artist">{esc(p["vendor"])}</span>')
@@ -521,7 +521,7 @@ featured = [p for p in products if p.get("images") and not is_edition(p)][:6]
 body = f"""
 <div class="wrap">
   <a class="hero r in" href="exhibitions/index.html">{pic(hero_p, 1600, "fx", "92vw")}</a>
-  <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
+  <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} · {esc(EXHIBITION['sub'])}</span>
     <span class="s">CURRENT EXHIBITION</span></div>
   <div class="statement r">HAND-SIGNED ORIGINALS · LIMITED EDITION WORKS · AUTHENTICATED ART</div>
   <div class="section-label r">SELECTED WORKS</div>
@@ -538,7 +538,7 @@ body = f"""<div class="wrap"><div class="page-title r in">ARTISTS</div>
 <ul class="index-list r in">
   {''.join(f'<li><a href="{c["handle"]}.html" data-img="{col_preview(c)}"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
 </ul></div>"""
-open(os.path.join(OUT, "artists", "index.html"), "w").write(page("Artists — Chase Contemporary", body, "ARTISTS", 1))
+open(os.path.join(OUT, "artists", "index.html"), "w").write(page("Artists · Chase Contemporary", body, "ARTISTS", 1))
 
 for c in artists:
     ps = [p for p in col_products.get(c["handle"], []) if p.get("images")]
@@ -548,7 +548,7 @@ for c in artists:
     <div class="section-label"></div>
     <div class="grid">{''.join(card(p, 1, num=i + 1, max_w=max_phys_w(ps)) for i, p in enumerate(ps))}</div></div>"""
     open(os.path.join(OUT, "artists", f"{c['handle']}.html"), "w").write(
-        page(f"{c['title']} — Chase Contemporary", body, "ARTISTS", 1))
+        page(f"{c['title']} · Chase Contemporary", body, "ARTISTS", 1))
 
 for p in products:
     det = details(p)
@@ -582,7 +582,7 @@ for p in products:
     <button class="btn-inq" id="inqbtn" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
     {"" if ed else '<div class="alt-acts" id="altacts"><button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button></div>'}
     <form class="inq" id="inq" onsubmit="sendInq(event)">
-      <div class="fhead">INQUIRE — {esc(p['title'])}</div>
+      <div class="fhead">INQUIRE · {esc(p['title'])}</div>
       <div class="row2">
         <div><label for="f-fn">FIRST NAME *</label><input id="f-fn" required autocomplete="given-name"></div>
         <div><label for="f-ln">LAST NAME *</label><input id="f-ln" required autocomplete="family-name"></div>
@@ -630,7 +630,7 @@ document.addEventListener('keydown',function(e){{
   {f"if(e.key==='ArrowRight') location.href='{next_p['handle']}.html';" if next_p else ""}
 }});}});</script>"""
     open(os.path.join(OUT, "works", f"{p['handle']}.html"), "w").write(
-        page(f"{p['title']} — {p['vendor']}", body, "", 1))
+        page(f"{p['title']} · {p['vendor']}", body, "", 1))
 
 grid = ''.join(card(p, 1) for p in pele if p.get("images"))
 body = f"""<div class="wrap"><div class="page-title r in">{esc(EXHIBITION['title'])}</div>
@@ -638,7 +638,7 @@ body = f"""<div class="wrap"><div class="page-title r in">{esc(EXHIBITION['title
 <div class="section-label"></div>
 <div class="grid">{grid}</div>
 </div>"""
-open(os.path.join(OUT, "exhibitions", "index.html"), "w").write(page("Exhibitions — Chase Contemporary", body, "EXHIBITIONS", 1))
+open(os.path.join(OUT, "exhibitions", "index.html"), "w").write(page("Exhibitions · Chase Contemporary", body, "EXHIBITIONS", 1))
 
 body = """<div class="wrap"><div class="page-title r in">ABOUT</div>
 <div class="section-label"></div>
@@ -646,7 +646,7 @@ body = """<div class="wrap"><div class="page-title r in">ABOUT</div>
 <p>CHASE CONTEMPORARY WAS FOUNDED IN NEW YORK AS A BRICK-AND-MORTAR GALLERY, STAGING MORE THAN FIFTY SOLO EXHIBITIONS FROM ITS WEST BROADWAY FLAGSHIP OVER MORE THAN A DECADE.</p>
 <p>TODAY THE GALLERY OPERATES AS A DIGITAL-FIRST PLATFORM.</p>
 </div></div>"""
-open(os.path.join(OUT, "about.html"), "w").write(page("About — Chase Contemporary", body, "ABOUT"))
+open(os.path.join(OUT, "about.html"), "w").write(page("About · Chase Contemporary", body, "ABOUT"))
 
 body = """<div class="wrap"><div class="page-title r in">CONTACT</div>
 <div class="section-label"></div>
@@ -654,6 +654,6 @@ body = """<div class="wrap"><div class="page-title r in">CONTACT</div>
 <p>INFO@CHASECONTEMPORARY.COM</p>
 <p>FOR ACQUISITIONS AND ALL INQUIRIES, A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES.</p>
 </div></div>"""
-open(os.path.join(OUT, "contact.html"), "w").write(page("Contact — Chase Contemporary", body, "CONTACT"))
+open(os.path.join(OUT, "contact.html"), "w").write(page("Contact · Chase Contemporary", body, "CONTACT"))
 
 print(f"built {len(products) + len(artists) + 5} pages -> {OUT}")

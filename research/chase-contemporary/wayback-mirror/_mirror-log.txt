@@ -86,3 +86,4 @@ OK /artistpage/fabiano-senk/tempo-de-cuidar-(time-to-take-care) 20221202065955 6
 OK /artistpage/hybycozo 20221202072124 782543
 FAIL /artistpage/hybycozo/ascension 20221202065451 <urlopen error timed out>
 FAIL /artistpage/hybycozo/aura-40 20221129012921 <urlopen error [Errno 54] Connection reset by peer>
+OK /artistpage/hybycozo/octagon 20221208193726 694826
