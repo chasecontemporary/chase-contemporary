@@ -56,3 +56,6 @@ OK /artistpage/connor-brothers/all-my-life-i've-been-a-liar 20221129002433 68021
 OK /artistpage/connor-brothers/all-she-wanted 20221208193157 696285
 FAIL /artistpage/connor-brothers/any-artist-who-takes-himself-seriously 20221202073507 <urlopen error timed out>
 FAIL /artistpage/connor-brothers/be-yourself-everyone-else-is-taken 20221129011347 <urlopen error timed out>
+FAIL /artistpage/connor-brothers/call-me-anything-but-ordinary 20221202071241 <urlopen error timed out>
+OK /artistpage/connor-brothers/hear-no-evil%2C-speak-no-evil 20221202064642 695523
+OK /artistpage/connor-brothers/i-know-i'm-paranoid 20221208194400 695376

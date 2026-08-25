@@ -103,6 +103,7 @@ body { font-family: 'NSN', 'Helvetica Neue', Arial, sans-serif; background: #fff
        -webkit-font-smoothing: antialiased; text-transform: uppercase;
        animation: pagein .45s ease both; }
 @keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
+body.leaving { opacity: 0; transition: opacity .18s ease; animation: none; }
 ::selection { background: var(--ink); color: #fff; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
@@ -121,10 +122,12 @@ header .wrap { display: flex; justify-content: space-between; align-items: basel
                padding-top: 26px; padding-bottom: 22px; gap: 14px; }
 .mark { font-size: 12px; font-weight: 500; letter-spacing: .32em; white-space: nowrap; }
 nav { display: flex; gap: 28px; }
-nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease;
-        padding-bottom: 3px; border-bottom: 1px solid transparent; }
+nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
+nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
+               transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
 nav a:hover { color: var(--ink); }
-nav a.on { color: var(--ink); border-bottom-color: var(--ink); }
+nav a:hover::after, nav a.on::after { transform: scaleX(1); }
+nav a.on { color: var(--ink); }
 @media (max-width: 720px) { nav { gap: 16px; } nav a { font-size: 8px; letter-spacing: .18em; } }
 
 main { min-height: 62vh; }
@@ -164,8 +167,9 @@ main { min-height: 62vh; }
 .card .num { font-size: 7.5px; letter-spacing: .3em; color: var(--mute); margin-bottom: 12px; }
 
 /* ---------- hero ---------- */
-.hero { margin-top: 28px; }
-.hero img { width: 100%; max-height: 76vh; object-fit: cover; object-position: center 28%; }
+.hero { margin-top: 28px; overflow: hidden; }
+.hero img { width: 100%; max-height: 76vh; object-fit: cover; object-position: center 28%;
+            transform: scale(1.06); will-change: transform; }
 .hero-cap { display: flex; justify-content: space-between; align-items: baseline;
             margin-top: 16px; flex-wrap: wrap; gap: 8px; }
 .hero-cap .t { font-size: 11px; font-weight: 500; letter-spacing: .24em; }
@@ -181,10 +185,14 @@ main { min-height: 62vh; }
 @media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
 .card img { width: 100%; height: auto; max-height: 62vh; object-fit: contain; object-position: left bottom;
             transition: opacity .7s ease; }
-.card .cim:hover img.ld { opacity: .93; }
+.card .cim img { transition: opacity .7s ease, transform .45s cubic-bezier(.2,.6,.2,1); }
+.card .cim:hover img.ld { opacity: .95; transform: translateY(-5px); }
+@media (prefers-reduced-motion: reduce) { .card .cim:hover img.ld { transform: none; } }
 .card .cap { margin-top: 16px; }
 .cap .artist { display: inline-block; font-size: 9.5px; font-weight: 500; letter-spacing: .22em; }
-a.artist:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+a.artist::after { content: ''; display: block; height: 1px; margin-top: 3px; background: currentColor;
+                  transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
+a.artist:hover::after { transform: scaleX(1); }
 .cap .wl { display: block; cursor: crosshair; }
 .cap .title { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 6px; line-height: 1.9; }
 .cap .price { font-size: 8.5px; letter-spacing: .16em; color: var(--ink); margin-top: 6px; }
@@ -337,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
-  var links = document.querySelectorAll('.index-list a[data-img]');
+  var links = document.querySelectorAll('a[data-img]');
   if (links.length && window.matchMedia('(hover: hover)').matches) {
     var pv = document.createElement('div'); pv.id = 'apv';
     var pim = document.createElement('img'); pv.appendChild(pim); document.body.appendChild(pv);
@@ -360,6 +368,30 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!raf) raf = requestAnimationFrame(place);
       });
     });
+  }
+
+  var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!rm) {
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a || a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var href = a.getAttribute('href');
+      if (!href || href.indexOf('#') === 0 || /^(https?:|mailto:|tel:)/.test(href)) return;
+      e.preventDefault();
+      document.body.classList.add('leaving');
+      setTimeout(function () { location.href = href; }, 170);
+    });
+    var hero = document.querySelector('.hero img');
+    if (hero) {
+      var hraf = null;
+      window.addEventListener('scroll', function () {
+        if (hraf) return;
+        hraf = requestAnimationFrame(function () {
+          hraf = null;
+          hero.style.transform = 'scale(1.06) translateY(' + (window.scrollY * 0.08) + 'px)';
+        });
+      }, { passive: true });
+    }
   }
 
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
@@ -498,12 +530,12 @@ for p in products:
     prev_p = siblings[idx - 1] if idx > 0 else None
     next_p = siblings[idx + 1] if 0 <= idx < len(siblings) - 1 else None
     related = [s for s in siblings if s["id"] != p["id"]][:3]
-    crumb = (f'<a class="crumb" href="../artists/{c["handle"]}.html">&larr; {esc(c["title"])}</a>'
+    crumb = (f'<a class="crumb" href="../artists/{c["handle"]}.html" data-img="{col_preview(c, 480)}">&larr; {esc(c["title"])}</a>'
              if c else '<span class="crumb"></span>')
     wnav = ""
     if prev_p or next_p:
-        left = f'<a href="{prev_p["handle"]}.html">&larr; PREVIOUS</a>' if prev_p else "<span></span>"
-        right = f'<a href="{next_p["handle"]}.html">NEXT &rarr;</a>' if next_p else "<span></span>"
+        left = f'<a href="{prev_p["handle"]}.html" data-img="{imgsrc(prev_p, 640)}">&larr; PREVIOUS</a>' if prev_p else "<span></span>"
+        right = f'<a href="{next_p["handle"]}.html" data-img="{imgsrc(next_p, 640)}">NEXT &rarr;</a>' if next_p else "<span></span>"
         pos = f'<span style="font-size:8px;letter-spacing:.26em;color:var(--mute)">{idx + 1:02d} / {len(siblings):02d}</span>' if idx >= 0 else ""
         wnav = f'<div class="wnav">{left}{pos}{right}</div>'
     rel = ""
