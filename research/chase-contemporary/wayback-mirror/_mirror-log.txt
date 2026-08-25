@@ -54,3 +54,5 @@ FAIL /artistpage/connor-brothers/a-dangerous-idea 20221208192500 <urlopen error 
 OK /artistpage/connor-brothers/absence-makes-the-days-grow-longer 20221202065646 695728
 OK /artistpage/connor-brothers/all-my-life-i've-been-a-liar 20221129002433 680215
 OK /artistpage/connor-brothers/all-she-wanted 20221208193157 696285
+FAIL /artistpage/connor-brothers/any-artist-who-takes-himself-seriously 20221202073507 <urlopen error timed out>
+FAIL /artistpage/connor-brothers/be-yourself-everyone-else-is-taken 20221129011347 <urlopen error timed out>

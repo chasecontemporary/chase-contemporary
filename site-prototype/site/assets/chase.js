@@ -27,6 +27,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  var links = document.querySelectorAll('.index-list a[data-img]');
+  if (links.length && window.matchMedia('(hover: hover)').matches) {
+    var pv = document.createElement('div'); pv.id = 'apv';
+    var pim = document.createElement('img'); pv.appendChild(pim); document.body.appendChild(pv);
+    var px = 0, py = 0, raf = null;
+    var place = function () {
+      raf = null;
+      var w = pv.offsetWidth || 320, h = pv.offsetHeight || 240;
+      var x = Math.min(px + 36, window.innerWidth - w - 24);
+      var y = Math.min(Math.max(py - h / 2, 24), window.innerHeight - h - 24);
+      pv.style.left = x + 'px'; pv.style.top = y + 'px';
+    };
+    links.forEach(function (a) {
+      a.addEventListener('mouseenter', function () {
+        var src = a.getAttribute('data-img'); if (!src) return;
+        pim.src = src; pv.classList.add('show');
+      });
+      a.addEventListener('mouseleave', function () { pv.classList.remove('show'); });
+      a.addEventListener('mousemove', function (e) {
+        px = e.clientX; py = e.clientY;
+        if (!raf) raf = requestAnimationFrame(place);
+      });
+    });
+  }
+
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
   if (wi && lb) {
     wi.addEventListener('click', function(){ lb.classList.add('show'); document.body.style.overflow='hidden'; });

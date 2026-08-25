@@ -33,6 +33,17 @@ for c in artists:
         artist_of.setdefault(p["id"], c)
 
 def esc(s): return html.escape(s or "", quote=True)
+
+def artist_href(p, depth):
+    c = artist_of.get(p["id"])
+    return (("../" * depth) + f"artists/{c['handle']}.html") if c else None
+
+def col_preview(c, w=640):
+    for p in col_products.get(c["handle"], []):
+        if p.get("images"):
+            src = p["images"][0]["src"]; sep = "&" if "?" in src else "?"
+            return f"{src}{sep}width={w}"
+    return ""
 def strip_html(s): return re.sub(r"<[^>]+>", "\n", s or "")
 def details(p):
     return [l.strip() for l in strip_html(p.get("body_html", "")).splitlines() if l.strip()][:3]
@@ -165,17 +176,19 @@ main { min-height: 62vh; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--colgap); row-gap: var(--rowgap); }
 @media (max-width: 720px) { .grid { grid-template-columns: 1fr; row-gap: 56px; } }
 .card { display: flex; flex-direction: column; }
-.card a { display: flex; flex-direction: column; height: 100%; cursor: crosshair; }
+.card .cim { display: flex; flex-direction: column; flex: 1; cursor: crosshair; }
 .card .im { display: flex; align-items: flex-end; flex: 1; min-height: 34vh; }
 @media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
 .card img { width: 100%; height: auto; max-height: 62vh; object-fit: contain; object-position: left bottom;
             transition: opacity .7s ease; }
-.card a:hover img.ld { opacity: .93; }
+.card .cim:hover img.ld { opacity: .93; }
 .card .cap { margin-top: 16px; }
-.cap .artist { font-size: 9.5px; font-weight: 500; letter-spacing: .22em; }
+.cap .artist { display: inline-block; font-size: 9.5px; font-weight: 500; letter-spacing: .22em; }
+a.artist:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.cap .wl { display: block; cursor: crosshair; }
 .cap .title { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 6px; line-height: 1.9; }
 .cap .price { font-size: 8.5px; letter-spacing: .16em; color: var(--ink); margin-top: 6px; }
-.card a:hover .artist { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+
 
 /* ---------- artist index ---------- */
 .index-list { list-style: none; margin-bottom: 40px; }
@@ -186,6 +199,13 @@ main { min-height: 62vh; }
 .index-list a:hover { padding-left: 10px; }
 .index-list .n { font-size: 13px; letter-spacing: .28em; font-weight: 400; }
 .index-list .c { font-size: 8px; letter-spacing: .22em; color: var(--mute); }
+
+/* ---------- artist hover preview ---------- */
+#apv { position: fixed; z-index: 60; width: 320px; pointer-events: none; opacity: 0;
+       transform: translateY(6px); transition: opacity .28s ease, transform .28s ease; }
+#apv.show { opacity: 1; transform: none; }
+#apv img { width: 100%; height: auto; box-shadow: 0 6px 40px rgba(17,17,17,.14); }
+@media (hover: none), (max-width: 880px) { #apv { display: none; } }
 
 /* ---------- work page ---------- */
 .crumb { font-size: 8.5px; letter-spacing: .24em; color: var(--mute); margin: 32px 0 36px; display: inline-block; }
@@ -317,6 +337,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  var links = document.querySelectorAll('.index-list a[data-img]');
+  if (links.length && window.matchMedia('(hover: hover)').matches) {
+    var pv = document.createElement('div'); pv.id = 'apv';
+    var pim = document.createElement('img'); pv.appendChild(pim); document.body.appendChild(pv);
+    var px = 0, py = 0, raf = null;
+    var place = function () {
+      raf = null;
+      var w = pv.offsetWidth || 320, h = pv.offsetHeight || 240;
+      var x = Math.min(px + 36, window.innerWidth - w - 24);
+      var y = Math.min(Math.max(py - h / 2, 24), window.innerHeight - h - 24);
+      pv.style.left = x + 'px'; pv.style.top = y + 'px';
+    };
+    links.forEach(function (a) {
+      a.addEventListener('mouseenter', function () {
+        var src = a.getAttribute('data-img'); if (!src) return;
+        pim.src = src; pv.classList.add('show');
+      });
+      a.addEventListener('mouseleave', function () { pv.classList.remove('show'); });
+      a.addEventListener('mousemove', function (e) {
+        px = e.clientX; py = e.clientY;
+        if (!raf) raf = requestAnimationFrame(place);
+      });
+    });
+  }
+
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
   if (wi && lb) {
     wi.addEventListener('click', function(){ lb.classList.add('show'); document.body.style.overflow='hidden'; });
@@ -388,12 +433,14 @@ def card(p, depth=0, cls="", num=None, max_w=None):
     n = f'<div class="num">{num:02d}</div>' if num else ""
     d = phys(p)
     dims = f' — {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
-    price = f'<div class="price">{price_line(p)}</div>' 
-    return f"""<div class="card r {cls}"><a href="{pre}works/{p['handle']}.html">
-  <div class="im">{pic(p, 900, "fx")}</div>
-  {n}<div class="cap"><div class="artist">{esc(p['vendor'])}</div>
-  <div class="title">{esc(p['title'])}{dims}</div>
-  {price}</div></a></div>"""
+    ah = artist_href(p, depth)
+    artist = (f'<a class="artist" href="{ah}">{esc(p["vendor"])}</a>' if ah
+              else f'<span class="artist">{esc(p["vendor"])}</span>')
+    return f"""<div class="card r {cls}"><a class="cim" href="{pre}works/{p['handle']}.html">
+  <div class="im">{pic(p, 900, "fx")}</div>{n}</a>
+  <div class="cap">{artist}
+  <a class="wl" href="{pre}works/{p['handle']}.html"><div class="title">{esc(p['title'])}{dims}</div>
+  <div class="price">{price_line(p)}</div></a></div></div>"""
 
 # ---------- build ----------
 os.makedirs(OUT, exist_ok=True)
@@ -420,7 +467,7 @@ body = f"""
   <div class="feat">{''.join(card(p, 0, cls) for p, cls in zip(featured, ["f-a","f-b","f-c","f-d","f-e","f-f"]))}</div>
   <div class="section-label r">ARTISTS</div>
   <ul class="index-list r">
-    {''.join(f'<li><a href="artists/{c["handle"]}.html"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
+    {''.join(f'<li><a href="artists/{c["handle"]}.html" data-img="{col_preview(c)}"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
   </ul>
 </div>"""
 open(os.path.join(OUT, "index.html"), "w").write(page("Chase Contemporary", body))
@@ -428,7 +475,7 @@ open(os.path.join(OUT, "index.html"), "w").write(page("Chase Contemporary", body
 body = f"""<div class="wrap"><div class="page-title r in">ARTISTS</div>
 <div class="section-label r"></div>
 <ul class="index-list r in">
-  {''.join(f'<li><a href="{c["handle"]}.html"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
+  {''.join(f'<li><a href="{c["handle"]}.html" data-img="{col_preview(c)}"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
 </ul></div>"""
 open(os.path.join(OUT, "artists", "index.html"), "w").write(page("Artists — Chase Contemporary", body, "ARTISTS", 1))
 
