@@ -24,6 +24,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  if (location.hash === '#inquire' && document.getElementById('inq')) {
+    inq(document.getElementById('inqbtn'));
+    setTimeout(function(){ document.getElementById('inq').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+  }
+
   var links = document.querySelectorAll('a[data-img]');
   if (links.length && window.matchMedia('(hover: hover)').matches) {
     var pv = document.createElement('div'); pv.id = 'apv';
@@ -96,7 +101,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
   }
 });
+function inqPre(kind){
+  var t = document.getElementById('f-m');
+  var title = (document.querySelector('input[name=artwork_title]')||{}).value || 'this work';
+  var artist = (document.querySelector('input[name=artist]')||{}).value || '';
+  var by = artist ? ' by ' + artist : '';
+  if (t) {
+    if (kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
+    if (kind === 'viewing') t.value = 'I would like to schedule a private viewing of ' + title + by + '.';
+    if (kind === 'images') t.value = 'Please send additional images and a condition report for ' + title + by + '.';
+  }
+  inq(document.getElementById('inqbtn'));
+}
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
+  var alts = document.getElementById('altacts'); if (alts) alts.style.display='none';
   setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
 function sendInq(e){ e.preventDefault();
   document.getElementById('inq').classList.remove('show');

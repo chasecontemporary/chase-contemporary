@@ -3,12 +3,12 @@
 <title>Ron Galella Jackie Onassis &amp; John Jr. 1969 — Ron Galella</title>
 <link rel="preconnect" href="https://cdn.shopify.com">
 <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 32 32&#x27;&gt;&lt;rect width=&#x27;32&#x27; height=&#x27;32&#x27; fill=&#x27;white&#x27;/&gt;&lt;text x=&#x27;16&#x27; y=&#x27;21&#x27; font-family=&#x27;Helvetica&#x27; font-size=&#x27;13&#x27; letter-spacing=&#x27;1&#x27; text-anchor=&#x27;middle&#x27; fill=&#x27;#111&#x27;&gt;CC&lt;/text&gt;&lt;/svg&gt;">
-<link rel="stylesheet" href="/assets/chase.css"><script src="/assets/chase.js" defer></script></head>
+<link rel="stylesheet" href="/assets/chase.css?v=80dad5726a"><script src="/assets/chase.js?v=80dad5726a" defer></script></head>
 <body>
-<header><div class="wrap">
+<header>
   <a class="mark" href="../index.html">CHASE CONTEMPORARY</a>
-  <nav><a href="../artists/index.html" class="">ARTISTS</a><a href="../exhibitions/index.html" class="">EXHIBITIONS</a><a href="../about.html" class="">ABOUT</a><a href="../contact.html" class="">CONTACT</a></nav>
-</div></header>
+  <nav><a href="../artists/index.html" class="">ARTISTS</a><span class="sep">,&#x2002;</span><a href="../exhibitions/index.html" class="">EXHIBITIONS</a><span class="sep">,&#x2002;</span><a href="../about.html" class="">ABOUT</a><span class="sep">,&#x2002;</span><a href="../contact.html" class="">CONTACT</a></nav>
+</header>
 <main><div class="wrap"><span class="crumb"></span><div class="work">
   <div class="work-img r in"><img class="fx" src="https://cdn.shopify.com/s/files/1/0709/4324/4439/files/Jackie.jpg?v=1766452683&width=1400" srcset="https://cdn.shopify.com/s/files/1/0709/4324/4439/files/Jackie.jpg?v=1766452683&width=1400 1x, https://cdn.shopify.com/s/files/1/0709/4324/4439/files/Jackie.jpg?v=1766452683&width=2800 2x" sizes="(max-width: 880px) 92vw, 60vw" width="2950" height="3637" alt="Ron Galella Jackie Onassis &amp; John Jr. 1969, Ron Galella" loading="lazy" decoding="async" onload="this.classList.add('ld')"></div>
   <div class="work-info r in">
@@ -17,7 +17,12 @@
     <div class="meta">Silver gelatin print<br>10 x 8 in (25.40 x 20.32 cm)</div>
     <div class="price">Price on request</div>
     <div class="status">AVAILABLE</div>
-    <button class="act" onclick="inq(this)">INQUIRE</button>
+    <button class="btn-inq" id="inqbtn" onclick="inq(this)">INQUIRE</button>
+    <div class="alt-acts" id="altacts">
+      <button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button>
+      <button onclick="inqPre('viewing')">SCHEDULE A PRIVATE VIEWING</button>
+      <button onclick="inqPre('images')">REQUEST IMAGES &amp; CONDITION REPORT</button>
+    </div>
     <form class="inq" id="inq" onsubmit="sendInq(event)">
       <div class="fhead">INQUIRE — Ron Galella Jackie Onassis &amp; John Jr. 1969</div>
       <div class="row2">
@@ -48,7 +53,7 @@
       <input type="hidden" name="referrer" id="cc-ref">
       <input type="hidden" name="utm" id="cc-utm">
       <input type="hidden" name="seconds_on_page" id="cc-secs">
-      <button class="act" type="submit">SEND INQUIRY</button>
+      <button class="btn-inq" type="submit" style="margin-top:26px">SEND INQUIRY</button>
       <div class="note" style="margin-top:12px">ATTACHED AUTOMATICALLY FOR THE GALLERY: THIS ARTWORK, PRICE BAND, YOUR PATH THROUGH THE SITE, AND HOW YOU ARRIVED.</div>
       <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
@@ -57,7 +62,7 @@
     
   </div></div>
   </div>
-<div class="mbar"><span class="p">Price on request</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({behavior:'smooth',block:'center'});inq(document.querySelector('.work-info .act'))">INQUIRE</button></div>
+<div class="mbar"><span class="p">Price on request</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({behavior:'smooth',block:'center'});inq(document.getElementById('inqbtn'))">INQUIRE</button></div>
 <script>document.addEventListener('DOMContentLoaded',function(){document.body.classList.add('workpage');
 var l=document.getElementById('lb');
 if(l) l.innerHTML='<img src="https://cdn.shopify.com/s/files/1/0709/4324/4439/files/Jackie.jpg?v=1766452683&width=2400" alt="Ron Galella Jackie Onassis &amp; John Jr. 1969">';

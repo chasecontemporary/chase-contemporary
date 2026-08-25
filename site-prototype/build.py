@@ -115,19 +115,20 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 @media (max-width: 720px) { :root { --pad: 20px; } }
 
 /* ---------- header ---------- */
-header { background: none; }
-header .wrap { display: flex; justify-content: space-between; align-items: baseline;
-               padding-top: 40px; padding-bottom: 10px; gap: 14px; }
-.mark { font-size: 13px; font-weight: 500; letter-spacing: .36em; white-space: nowrap; }
+html, body { overflow-x: hidden; }
+header { background: none; padding: 46px 20px 6px; text-align: center; }
+.mark { display: inline-block; font-size: 13px; font-weight: 500; letter-spacing: .4em; white-space: nowrap; }
+nav { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; margin-top: 16px; }
+nav .sep { font-size: 8.5px; color: var(--mute); letter-spacing: .26em; white-space: pre; }
 main { padding-top: 0; }
 nav { display: flex; gap: 28px; }
-nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
+nav a { font-size: 8.5px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
 nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
                transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
 nav a:hover { color: var(--ink); }
 nav a:hover::after, nav a.on::after { transform: scaleX(1); }
 nav a.on { color: var(--ink); }
-@media (max-width: 720px) { nav { gap: 16px; } nav a { font-size: 8px; letter-spacing: .18em; } }
+@media (max-width: 720px) { nav a { font-size: 8px; letter-spacing: .18em; } }
 
 main { min-height: 62vh; }
 
@@ -230,6 +231,22 @@ a.artist:hover::after { transform: scaleX(1); }
 .work-info .meta { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 18px; line-height: 2.2; }
 .work-info .price { font-size: 10px; letter-spacing: .2em; margin-top: 26px; }
 .work-info .status { font-size: 7.5px; letter-spacing: .26em; color: var(--mute); margin-top: 12px; }
+.btn-inq { display: block; width: 100%; background: var(--ink); color: #fff; border: 1px solid var(--ink);
+  text-align: center; font-size: 9.5px; font-weight: 500; letter-spacing: .32em; padding: 17px 0 16px;
+  margin-top: 32px; font-family: inherit; text-transform: uppercase; cursor: pointer;
+  transition: background .25s ease, color .25s ease; }
+.btn-inq:hover { background: #fff; color: var(--ink); }
+.alt-acts { margin-top: 18px; display: flex; flex-direction: column; gap: 11px; }
+.alt-acts button { border: 0; background: none; font-family: inherit; text-transform: uppercase;
+  text-align: left; padding: 0; font-size: 8px; letter-spacing: .24em; color: var(--mute); cursor: pointer;
+  transition: color .18s ease; }
+.alt-acts button:hover { color: var(--ink); }
+.alt-acts button::before { content: '\2192\00a0\00a0'; color: var(--mute); }
+.cap { position: relative; }
+.cap .cta { position: absolute; right: 0; bottom: 1px; font-size: 8px; font-weight: 500;
+  letter-spacing: .26em; opacity: 0; transform: translateY(3px); transition: opacity .3s ease, transform .3s ease; }
+.card:hover .cta { opacity: 1; transform: none; }
+@media (hover: none) { .cap .cta { display: none; } }
 .act { display: inline-block; margin-top: 30px; font-size: 9px; font-weight: 500; letter-spacing: .3em;
        border: 0; border-bottom: 1px solid var(--ink); padding: 0 0 5px; cursor: pointer;
        background: none; font-family: inherit; color: var(--ink); text-transform: uppercase;
@@ -343,6 +360,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  if (location.hash === '#inquire' && document.getElementById('inq')) {
+    inq(document.getElementById('inqbtn'));
+    setTimeout(function(){ document.getElementById('inq').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+  }
+
   var links = document.querySelectorAll('a[data-img]');
   if (links.length && window.matchMedia('(hover: hover)').matches) {
     var pv = document.createElement('div'); pv.id = 'apv';
@@ -415,7 +437,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
   }
 });
+function inqPre(kind){
+  var t = document.getElementById('f-m');
+  var title = (document.querySelector('input[name=artwork_title]')||{}).value || 'this work';
+  var artist = (document.querySelector('input[name=artist]')||{}).value || '';
+  var by = artist ? ' by ' + artist : '';
+  if (t) {
+    if (kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
+    if (kind === 'viewing') t.value = 'I would like to schedule a private viewing of ' + title + by + '.';
+    if (kind === 'images') t.value = 'Please send additional images and a condition report for ' + title + by + '.';
+  }
+  inq(document.getElementById('inqbtn'));
+}
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
+  var alts = document.getElementById('altacts'); if (alts) alts.style.display='none';
   setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
 function sendInq(e){ e.preventDefault();
   document.getElementById('inq').classList.remove('show');
@@ -434,17 +469,18 @@ def page(title, body, active="", depth=0):
     pre = "../" * depth
     items = [("ARTISTS", "artists/index.html"), ("EXHIBITIONS", "exhibitions/index.html"),
              ("ABOUT", "about.html"), ("CONTACT", "contact.html")]
-    nav = "".join(f'<a href="{pre}{h}" class="{"on" if n == active else ""}">{n}</a>' for n, h in items)
+    nav = '<span class="sep">,&#x2002;</span>'.join(
+        f'<a href="{pre}{h}" class="{"on" if n == active else ""}">{n}</a>' for n, h in items)
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
 <link rel="preconnect" href="https://cdn.shopify.com">\n<link rel="icon" href="{FAVICON}">
-<link rel="stylesheet" href="/assets/chase.css"><script src="/assets/chase.js" defer></script></head>
+<link rel="stylesheet" href="/assets/chase.css?v={V}"><script src="/assets/chase.js?v={V}" defer></script></head>
 <body>
-<header><div class="wrap">
+<header>
   <a class="mark" href="{pre}index.html">CHASE CONTEMPORARY</a>
   <nav>{nav}</nav>
-</div></header>
+</header>
 <main>{body}</main>
 <footer><div class="wrap">
   <div class="col"><b>NEW YORK</b><br>413 WEST BROADWAY<br>BY APPOINTMENT</div>
@@ -470,7 +506,8 @@ def card(p, depth=0, cls="", num=None, max_w=None):
   <div class="im">{pic(p, 900, "fx")}</div>{n}</a>
   <div class="cap">{artist}
   <a class="wl" href="{pre}works/{p['handle']}.html"><div class="title">{esc(p['title'])}{dims}</div>
-  <div class="price">{price_line(p)}</div></a></div></div>"""
+  <div class="price">{price_line(p)}</div></a>
+  <a class="cta" href="{pre}works/{p['handle']}.html#inquire">{"ACQUIRE" if is_edition(p) else "INQUIRE"}</a></div></div>"""
 
 # ---------- build ----------
 os.makedirs(OUT, exist_ok=True)
@@ -482,6 +519,8 @@ for d in ["artists", "works", "exhibitions", "assets"]:
 shutil.copytree(os.path.join(ROOT, "assets", "fonts"), os.path.join(OUT, "assets", "fonts"))
 open(os.path.join(OUT, "assets", "chase.css"), "w").write(CSS)
 open(os.path.join(OUT, "assets", "chase.js"), "w").write(JS)
+import hashlib
+V = hashlib.md5((CSS + JS).encode()).hexdigest()[:10]
 
 pele = col_products.get("pele", [])
 hero_p = next((p for p in pele if p.get("images")), products[0])
@@ -548,7 +587,12 @@ for p in products:
     <div class="meta">{'<br>'.join(esc(l) for l in det)}</div>
     <div class="price">{price_line(p)}</div>
     <div class="status">AVAILABLE</div>
-    <button class="act" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
+    <button class="btn-inq" id="inqbtn" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
+    <div class="alt-acts" id="altacts">
+      {"" if ed else '<button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button>'}
+      <button onclick="inqPre('viewing')">SCHEDULE A PRIVATE VIEWING</button>
+      <button onclick="inqPre('images')">REQUEST IMAGES &amp; CONDITION REPORT</button>
+    </div>
     <form class="inq" id="inq" onsubmit="sendInq(event)">
       <div class="fhead">INQUIRE — {esc(p['title'])}</div>
       <div class="row2">
@@ -579,7 +623,7 @@ for p in products:
       <input type="hidden" name="referrer" id="cc-ref">
       <input type="hidden" name="utm" id="cc-utm">
       <input type="hidden" name="seconds_on_page" id="cc-secs">
-      <button class="act" type="submit">SEND INQUIRY</button>
+      <button class="btn-inq" type="submit" style="margin-top:26px">SEND INQUIRY</button>
       <div class="note" style="margin-top:12px">ATTACHED AUTOMATICALLY FOR THE GALLERY: THIS ARTWORK, PRICE BAND, YOUR PATH THROUGH THE SITE, AND HOW YOU ARRIVED.</div>
       <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
@@ -588,7 +632,7 @@ for p in products:
     {wnav}
   </div></div>
   {rel}</div>
-<div class="mbar"><span class="p">{price_line(p)}</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({{behavior:'smooth',block:'center'}});inq(document.querySelector('.work-info .act'))">{"ACQUIRE" if ed else "INQUIRE"}</button></div>
+<div class="mbar"><span class="p">{price_line(p)}</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({{behavior:'smooth',block:'center'}});inq(document.getElementById('inqbtn'))">{"ACQUIRE" if ed else "INQUIRE"}</button></div>
 <script>document.addEventListener('DOMContentLoaded',function(){{document.body.classList.add('workpage');
 var l=document.getElementById('lb');
 if(l) l.innerHTML='<img src="{imgsrc(p, 2400)}" alt="{esc(p['title'])}">';

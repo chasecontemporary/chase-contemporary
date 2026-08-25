@@ -73,3 +73,7 @@ FAIL /artistpage/cristiano-mangovo/defenders-of-nature 20230203190030 <urlopen e
 FAIL /artistpage/cristiano-mangovo/signature 20230203205256 <urlopen error timed out>
 OK /artistpage/cristiano-mangovo/the-return-2 20230203200603 771619
 FAIL /artistpage/cristiano-mangovo/the-return-3 20230203203154 <urlopen error timed out>
+FAIL /artistpage/cristiano-mangovo/urban-champions 20230203200247 <urlopen error timed out>
+OK /artistpage/fabiano-senk 20221129013032 723025
+OK /artistpage/fabiano-senk/carga-da-vida-(load-of-life) 20221202051645 688874
+OK /artistpage/fabiano-senk/corrupt-man 20221202060610 694826

@@ -22,19 +22,20 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 @media (max-width: 720px) { :root { --pad: 20px; } }
 
 /* ---------- header ---------- */
-header { background: none; }
-header .wrap { display: flex; justify-content: space-between; align-items: baseline;
-               padding-top: 40px; padding-bottom: 10px; gap: 14px; }
-.mark { font-size: 13px; font-weight: 500; letter-spacing: .36em; white-space: nowrap; }
+html, body { overflow-x: hidden; }
+header { background: none; padding: 46px 20px 6px; text-align: center; }
+.mark { display: inline-block; font-size: 13px; font-weight: 500; letter-spacing: .4em; white-space: nowrap; }
+nav { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; margin-top: 16px; }
+nav .sep { font-size: 8.5px; color: var(--mute); letter-spacing: .26em; white-space: pre; }
 main { padding-top: 0; }
 nav { display: flex; gap: 28px; }
-nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
+nav a { font-size: 8.5px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
 nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
                transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }
 nav a:hover { color: var(--ink); }
 nav a:hover::after, nav a.on::after { transform: scaleX(1); }
 nav a.on { color: var(--ink); }
-@media (max-width: 720px) { nav { gap: 16px; } nav a { font-size: 8px; letter-spacing: .18em; } }
+@media (max-width: 720px) { nav a { font-size: 8px; letter-spacing: .18em; } }
 
 main { min-height: 62vh; }
 
@@ -137,6 +138,22 @@ a.artist:hover::after { transform: scaleX(1); }
 .work-info .meta { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 18px; line-height: 2.2; }
 .work-info .price { font-size: 10px; letter-spacing: .2em; margin-top: 26px; }
 .work-info .status { font-size: 7.5px; letter-spacing: .26em; color: var(--mute); margin-top: 12px; }
+.btn-inq { display: block; width: 100%; background: var(--ink); color: #fff; border: 1px solid var(--ink);
+  text-align: center; font-size: 9.5px; font-weight: 500; letter-spacing: .32em; padding: 17px 0 16px;
+  margin-top: 32px; font-family: inherit; text-transform: uppercase; cursor: pointer;
+  transition: background .25s ease, color .25s ease; }
+.btn-inq:hover { background: #fff; color: var(--ink); }
+.alt-acts { margin-top: 18px; display: flex; flex-direction: column; gap: 11px; }
+.alt-acts button { border: 0; background: none; font-family: inherit; text-transform: uppercase;
+  text-align: left; padding: 0; font-size: 8px; letter-spacing: .24em; color: var(--mute); cursor: pointer;
+  transition: color .18s ease; }
+.alt-acts button:hover { color: var(--ink); }
+.alt-acts button::before { content: '92 a0 a0'; color: var(--mute); }
+.cap { position: relative; }
+.cap .cta { position: absolute; right: 0; bottom: 1px; font-size: 8px; font-weight: 500;
+  letter-spacing: .26em; opacity: 0; transform: translateY(3px); transition: opacity .3s ease, transform .3s ease; }
+.card:hover .cta { opacity: 1; transform: none; }
+@media (hover: none) { .cap .cta { display: none; } }
 .act { display: inline-block; margin-top: 30px; font-size: 9px; font-weight: 500; letter-spacing: .3em;
        border: 0; border-bottom: 1px solid var(--ink); padding: 0 0 5px; cursor: pointer;
        background: none; font-family: inherit; color: var(--ink); text-transform: uppercase;
