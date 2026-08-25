@@ -13,3 +13,8 @@ OK /art-fairs/art-on-paper 20210919175156 22750
 OK /art-fairs/dallas-art-fair 20211207030837 23626
 OK /art-fairs/dallas-art-fair/selected-works 20220702134135 22549
 OK /art-fairs/palm-beach-modern-contemporary 20200920193637 28427
+FAIL /art-fairs/past/all/2019 20200920210057 <urlopen error timed out>
+OK /art-fairs/past/all/2020 20200920213330 8329
+FAIL /art-fairs/past/all/2021 20210919165805 <urlopen error timed out>
+OK /art-fairs/past/all/all 20200920202523 9874
+FAIL /artistpage/andres-valencia 20221129010501 <urlopen error timed out>
