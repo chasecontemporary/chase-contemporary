@@ -9,7 +9,7 @@ DATA = os.path.join(ROOT, "..", "research", "chase-contemporary")
 OUT = os.path.join(ROOT, "site")
 
 ARTIST_EXCLUDE = {"summer-sale", "pele"}
-EXHIBITION = {"handle": "pele", "title": "Pelé", "sub": "The King of Football — A Collection"}
+EXHIBITION = {"handle": "pele", "title": "Pelé", "sub": "A Collection"}
 
 products = json.load(open(os.path.join(DATA, "shopify-products.json")))["products"]
 collections = json.load(open(os.path.join(DATA, "shopify-collections.json")))["collections"]
@@ -477,7 +477,7 @@ def page(title, body, active="", depth=0):
 </header>
 <main>{body}</main>
 <footer><div class="wrap">
-  <div class="col"><b>CHASE CONTEMPORARY</b><br>NEW YORK · PALM BEACH · LOS ANGELES<br>ONLINE WORLDWIDE</div>
+  <div class="col"><b>CHASE CONTEMPORARY</b><br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
   <div class="col"><b>CONTACT</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>INFO@CHASECONTEMPORARY.COM</div>
   <div class="col news"><b>NEWSLETTER</b>
     <form onsubmit="newsl(event)"><input placeholder="Email address" aria-label="Email address" required type="email"><button aria-label="Subscribe">&rarr;</button></form>
@@ -523,7 +523,7 @@ body = f"""
   <a class="hero r in" href="exhibitions/index.html">{pic(hero_p, 1600, "fx", "92vw")}</a>
   <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
     <span class="s">CURRENT EXHIBITION</span></div>
-  <div class="statement r">CONTEMPORARY AND STREET ART — HAMBLETON, RETNA, SCHARF, VALENCIA — IN NEW YORK, PALM BEACH, AND LOS ANGELES.</div>
+  <div class="statement r">HAND-SIGNED ORIGINALS · LIMITED EDITION WORKS · AUTHENTICATED ART</div>
   <div class="section-label r">SELECTED WORKS</div>
   <div class="feat">{''.join(card(p, 0, cls) for p, cls in zip(featured, ["f-a","f-b","f-c","f-d","f-e","f-f"]))}</div>
   <div class="section-label r">ARTISTS</div>
@@ -616,7 +616,7 @@ for p in products:
       <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
-    <div class="assure">HAND-SIGNED ORIGINALS · CERTIFICATE OF AUTHENTICITY<br>WORLDWIDE FINE-ART SHIPPING · CARD, ACH, WIRE, FINANCING</div>
+    <div class="assure">HAND-SIGNED ORIGINALS · AUTHENTICATED ART<br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
     {wnav}
   </div></div>
   {rel}</div>
@@ -635,19 +635,16 @@ document.addEventListener('keydown',function(e){{
 grid = ''.join(card(p, 1) for p in pele if p.get("images"))
 body = f"""<div class="wrap"><div class="page-title r in">{esc(EXHIBITION['title'])}</div>
 <div class="page-sub r in">{esc(EXHIBITION['sub'])} · CURRENT EXHIBITION</div>
-<div class="statement r" style="margin-top:56px;">A COLLECTION CELEBRATING THE KING — WORKS HONORING PELÉ'S LEGACY, PRESENTED BY THE GALLERY.</div>
 <div class="section-label"></div>
 <div class="grid">{grid}</div>
-<div class="section-label r">ARCHIVE</div>
-<div class="prose r"><p>FIFTY EXHIBITIONS, 2017 TO TODAY — HAMBLETON, VALENCIA, TAUPIN, SCHARF, FEUERMAN — RETURN TO THIS PAGE AS THE ARCHIVE IS RESTORED.</p></div></div>"""
+</div>"""
 open(os.path.join(OUT, "exhibitions", "index.html"), "w").write(page("Exhibitions — Chase Contemporary", body, "EXHIBITIONS", 1))
 
 body = """<div class="wrap"><div class="page-title r in">ABOUT</div>
 <div class="section-label"></div>
 <div class="prose r in">
-<p>CHASE CONTEMPORARY WAS FOUNDED IN NEW YORK IN 2017 BY BERNIE CHASE. FROM ITS CHELSEA BEGINNINGS TO A TEN-THOUSAND-SQUARE-FOOT FLAGSHIP ON WEST BROADWAY, THE GALLERY HAS STAGED MORE THAN FIFTY SOLO EXHIBITIONS.</p>
-<p>THE PROGRAM CENTERS ON CONTEMPORARY AND STREET ART — RICHARD HAMBLETON, RETNA, KENNY SCHARF — ALONGSIDE THE ARTISTS THE GALLERY HAS DISCOVERED AND CHAMPIONED, INCLUDING ANDRES VALENCIA.</p>
-<p>[BIO COPY PENDING BERNIE'S APPROVAL — DRAFTED FROM THE PRESS ARCHIVE.]</p>
+<p>CHASE CONTEMPORARY WAS FOUNDED IN NEW YORK AS A BRICK-AND-MORTAR GALLERY, STAGING MORE THAN FIFTY SOLO EXHIBITIONS FROM ITS WEST BROADWAY FLAGSHIP OVER MORE THAN A DECADE.</p>
+<p>TODAY THE GALLERY OPERATES AS A DIGITAL-FIRST PLATFORM.</p>
 </div></div>"""
 open(os.path.join(OUT, "about.html"), "w").write(page("About — Chase Contemporary", body, "ABOUT"))
 
@@ -655,7 +652,6 @@ body = """<div class="wrap"><div class="page-title r in">CONTACT</div>
 <div class="section-label"></div>
 <div class="prose r in">
 <p>INFO@CHASECONTEMPORARY.COM</p>
-<p>NEW YORK · PALM BEACH · LOS ANGELES · ONLINE WORLDWIDE</p>
 <p>FOR ACQUISITIONS AND ALL INQUIRIES, A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES.</p>
 </div></div>"""
 open(os.path.join(OUT, "contact.html"), "w").write(page("Contact — Chase Contemporary", body, "CONTACT"))

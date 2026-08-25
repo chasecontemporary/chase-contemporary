@@ -84,3 +84,5 @@ FAIL /artistpage/fabiano-senk/sonho-americano-(american-dream) 20221202064038 <u
 FAIL /artistpage/fabiano-senk/sonho-seretanejo-(sertanejo-dream) 20221129001125 The read operation timed out
 OK /artistpage/fabiano-senk/tempo-de-cuidar-(time-to-take-care) 20221202065955 688932
 OK /artistpage/hybycozo 20221202072124 782543
+FAIL /artistpage/hybycozo/ascension 20221202065451 <urlopen error timed out>
+FAIL /artistpage/hybycozo/aura-40 20221129012921 <urlopen error [Errno 54] Connection reset by peer>
