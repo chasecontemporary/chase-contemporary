@@ -32,7 +32,9 @@ Every question that needs an answer before/while building. Organized by category
 20. Collector list: how many contacts, where, and what's their email consent status?
 21. Historical sales: what records exist (invoices, Shopify orders, Artsy sales, paper)? How far back do we import?
 22. Consignments: are artist consignment terms written down anywhere? Split % per artist?
+    **ANSWERED (Devyn, 2026-08-25): Bernie OWNS all the artwork outright — no artist consignments, no artist splits or statements. The commissions system is purely internal.**
 23. Rep commissions: what are the actual splits (rep %, house %, location share, discount sharing) that W8 should encode?
+    **PARTIALLY ANSWERED (Devyn, 2026-08-25): there is a pre-agreed commission structure; on settlement the database splits automatically and drives each person's share into their pool — zero manual calculation or reconciliation. Still need: the actual percentages and who's in the pool.**
 24. Current roster: the site lists 14 artists; press history lists ~25. Who is actually represented today, and which are estate/secondary-market relationships?
 
 ## D. Architecture decisions

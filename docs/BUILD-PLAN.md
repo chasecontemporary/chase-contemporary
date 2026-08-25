@@ -41,7 +41,7 @@ Shopify collaborator access + plan tier; DNS/registrar; Google Workspace/info@; 
 1. Payment rails: card (fees priced in), ACH push for $5k–150k, auto-generated wire instructions + reconciliation, financing partner (Q38), payment links mid-call via draft orders.
 2. The Hold: refundable-deposit product + 72-hr expiry automation + policy page.
 3. Automated invoicing; historical sales import; unified pipeline (Artsy, shop, fairs, walk-ins → one table).
-4. Lifecycle email flows live (new-work alerts by taste, nurture, logistics updates) — all human-approved.
+4. Lifecycle email marketing infrastructure live (Devyn 8/25: confirmed Phase 2 priority) — the flagship trigger: new artwork uploaded → CRM matches it to collectors by purchase/inquiry history → drafts a personalized note per collector → human approves → sends. Plus nurture and logistics updates. Nothing auto-sends.
 
 ## Phase 3 — Compound (≈ weeks 8–16)
 

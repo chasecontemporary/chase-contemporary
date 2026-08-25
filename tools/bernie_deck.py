@@ -233,7 +233,7 @@ bg(False)
 kicker(H-70, "THE BOOK", False)
 y = title(H-104, ["THE WHOLE GALLERY,", "IN ONE PLACE"], False)
 y -= 6
-y = para(M, y, "Every artwork, with its images and provenance. Every collector and everything they ever bought or asked about. Every deal, every payment, every consignment. One book.",
+y = para(M, y, "Every artwork, with its images and provenance. Every collector and everything they ever bought or asked about. Every deal, every payment, every dollar. One book.",
          "AN-Regular", 12.5, INK, W-2*M, 19)
 y -= 8
 y = para(M, y, "And you can ask it questions the way you would ask a person:",
@@ -245,7 +245,10 @@ para(M+16, y-40, "“Who bought street art under fifty thousand near Palm Beach 
      "AN-Medium", 12, INK, W-2*M-32, 17)
 draw(M+16, y-14-qh+16, "TEN SECONDS LATER: YOUR NEXT INVITE LIST.", "AN-Demi", 7.5, GOLD, cs=1.8)
 y2 = y - qh - 44
-y2 = para(M, y2, "Who sees what is up to you. You see everything. Each person on the team sees their own deals. Artists, later, can see only their own statements.",
+y2 = para(M, y2, "And the book works for you. When a new piece comes in, it already knows which collectors will care, and it writes the note to each of them. A person reads it, approves it, and only then does it send.",
+         "AN-Regular", 12.5, INK, W-2*M, 19)
+y2 -= 8
+y2 = para(M, y2, "Who sees what is up to you. You see everything. Each person on the team sees their own deals and their own numbers.",
          "AN-Regular", 12.5, INK, W-2*M, 19)
 y2 -= 8
 para(M, y2, "History goes in first: past sales, past invoices, past clients. The book is only as smart as its memory.",
@@ -310,15 +313,15 @@ footer(8, False); c.showPage()
 # =========================================================
 bg(False)
 kicker(H-116, "THE BACK OFFICE", False)
-y = title(H-150, ["ARTISTS PAID RIGHT,", "AUTOMATICALLY"], False)
+y = title(H-150, ["COMMISSIONS THAT", "SPLIT THEMSELVES"], False)
 y -= 6
-y = para(M, y, "The artist's share, the salesperson's commission, the house cut: every split is written down once, as a rule.",
+y = para(M, y, "The commission structure is agreed once, up front: who earns what share of every sale. That agreement lives in the book, as a rule.",
          "AN-Regular", 12.5, INK, W-2*M, 19)
 y -= 8
-y = para(M, y, "The moment a payment lands, the numbers work themselves out. Installments too. Discounts shared fairly, automatically.",
+y = para(M, y, "The moment a payment lands, the split happens on its own. Each person's share is driven straight into their pool. Installments and partial payments too.",
          "AN-Regular", 12.5, INK, W-2*M, 19)
 y -= 8
-y = para(M, y, "Artist statements go out monthly, on time, every time. Salespeople see their own numbers live.",
+y = para(M, y, "Nobody calculates. Nobody reconciles. Nothing waits for month-end.",
          "AN-Regular", 12.5, INK, W-2*M, 19)
 y -= 16
 hrule(y, False)
@@ -326,7 +329,7 @@ y -= 28
 y = para(M, y, "No month-end spreadsheet archaeology. No disputes. No “I thought we agreed…”",
          "AN-Medium", 13, INK, W-2*M, 20)
 y -= 8
-para(M, y, "And because every discount is on the record, the quiet leak most galleries never see becomes money you keep.",
+para(M, y, "Salespeople who trust their number to the penny push harder. And because every discount is on the record, the quiet leak most galleries never see becomes money you keep.",
      "AN-Regular", 12.5, INK, W-2*M, 19)
 footer(9, False); c.showPage()
 
@@ -366,7 +369,7 @@ phases = [
     ("WEEKS 3–8", "TAKE THE MONEY",
      "Card, bank transfer, wire, plans, holds, payment links. Collectors can commit the moment they are ready, on whatever terms suit the work."),
     ("WEEKS 8–16", "COMPOUND",
-     "The beautiful new website. The history restored. The dashboard. The automatic artist statements. Every sale makes the next one easier."),
+     "The beautiful new website. The history restored. The dashboard. The commissions that split themselves. Every sale makes the next one easier."),
 ]
 yy = y - 14
 for weeks, name, body in phases:
