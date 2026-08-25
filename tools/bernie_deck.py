@@ -6,26 +6,25 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import HexColor
 
 # ---------- fonts ----------
-AN = "/System/Library/Fonts/Avenir Next.ttc"
-pdfmetrics.registerFont(TTFont("AN-UltraLight", AN, subfontIndex=10))
-pdfmetrics.registerFont(TTFont("AN-Regular", AN, subfontIndex=7))
-pdfmetrics.registerFont(TTFont("AN-Medium", AN, subfontIndex=5))
-pdfmetrics.registerFont(TTFont("AN-Demi", AN, subfontIndex=2))
-pdfmetrics.registerFont(TTFont("AN-Bold", AN, subfontIndex=0))
+NSN = "/Users/moabot/Library/Fonts/nimbus-sans-novus-regular.ttf"
+for alias in ("AN-UltraLight", "AN-Regular", "AN-Medium", "AN-Demi", "AN-Bold"):
+    pdfmetrics.registerFont(TTFont(alias, NSN))
 
 # ---------- palette (from the Revenue Engine proposal) ----------
-CREAM      = HexColor("#FBFAF7")
-INK        = HexColor("#211F1B")
-INK_SOFT   = HexColor("#6E685E")
-DARK       = HexColor("#191813")
-DARK_CARD  = HexColor("#211F19")
-LIGHT_ON_D = HexColor("#F2EFE8")
-SOFT_ON_D  = HexColor("#A8A296")
-GOLD       = HexColor("#A67C2E")
-GOLD_BRIGHT= HexColor("#B4913F")
-RULE_L     = HexColor("#DDD8CE")
-RULE_D     = HexColor("#3A372E")
-CARD_L     = HexColor("#F4F1EA")
+WHITE      = HexColor("#FFFFFF")
+BLACK      = HexColor("#000000")
+CREAM      = WHITE
+INK        = BLACK
+INK_SOFT   = BLACK
+DARK       = WHITE
+DARK_CARD  = WHITE
+LIGHT_ON_D = BLACK
+SOFT_ON_D  = BLACK
+GOLD       = BLACK
+GOLD_BRIGHT= BLACK
+RULE_L     = BLACK
+RULE_D     = BLACK
+CARD_L     = WHITE
 
 W, H = 390, 844
 M = 34                      # side margin
@@ -36,6 +35,7 @@ c.setTitle("Chase Contemporary — Revenue Engine: The Execution Plan")
 
 # ---------- helpers ----------
 def sw(text, font, size, cs=0):
+    text = text.upper()
     w = pdfmetrics.stringWidth(text, font, size)
     if cs and len(text) > 1:
         w += cs * (len(text) - 1)
@@ -43,7 +43,7 @@ def sw(text, font, size, cs=0):
 
 def draw(x, y, text, font, size, color, cs=0):
     c.setFont(font, size); c.setFillColor(color)
-    t = c.beginText(x, y); t.setCharSpace(cs); t.textOut(text); c.drawText(t)
+    t = c.beginText(x, y); t.setCharSpace(cs); t.textOut(text.upper()); c.drawText(t)
 
 def draw_center(y, text, font, size, color, cs=0):
     draw((W - sw(text, font, size, cs)) / 2, y, text, font, size, color, cs)
@@ -87,7 +87,7 @@ def title(y, lines, dark, size=27):
     return y
 
 def hrule(y, dark, x0=M, x1=W-M):
-    c.setStrokeColor(RULE_D if dark else RULE_L); c.setLineWidth(0.7)
+    c.setStrokeColor(RULE_D if dark else RULE_L); c.setLineWidth(0.5)
     c.line(x0, y, x1, y)
 
 # =========================================================
@@ -100,7 +100,7 @@ draw_center(H-268, "REVENUE ENGINE · THE EXECUTION PLAN", "AN-Demi", 9, GOLD_BR
 draw_center(H-330, "A NEW WEBSITE.", "AN-UltraLight", 30, LIGHT_ON_D, cs=1)
 draw_center(H-368, "AN ENGINE BEHIND IT.", "AN-UltraLight", 30, LIGHT_ON_D, cs=1)
 para(0, H-425, "What we are building, what it does for the gallery, and the few things we need from you.",
-     "AN-Regular", 12.5, SOFT_ON_D, 270, 19, center=True)
+     "AN-Regular", 10, SOFT_ON_D, 280, 15.5, center=True)
 draw_center(200, "PREPARED FOR BERNIE CHASE", "AN-Demi", 8.5, SOFT_ON_D, cs=2.4)
 draw_center(182, "AUGUST 2026", "AN-Demi", 8.5, SOFT_ON_D, cs=2.4)
 draw_center(150, "NEW YORK  ·  PALM BEACH  ·  LOS ANGELES", "AN-Demi", 7.5, SOFT_ON_D, cs=1.8)
@@ -114,13 +114,13 @@ kicker(H-70, "TODAY", False)
 y = title(H-104, ["WHERE SALES", "SLIP AWAY"], False)
 y -= 6
 y = para(M, y, "Right now, when a collector wants a piece, their message lands in one shared email box.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "No one owns it. Some get answered fast. Some never get answered at all. And every single one can be a five-thousand-dollar sale, or a million-dollar sale.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "The old website is gone too. About fifty shows: Hambleton, Valencia, Taupin, Scharf. Erased. People still search for them and find nothing.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 # stat cards 2x2
 cy = y - 24
 cw, ch, gap = (W - 2*M - 12) / 2, 92, 12
@@ -131,12 +131,12 @@ stats = [("1", "shared inbox where every inquiry lands"),
 for i, (big, small) in enumerate(stats):
     x = M + (i % 2) * (cw + gap)
     yy = cy - (i // 2) * (ch + gap)
-    c.setFillColor(CARD_L); c.setStrokeColor(RULE_L); c.setLineWidth(0.7)
+    c.setFillColor(CARD_L); c.setStrokeColor(RULE_L); c.setLineWidth(0.5)
     c.rect(x, yy - ch, cw, ch, stroke=1, fill=1)
     draw(x+14, yy-34, big, "AN-Medium", 21, INK)
     para(x+14, yy-52, small, "AN-Regular", 9, INK_SOFT, cw-26, 12.5)
 end_y = cy - 2*ch - gap
-para(M, end_y - 30, "One saved sale pays for this entire project.", "AN-Medium", 13.5, INK, W-2*M, 19)
+para(M, end_y - 30, "One saved sale pays for this entire project.", "AN-Medium", 11.5, INK, W-2*M, 15.5)
 footer(2, False); c.showPage()
 
 # =========================================================
@@ -147,7 +147,7 @@ kicker(H-70, "THE BIG IDEA", True)
 y = title(H-104, ["ONE WEBSITE.", "ONE BOOK."], True)
 y -= 6
 y = para(M, y, "We are building two things that work as one:",
-         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
+         "AN-Regular", 10, SOFT_ON_D, W-2*M, 15.5)
 items = [
     ("A WEBSITE WORTHY OF THE ART",
      "Beautiful, museum-grade, and built to sell. Prints and editions can be bought on the spot. Important works start a conversation."),
@@ -160,11 +160,11 @@ yy = y - 24
 for i, (h, b) in enumerate(items, 1):
     draw(M, yy, f"{i}", "AN-Medium", 19, GOLD_BRIGHT)
     para(M+30, yy, h, "AN-Demi", 10.5, LIGHT_ON_D, W-2*M-30, 15, cs=1.2)
-    yy = para(M+30, yy-19, b, "AN-Regular", 11.5, SOFT_ON_D, W-2*M-30, 17)
+    yy = para(M+30, yy-19, b, "AN-Regular", 9.5, SOFT_ON_D, W-2*M-30, 14)
     yy -= 20
 hrule(yy+2, True)
 para(M, yy - 26, "And the heart of the business does not change. The artists, the taste, the way you buy and sell: untouched.",
-     "AN-Medium", 13, LIGHT_ON_D, W-2*M, 20)
+     "AN-Medium", 11, LIGHT_ON_D, W-2*M, 16)
 footer(3, True); c.showPage()
 
 # =========================================================
@@ -184,14 +184,14 @@ yy = y
 for i, (h, b) in enumerate(steps, 1):
     c.setFillColor(GOLD); c.circle(M+8, yy+4, 8.5, stroke=0, fill=1)
     d = str(i); draw(M+8-sw(d,"AN-Demi",9)/2, yy+1, d, "AN-Demi", 9, CREAM)
-    yy = para(M+30, yy, h, "AN-Medium", 12.5, INK, W-2*M-30, 17)
-    if b: yy = para(M+30, yy-1, b, "AN-Regular", 11, INK_SOFT, W-2*M-30, 16)
+    yy = para(M+30, yy, h, "AN-Medium", 10.5, INK, W-2*M-30, 14)
+    if b: yy = para(M+30, yy-1, b, "AN-Regular", 9.5, INK_SOFT, W-2*M-30, 13.5)
     yy -= 16
-c.setFillColor(DARK)
-c.rect(M, yy-88, W-2*M, 78, stroke=0, fill=1)
+c.setFillColor(WHITE); c.setStrokeColor(BLACK); c.setLineWidth(0.8)
+c.rect(M, yy-88, W-2*M, 78, stroke=1, fill=1)
 draw(M+16, yy-34, "WHY IT MATTERS", "AN-Demi", 7.5, GOLD_BRIGHT, cs=2.2)
 para(M+16, yy-52, "Answer inside five minutes and a buyer is 21 times more likely to become a real conversation.",
-     "AN-Regular", 11, LIGHT_ON_D, W-2*M-32, 15.5)
+     "AN-Regular", 9.5, LIGHT_ON_D, W-2*M-32, 13.5)
 footer(4, False); c.showPage()
 
 # =========================================================
@@ -202,7 +202,7 @@ kicker(H-70, "STEP TWO", False)
 y = title(H-104, ["MONEY, ON THE", "COLLECTOR'S TERMS"], False)
 y -= 6
 y = para(M, y, "When a collector is ready, we take the money however they want to give it:",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 rails = [
     ("CARD", "for editions and deposits"),
     ("BANK TRANSFER", "the easy middle, five to a hundred fifty thousand"),
@@ -213,17 +213,17 @@ rails = [
 yy = y - 14
 for h, b in rails:
     draw(M, yy, h, "AN-Demi", 10, INK, cs=1.4)
-    yy = para(M + 128, yy, b, "AN-Regular", 10.5, INK_SOFT, W-M-16-(M+128-M), 14.5)
+    yy = para(M + 128, yy, b, "AN-Regular", 9.5, INK_SOFT, W-M-16-(M+128-M), 14.5)
     yy -= 10
     hrule(yy+4, False)
     yy -= 12
-c.setFillColor(DARK)
+c.setFillColor(WHITE); c.setStrokeColor(BLACK); c.setLineWidth(0.8)
 bh = 128
-c.rect(M, yy-bh, W-2*M, bh, stroke=0, fill=1)
-c.setFillColor(GOLD_BRIGHT); c.rect(M+16, yy-30, 68, 15, stroke=0, fill=1)
-draw(M+22, yy-26, "THE HOLD", "AN-Demi", 7.5, DARK, cs=1.6)
+c.rect(M, yy-bh, W-2*M, bh, stroke=1, fill=1)
+c.setFillColor(BLACK); c.rect(M+16, yy-30, 68, 15, stroke=0, fill=1)
+draw(M+22, yy-26, "THE HOLD", "AN-Demi", 7.5, WHITE, cs=1.6)
 para(M+16, yy-50, "A collector who says “let me think about it” puts down a small refundable deposit, and the work is held for 72 hours. “A hold has been placed on this work” is the most honest urgency in the business, and it turns maybes into sales.",
-     "AN-Regular", 10.5, LIGHT_ON_D, W-2*M-32, 15)
+     "AN-Regular", 9.5, LIGHT_ON_D, W-2*M-32, 13)
 footer(5, False); c.showPage()
 
 # =========================================================
@@ -234,25 +234,25 @@ kicker(H-70, "THE BOOK", False)
 y = title(H-104, ["THE WHOLE GALLERY,", "IN ONE PLACE"], False)
 y -= 6
 y = para(M, y, "Every artwork, with its images and provenance. Every collector and everything they ever bought or asked about. Every deal, every payment, every dollar. One book.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "And you can ask it questions the way you would ask a person:",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 c.setFillColor(CARD_L); c.setStrokeColor(RULE_L)
 qh = 84
 c.rect(M, y-14-qh, W-2*M, qh, stroke=1, fill=1)
 para(M+16, y-40, "“Who bought street art under fifty thousand near Palm Beach in the last three years?”",
-     "AN-Medium", 12, INK, W-2*M-32, 17)
+     "AN-Medium", 10.5, INK, W-2*M-32, 14)
 draw(M+16, y-14-qh+16, "TEN SECONDS LATER: YOUR NEXT INVITE LIST.", "AN-Demi", 7.5, GOLD, cs=1.8)
 y2 = y - qh - 44
 y2 = para(M, y2, "And the book works for you. When a new piece comes in, it already knows which collectors will care, and it writes the note to each of them. A person reads it, approves it, and only then does it send.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y2 -= 8
 y2 = para(M, y2, "Who sees what is up to you. You see everything. Each person on the team sees their own deals and their own numbers.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y2 -= 8
 para(M, y2, "History goes in first: past sales, past invoices, past clients. The book is only as smart as its memory.",
-     "AN-Regular", 12.5, INK, W-2*M, 19)
+     "AN-Regular", 10, INK, W-2*M, 15.5)
 footer(6, False); c.showPage()
 
 # =========================================================
@@ -263,23 +263,23 @@ kicker(H-90, "THE LEGACY", True)
 y = title(H-124, ["YOUR HISTORY,", "BACK ONLINE"], True)
 y -= 6
 y = para(M, y, "We found the old pages preserved in internet archives: about fifty shows, from the Chelsea years to the SoHo flagship. We are bringing every one of them back.",
-         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
+         "AN-Regular", 10, SOFT_ON_D, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "Hambleton. Valencia. Taupin. Scharf. Feuerman. The fairs, the press, the story.",
-         "AN-Medium", 12.5, LIGHT_ON_D, W-2*M, 19)
+         "AN-Medium", 10.5, LIGHT_ON_D, W-2*M, 15.5)
 y -= 16
 hrule(y, True)
 y -= 28
 draw(M, y, "WHY BOTHER?", "AN-Demi", 8, GOLD_BRIGHT, cs=2.4)
 y -= 22
 y = para(M, y, "Because people don't just ask Google anymore. They ask their phone, and their phone asks an AI.",
-         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
+         "AN-Regular", 10, SOFT_ON_D, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "When someone asks “where do I buy a Kenny Scharf?”, the answer should be Chase Contemporary.",
-         "AN-Medium", 13, LIGHT_ON_D, W-2*M, 20)
+         "AN-Medium", 11, LIGHT_ON_D, W-2*M, 16)
 y -= 8
 y = para(M, y, "The more of your history that lives online, the more often the gallery is the answer. The shows. The press. Your eye for artists like Andres Valencia. Your past sells for you, around the clock.",
-         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
+         "AN-Regular", 10, SOFT_ON_D, W-2*M, 15.5)
 footer(7, True); c.showPage()
 
 # =========================================================
@@ -290,7 +290,7 @@ kicker(H-116, "VISIBILITY", False)
 y = title(H-150, ["WHAT YOU SEE"], False)
 y -= 6
 y = para(M, y, "One screen, live, any time you look. Not month-end reports, but answers to the questions an owner actually asks:",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 qs = [
     ("WHO IS ASKING ABOUT WHAT", "every open conversation, and who owns it"),
     ("WHO ANSWERS FASTEST", "and who closes, and who discounts too much"),
@@ -301,11 +301,11 @@ yy = y - 14
 for h, b in qs:
     c.setFillColor(GOLD); c.rect(M, yy-2, 3, 12, stroke=0, fill=1)
     draw(M+14, yy, h, "AN-Demi", 10.5, INK, cs=1.2)
-    yy = para(M+14, yy-17, b, "AN-Regular", 11, INK_SOFT, W-2*M-14, 16)
+    yy = para(M+14, yy-17, b, "AN-Regular", 9.5, INK_SOFT, W-2*M-14, 13.5)
     yy -= 18
 hrule(yy+4, False)
 para(M, yy-24, "When everyone can see the board, the floor manages itself. And once we can see what your best closer does differently, we teach it to everyone.",
-     "AN-Regular", 12.5, INK, W-2*M, 19)
+     "AN-Regular", 10, INK, W-2*M, 15.5)
 footer(8, False); c.showPage()
 
 # =========================================================
@@ -316,21 +316,21 @@ kicker(H-116, "THE BACK OFFICE", False)
 y = title(H-150, ["COMMISSIONS THAT", "SPLIT THEMSELVES"], False)
 y -= 6
 y = para(M, y, "The commission structure is agreed once, up front: who earns what share of every sale. That agreement lives in the book, as a rule.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "The moment a payment lands, the split happens on its own. Each person's share is driven straight into their pool. Installments and partial payments too.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 8
 y = para(M, y, "Nobody calculates. Nobody reconciles. Nothing waits for month-end.",
-         "AN-Regular", 12.5, INK, W-2*M, 19)
+         "AN-Regular", 10, INK, W-2*M, 15.5)
 y -= 16
 hrule(y, False)
 y -= 28
 y = para(M, y, "No month-end spreadsheet archaeology. No disputes. No “I thought we agreed…”",
-         "AN-Medium", 13, INK, W-2*M, 20)
+         "AN-Medium", 11, INK, W-2*M, 16)
 y -= 8
 para(M, y, "Salespeople who trust their number to the penny push harder. And because every discount is on the record, the quiet leak most galleries never see becomes money you keep.",
-     "AN-Regular", 12.5, INK, W-2*M, 19)
+     "AN-Regular", 10, INK, W-2*M, 15.5)
 footer(9, False); c.showPage()
 
 # =========================================================
@@ -349,11 +349,11 @@ rules = [
 yy = y - 6
 for h, b in rules:
     draw(M, yy, h, "AN-Demi", 12, GOLD_BRIGHT, cs=1)
-    yy = para(M, yy-19, b, "AN-Regular", 12, SOFT_ON_D, W-2*M, 17.5)
+    yy = para(M, yy-19, b, "AN-Regular", 10, SOFT_ON_D, W-2*M, 17.5)
     yy -= 22
 hrule(yy+6, True)
 para(M, yy-22, "The machinery does the remembering, the timing, and the paperwork. People do the selling.",
-     "AN-Medium", 13, LIGHT_ON_D, W-2*M, 20)
+     "AN-Medium", 11, LIGHT_ON_D, W-2*M, 16)
 footer(10, True); c.showPage()
 
 # =========================================================
@@ -373,16 +373,16 @@ phases = [
 ]
 yy = y - 14
 for weeks, name, body in phases:
-    c.setFillColor(CARD_L); c.setStrokeColor(RULE_L); c.setLineWidth(0.7)
+    c.setFillColor(CARD_L); c.setStrokeColor(RULE_L); c.setLineWidth(0.5)
     bh2 = 118
     c.rect(M, yy-bh2, W-2*M, bh2, stroke=1, fill=1)
     draw(M+16, yy-26, name, "AN-Demi", 11, INK, cs=1.4)
     wtxt = weeks
     draw(W-M-16-sw(wtxt,"AN-Demi",8,1.6), yy-25, wtxt, "AN-Demi", 8, GOLD, cs=1.6)
-    para(M+16, yy-46, body, "AN-Regular", 10.5, INK_SOFT, W-2*M-32, 15)
+    para(M+16, yy-46, body, "AN-Regular", 9.5, INK_SOFT, W-2*M-32, 13)
     yy -= bh2 + 14
 para(M, yy-8, "Measured before promised: the first thing we build is the counting, so every claim gets proven with your real numbers.",
-     "AN-Regular", 11.5, INK, W-2*M, 17)
+     "AN-Regular", 9.5, INK, W-2*M, 14)
 footer(11, False); c.showPage()
 
 # =========================================================
@@ -393,7 +393,7 @@ kicker(H-90, "FROM YOU", True)
 y = title(H-124, ["ALL WE NEED", "IS THE KEYS"], True)
 y -= 6
 y = para(M, y-2, "You have already given us the vision and the stories. What is left is execution, and execution starts the day we have access.",
-         "AN-Regular", 12.5, SOFT_ON_D, W-2*M, 19)
+         "AN-Regular", 10, SOFT_ON_D, W-2*M, 15.5)
 needs = [
     ("THE KEYS", "The website, email, and payment logins. Your office manager can hand them over. We take it from there, immediately."),
     ("A FEW FACTS", "Addresses, the team, which artists are current. Ten minutes with your office manager covers it."),
@@ -401,15 +401,15 @@ needs = [
 ]
 yy = y - 16
 for i, (h, b) in enumerate(needs, 1):
-    draw(M, yy, f"{i:02d}", "AN-Medium", 13, GOLD_BRIGHT)
+    draw(M, yy, f"{i:02d}", "AN-Medium", 11, GOLD_BRIGHT)
     draw(M+34, yy, h, "AN-Demi", 11, LIGHT_ON_D, cs=1.4)
-    yy = para(M+34, yy-18, b, "AN-Regular", 11.5, SOFT_ON_D, W-2*M-34, 17)
+    yy = para(M+34, yy-18, b, "AN-Regular", 9.5, SOFT_ON_D, W-2*M-34, 14)
     yy -= 22
 hrule(yy+6, True)
 yy -= 30
-draw(M, yy, "Competitors have an inbox.", "AN-Medium", 15.5, LIGHT_ON_D)
-draw(M, yy-24, "Chase Contemporary will have", "AN-Medium", 15.5, LIGHT_ON_D)
-draw(M, yy-48, "an operating system.", "AN-Medium", 15.5, GOLD_BRIGHT)
+draw(M, yy, "Competitors have an inbox.", "AN-Medium", 13, LIGHT_ON_D)
+draw(M, yy-24, "Chase Contemporary will have", "AN-Medium", 13, LIGHT_ON_D)
+draw(M, yy-48, "an operating system.", "AN-Medium", 13, GOLD_BRIGHT)
 footer(12, True); c.showPage()
 
 c.save()
