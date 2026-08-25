@@ -62,3 +62,13 @@ OK /artistpage/connor-brothers/i-know-i'm-paranoid 20221208194400 695376
 OK /artistpage/connor-brothers/i-tried-to-drown-my-sorrows 20221202060233 695472
 FAIL /artistpage/connor-brothers/if-it's-not-weird%2C-i'm-not-interested 20221129014703 <urlopen error timed out>
 FAIL /artistpage/connor-brothers/in-order-to-know-virtue 20221129014116 <urlopen error timed out>
+OK /artistpage/connor-brothers/one-of-us-was-insane 20221202063812 695411
+OK /artistpage/connor-brothers/tell-him-i-was-too-busy 20221202052443 695352
+OK /artistpage/connor-brothers/the-boundaries-of-our-reality 20221202054640 695511
+OK /artistpage/connor-brothers/there-are-no-extraordinary-people 20221208193900 696809
+FAIL /artistpage/connor-brothers/they-could-talk-for-a-lifetime 20221202062621 <urlopen error timed out>
+OK /artistpage/connor-brothers/who-we-pretend-to-be 20221129001818 686509
+OK /artistpage/cristiano-mangovo 20221202061129 774960
+FAIL /artistpage/cristiano-mangovo/defenders-of-nature 20230203190030 <urlopen error timed out>
+FAIL /artistpage/cristiano-mangovo/signature 20230203205256 <urlopen error timed out>
+OK /artistpage/cristiano-mangovo/the-return-2 20230203200603 771619

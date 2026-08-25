@@ -92,7 +92,8 @@ def pic(p, w, cls="", sizes="(max-width: 720px) 92vw, 46vw", style=""):
             f'onload="this.classList.add(\'ld\')">')
 
 CSS = """
-:root { --ink: #111; --mute: #79766f; --hair: #eceae6; --pad: 48px; --colgap: 44px; --rowgap: 88px; --sp: 96px; }
+:root { --ink: #111; --mute: #79766f; --hair: #eceae6; --pad: 72px; --colgap: 44px; --rowgap: 88px; --sp: 96px; }
+@media (max-width: 1080px) { :root { --pad: 44px; } }
 @font-face { font-family: 'NSN'; src: url('/assets/fonts/nimbus-sans-novus-regular.ttf'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'NSN'; src: url('/assets/fonts/nimbus-sans-novus-medium.ttf'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'NSN'; src: url('/assets/fonts/nimbus-sans-novus-light.ttf'); font-weight: 300; font-display: swap; }
@@ -114,13 +115,16 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 @media (max-width: 720px) { :root { --pad: 20px; } }
 
 /* ---------- header ---------- */
-header { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,.94);
-         -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-         border-bottom: 1px solid transparent; transition: border-color .3s ease; }
+header { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #fff;
+         border-bottom: 1px solid transparent;
+         transition: transform .38s cubic-bezier(.2,.6,.2,1), border-color .3s ease; }
 header.sc { border-bottom-color: var(--hair); }
+header.away { transform: translateY(-100%); }
 header .wrap { display: flex; justify-content: space-between; align-items: baseline;
-               padding-top: 26px; padding-bottom: 22px; gap: 14px; }
-.mark { font-size: 12px; font-weight: 500; letter-spacing: .32em; white-space: nowrap; }
+               padding-top: 30px; padding-bottom: 26px; gap: 14px; }
+.mark { font-size: 13px; font-weight: 500; letter-spacing: .36em; white-space: nowrap; }
+main { padding-top: 86px; }
+main:has(> .hero) { padding-top: 86px; }
 nav { display: flex; gap: 28px; }
 nav a { font-size: 9px; letter-spacing: .26em; color: var(--mute); transition: color .18s ease; }
 nav a::after { content: ''; display: block; height: 1px; margin-top: 4px; background: currentColor;
@@ -167,11 +171,12 @@ main { min-height: 62vh; }
 .card .num { font-size: 7.5px; letter-spacing: .3em; color: var(--mute); margin-bottom: 12px; }
 
 /* ---------- hero ---------- */
-.hero { margin-top: 28px; overflow: hidden; }
-.hero img { width: 100%; max-height: 76vh; object-fit: cover; object-position: center 28%;
+.hero { display: block; overflow: hidden; }
+.hero img { width: 100vw; height: 86vh; object-fit: cover; object-position: center 28%;
             transform: scale(1.06); will-change: transform; }
+@media (max-width: 720px) { .hero img { height: 60vh; } }
 .hero-cap { display: flex; justify-content: space-between; align-items: baseline;
-            margin-top: 16px; flex-wrap: wrap; gap: 8px; }
+            margin-top: 18px; flex-wrap: wrap; gap: 8px; }
 .hero-cap .t { font-size: 11px; font-weight: 500; letter-spacing: .24em; }
 .hero-cap .s { font-size: 8.5px; letter-spacing: .24em; color: var(--mute); }
 .hero a:hover img { opacity: .96; } .hero img { transition: opacity .3s ease; }
@@ -221,7 +226,7 @@ a.artist:hover::after { transform: scaleX(1); }
 .crumb:hover { color: var(--ink); }
 .work { display: grid; grid-template-columns: minmax(0, 13fr) minmax(300px, 7fr); gap: 72px; align-items: start; }
 @media (max-width: 880px) { .work { grid-template-columns: 1fr; gap: 34px; } }
-.work-img img { width: 100%; max-height: 80vh; object-fit: contain; object-position: left top; cursor: zoom-in; }
+.work-img img { width: 100%; max-height: 84vh; object-fit: contain; object-position: left top; cursor: zoom-in; }
 .work-info { position: sticky; top: 110px; padding-top: 2px; }
 @media (max-width: 880px) { .work-info { position: static; } }
 .work-info .artist { font-size: 12px; font-weight: 500; letter-spacing: .26em; }
@@ -332,7 +337,14 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
   } catch (e) {}
   var h = document.querySelector('header');
-  var onS = function(){ h.classList.toggle('sc', window.scrollY > 8); };
+  var lastY = window.scrollY;
+  var onS = function(){
+    var y = window.scrollY;
+    h.classList.toggle('sc', y > 8);
+    if (y > lastY + 6 && y > 140) h.classList.add('away');
+    else if (y < lastY - 6 || y <= 140) h.classList.remove('away');
+    lastY = y;
+  };
   onS(); window.addEventListener('scroll', onS, {passive: true});
 
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
@@ -491,10 +503,10 @@ hero_p = next((p for p in pele if p.get("images")), products[0])
 featured = [p for p in products if p.get("images") and not is_edition(p)][:6]
 
 body = f"""
+<a class="hero" href="exhibitions/index.html">{pic(hero_p, 2000, "fx", "100vw")}</a>
 <div class="wrap">
-  <div class="hero r in"><a href="exhibitions/index.html">{pic(hero_p, 1600, "fx", "92vw")}</a>
-    <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
-    <span class="s">CURRENT EXHIBITION</span></div></div>
+  <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
+    <span class="s">CURRENT EXHIBITION</span></div>
   <div class="statement r">CONTEMPORARY AND STREET ART — HAMBLETON, RETNA, SCHARF, VALENCIA — IN NEW YORK, PALM BEACH, AND LOS ANGELES.</div>
   <div class="section-label r">SELECTED WORKS</div>
   <div class="feat">{''.join(card(p, 0, cls) for p, cls in zip(featured, ["f-a","f-b","f-c","f-d","f-e","f-f"]))}</div>
