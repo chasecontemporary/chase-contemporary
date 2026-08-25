@@ -23,3 +23,13 @@ FAIL /artistpage/andres-valencia/birthday-clowns 20230203203325 <urlopen error t
 OK /artistpage/andres-valencia/happy-clowns 20230203202334 774230
 FAIL /artistpage/andres-valencia/invasion-of-ukraine 20230203190559 <urlopen error timed out>
 OK /artistpage/andres-valencia/max-the-clown 20230203192308 774374
+OK /artistpage/andres-valencia/sold--invasion-of-ukraine 20221129004122 686331
+FAIL /artistpage/andres-valencia/sold--max-the-clown 20221129011310 <urlopen error timed out>
+FAIL /artistpage/andres-valencia/sold--the-commander 20221129001445 <urlopen error timed out>
+OK /artistpage/andres-valencia/sold--tom-and-jenny 20221129005713 686290
+OK /artistpage/andres-valencia/sold-the-blue 20221129005257 685996
+OK /artistpage/andres-valencia/the-commander 20230203204902 774317
+OK /artistpage/andres-valencia/tom-and-jenny 20230203203836 774376
+OK /artistpage/andres-valencia/ukrainian-soldier 20230203210031 774333
+OK /artistpage/andres-valencia/venacube 20230203205931 774190
+FAIL /artistpage/andy-warhol 20230203201728 <urlopen error timed out>

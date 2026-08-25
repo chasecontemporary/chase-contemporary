@@ -37,6 +37,27 @@ def strip_html(s): return re.sub(r"<[^>]+>", "\n", s or "")
 def details(p):
     return [l.strip() for l in strip_html(p.get("body_html", "")).splitlines() if l.strip()][:3]
 def is_edition(p): return p.get("product_type") == "Print"
+
+DIM_PAT = re.compile(r'(\d+(?:\.\d+)?)\s*(?:h\b|"|\u201d|in\b|inches)?\s*[x\u00d7]\s*(\d+(?:\.\d+)?)\s*(?:w\b|"|\u201d)?\s*(in\b|inches|cm)?', re.I)
+def phys(p):
+    """(height_in, width_in) parsed from body_html; art convention is H x W."""
+    body = strip_html(p.get("body_html", ""))
+    m = DIM_PAT.search(body)
+    if not m: return None
+    h, w = float(m.group(1)), float(m.group(2))
+    if (m.group(3) or "").lower() == "cm": h, w = h / 2.54, w / 2.54
+    if h < 4 or w < 4 or h > 300 or w > 300: return None
+    return (h, w)
+
+def scale_pct(p, max_w):
+    """Rendered width as % of the grid cell, proportional to true physical width."""
+    d = phys(p)
+    if not d or not max_w: return 86
+    return max(38, min(100, round(d[1] / max_w * 100)))
+
+def max_phys_w(ps):
+    ws = [phys(p)[1] for p in ps if phys(p)]
+    return max(ws) if ws else None
 def price_line(p):
     if is_edition(p):
         v = p["variants"][0] if p["variants"] else {}
@@ -47,10 +68,13 @@ def imgsrc(p, w):
     if not p.get("images"): return ""
     src = p["images"][0]["src"]; sep = "&" if "?" in src else "?"
     return f"{src}{sep}width={w}"
-def pic(p, w, cls="", sizes="(max-width: 720px) 92vw, 46vw"):
+def pic(p, w, cls="", sizes="(max-width: 720px) 92vw, 46vw", style=""):
     if not p.get("images"): return ""
-    return (f'<img class="{cls}" src="{imgsrc(p, w)}" '
-            f'srcset="{imgsrc(p, w)} 1x, {imgsrc(p, w * 2)} 2x" sizes="{sizes}" '
+    im = p["images"][0]
+    wh = f'width="{im["width"]}" height="{im["height"]}" ' if im.get("width") and im.get("height") else ""
+    st = f'style="{style}" ' if style else ""
+    return (f'<img class="{cls}" {st}src="{imgsrc(p, w)}" '
+            f'srcset="{imgsrc(p, w)} 1x, {imgsrc(p, w * 2)} 2x" sizes="{sizes}" {wh}'
             f'alt="{esc(p["title"])}, {esc(p["vendor"])}" loading="lazy" decoding="async" '
             f'onload="this.classList.add(\'ld\')">')
 
@@ -219,6 +243,32 @@ main { min-height: 62vh; }
 .rel .card .im { min-height: 0; }
 .rel .card img { max-height: 34vh; }
 
+/* ---------- in-scale room view ---------- */
+.vtoggle { display: flex; gap: 22px; margin: 18px 0 0; }
+.vtoggle button { border: 0; background: none; font-family: inherit; cursor: pointer;
+  font-size: 7.5px; letter-spacing: .28em; color: var(--mute); text-transform: uppercase;
+  padding: 0 0 4px; border-bottom: 1px solid transparent; }
+.vtoggle button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.scale-view { display: none; position: relative; height: 66vh; border-bottom: 1px solid var(--hair); }
+.scale-view.show { display: block; }
+.scale-view img { position: absolute; box-shadow: 0 1px 24px rgba(17,17,17,.07); }
+.scale-view .fig { position: absolute; bottom: 0; }
+.scale-view .cap9 { position: absolute; top: 0; right: 0; font-size: 7px; letter-spacing: .26em; color: var(--mute); }
+.work-img.hid { display: none; }
+
+/* ---------- mobile inquire bar ---------- */
+.mbar { display: none; }
+@media (max-width: 880px) {
+  .mbar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(255,255,255,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--hair); padding: 16px 20px; justify-content: space-between; align-items: center; }
+  .mbar .p { font-size: 9px; letter-spacing: .18em; }
+  .mbar .act { margin-top: 0; }
+  body.workpage { padding-bottom: 64px; }
+}
+
+.price, .cap .price, .index-list .c, .num { font-variant-numeric: tabular-nums; }
+
 /* ---------- lightbox ---------- */
 .lb { position: fixed; inset: 0; background: rgba(255,255,255,.97); z-index: 90; display: none;
       align-items: center; justify-content: center; padding: 5vh 5vw; cursor: zoom-out; }
@@ -268,7 +318,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
   }
 });
-function inq(btn){ document.getElementById('inq').classList.add('show'); btn.style.display='none';
+function vmode(m){ document.getElementById('iv').classList.toggle('hid', m===1);
+  document.getElementById('sv').classList.toggle('show', m===1);
+  document.getElementById('tb-i').classList.toggle('on', m===0);
+  document.getElementById('tb-s').classList.toggle('on', m===1); }
+function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
   setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
 function sendInq(e){ e.preventDefault();
   document.getElementById('inq').classList.remove('show');
@@ -311,13 +365,16 @@ def page(title, body, active="", depth=0):
 <div class="lb" id="lb"></div>
 </body></html>"""
 
-def card(p, depth=0, cls="", num=None):
+def card(p, depth=0, cls="", num=None, max_w=None):
     pre = "../" * depth
     n = f'<div class="num">{num:02d}</div>' if num else ""
+    st = f"width:{scale_pct(p, max_w)}%" if max_w else ""
+    d = phys(p)
+    dims = f' — {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
     return f"""<div class="card r {cls}"><a href="{pre}works/{p['handle']}.html">
-  <div class="im">{pic(p, 900, "fx")}</div>
+  <div class="im">{pic(p, 900, "fx", style=st)}</div>
   {n}<div class="cap"><div class="l"><div class="artist">{esc(p['vendor'])}</div>
-  <div class="title">{esc(p['title'])}</div></div>
+  <div class="title">{esc(p['title'])}{dims}</div></div>
   <div class="price">{price_line(p)}</div></div></a></div>"""
 
 # ---------- build ----------
@@ -363,7 +420,7 @@ for c in artists:
     <div class="page-title r in">{esc(c['title'])}</div>
     <div class="page-sub r in">{len(ps)} WORKS</div>
     <div class="section-label"></div>
-    <div class="grid">{''.join(card(p, 1, num=i + 1) for i, p in enumerate(ps))}</div></div>"""
+    <div class="grid">{''.join(card(p, 1, num=i + 1, max_w=max_phys_w(ps)) for i, p in enumerate(ps))}</div></div>"""
     open(os.path.join(OUT, "artists", f"{c['handle']}.html"), "w").write(
         page(f"{c['title']} — Chase Contemporary", body, "ARTISTS", 1))
 
@@ -382,13 +439,30 @@ for p in products:
     if prev_p or next_p:
         left = f'<a href="{prev_p["handle"]}.html">&larr; PREVIOUS</a>' if prev_p else "<span></span>"
         right = f'<a href="{next_p["handle"]}.html">NEXT &rarr;</a>' if next_p else "<span></span>"
-        wnav = f'<div class="wnav">{left}{right}</div>'
+        pos = f'<span style="font-size:8px;letter-spacing:.26em;color:var(--mute)">{idx + 1:02d} / {len(siblings):02d}</span>' if idx >= 0 else ""
+        wnav = f'<div class="wnav">{left}{pos}{right}</div>'
     rel = ""
     if related:
         rel = f"""<div class="rel"><div class="section-label r">MORE FROM {esc(p['vendor'])}</div>
         <div class="grid">{''.join(card(w, 1) for w in related)}</div></div>"""
+    d = phys(p)
+    scale_html, toggle_html = "", ""
+    if d:
+        WALL_IN, EYE_IN, FIG_IN = 126.0, 57.0, 68.0
+        top_pct = (WALL_IN - (EYE_IN + d[0] / 2)) / WALL_IN * 100
+        h_pct = d[0] / WALL_IN * 100
+        fig_pct = FIG_IN / WALL_IN * 100
+        scale_html = f"""<div class="scale-view" id="sv">
+          <img src="{imgsrc(p, 1000)}" alt="" style="top:{top_pct:.1f}%;height:{h_pct:.1f}%;width:auto;left:30%;transform:translateX(-50%)">
+          <svg class="fig" viewBox="0 0 40 170" style="height:{fig_pct:.1f}%;right:14%" fill="none" stroke="#c9c6c0" stroke-width="2.5">
+            <circle cx="20" cy="14" r="11"/><path d="M20 25 V96 M20 44 L6 76 M20 44 L34 76 M20 96 L10 166 M20 96 L30 166"/>
+          </svg>
+          <div class="cap9">SHOWN TO SCALE — {d[0]:g} × {d[1]:g} IN</div>
+        </div>"""
+        toggle_html = """<div class="vtoggle"><button class="on" id="tb-i" onclick="vmode(0)">IMAGE</button><button id="tb-s" onclick="vmode(1)">IN SCALE</button></div>"""
     body = f"""<div class="wrap">{crumb}<div class="work">
-  <div class="work-img r in">{pic(p, 1400, "fx", "(max-width: 880px) 92vw, 60vw")}</div>
+  <div><div class="work-img r in" id="iv">{pic(p, 1400, "fx", "(max-width: 880px) 92vw, 60vw")}</div>
+  {scale_html}{toggle_html}</div>
   <div class="work-info r in">
     <div class="artist"><a href="../artists/{c['handle'] + '.html' if c else '#'}">{esc(p['vendor'])}</a></div>
     <div class="title">{esc(p['title'])}</div>
@@ -425,8 +499,15 @@ for p in products:
     {wnav}
   </div></div>
   {rel}</div>
-<script>document.addEventListener('DOMContentLoaded',function(){{var l=document.getElementById('lb');
-if(l) l.innerHTML='<img src="{imgsrc(p, 2400)}" alt="{esc(p['title'])}">';}});</script>"""
+<div class="mbar"><span class="p">{price_line(p)}</span><button class="act" onclick="document.getElementById('inq').scrollIntoView({{behavior:'smooth',block:'center'}});inq(document.querySelector('.work-info .act'))">{"ACQUIRE" if ed else "INQUIRE"}</button></div>
+<script>document.addEventListener('DOMContentLoaded',function(){{document.body.classList.add('workpage');
+var l=document.getElementById('lb');
+if(l) l.innerHTML='<img src="{imgsrc(p, 2400)}" alt="{esc(p['title'])}">';
+document.addEventListener('keydown',function(e){{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  {f"if(e.key==='ArrowLeft') location.href='{prev_p['handle']}.html';" if prev_p else ""}
+  {f"if(e.key==='ArrowRight') location.href='{next_p['handle']}.html';" if next_p else ""}
+}});}});</script>"""
     open(os.path.join(OUT, "works", f"{p['handle']}.html"), "w").write(
         page(f"{p['title']} — {p['vendor']}", body, "", 1))
 

@@ -163,6 +163,32 @@ main { min-height: 62vh; }
 .rel .card .im { min-height: 0; }
 .rel .card img { max-height: 34vh; }
 
+/* ---------- in-scale room view ---------- */
+.vtoggle { display: flex; gap: 22px; margin: 18px 0 0; }
+.vtoggle button { border: 0; background: none; font-family: inherit; cursor: pointer;
+  font-size: 7.5px; letter-spacing: .28em; color: var(--mute); text-transform: uppercase;
+  padding: 0 0 4px; border-bottom: 1px solid transparent; }
+.vtoggle button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.scale-view { display: none; position: relative; height: 66vh; border-bottom: 1px solid var(--hair); }
+.scale-view.show { display: block; }
+.scale-view img { position: absolute; box-shadow: 0 1px 24px rgba(17,17,17,.07); }
+.scale-view .fig { position: absolute; bottom: 0; }
+.scale-view .cap9 { position: absolute; top: 0; right: 0; font-size: 7px; letter-spacing: .26em; color: var(--mute); }
+.work-img.hid { display: none; }
+
+/* ---------- mobile inquire bar ---------- */
+.mbar { display: none; }
+@media (max-width: 880px) {
+  .mbar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(255,255,255,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--hair); padding: 16px 20px; justify-content: space-between; align-items: center; }
+  .mbar .p { font-size: 9px; letter-spacing: .18em; }
+  .mbar .act { margin-top: 0; }
+  body.workpage { padding-bottom: 64px; }
+}
+
+.price, .cap .price, .index-list .c, .num { font-variant-numeric: tabular-nums; }
+
 /* ---------- lightbox ---------- */
 .lb { position: fixed; inset: 0; background: rgba(255,255,255,.97); z-index: 90; display: none;
       align-items: center; justify-content: center; padding: 5vh 5vw; cursor: zoom-out; }
