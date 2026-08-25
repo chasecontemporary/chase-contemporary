@@ -94,7 +94,7 @@ main { min-height: 62vh; }
 
 /* ---------- shared ---------- */
 .section-label { font-size: 9px; letter-spacing: .3em; color: var(--mute); margin: 84px 0 34px; }
-.page-title { font-size: 24px; font-weight: 300; letter-spacing: .28em; margin-top: 64px; }
+.page-title { font-size: 28px; font-weight: 300; letter-spacing: .3em; margin-top: 72px; }
 .page-sub { font-size: 9px; letter-spacing: .24em; color: var(--mute); margin: 14px 0 0; }
 
 .r { opacity: 0; transform: translateY(12px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.6,.2,1); }
@@ -105,6 +105,25 @@ main { min-height: 62vh; }
   img.fx { opacity: 1; transition: none; }
   body { animation: none; }
 }
+
+/* ---------- statement ---------- */
+.statement { font-size: 16px; font-weight: 300; letter-spacing: .22em; line-height: 2.3;
+             max-width: 760px; margin: 96px 0 10px; }
+
+/* ---------- editorial feature layout ---------- */
+.feat { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 44px; row-gap: 120px;
+        align-items: end; }
+.f-a { grid-column: 1 / span 7; }
+.f-b { grid-column: 9 / span 4; padding-bottom: 110px; }
+.f-c { grid-column: 3 / span 8; }
+.f-d { grid-column: 1 / span 4; padding-bottom: 90px; }
+.f-e { grid-column: 6 / span 7; }
+.f-f { grid-column: 4 / span 6; }
+@media (max-width: 720px) {
+  .feat { row-gap: 64px; }
+  .f-a, .f-b, .f-c, .f-d, .f-e, .f-f { grid-column: 1 / span 12; padding-bottom: 0; }
+}
+.card .num { font-size: 7.5px; letter-spacing: .3em; color: var(--mute); margin-bottom: 12px; }
 
 /* ---------- hero ---------- */
 .hero { margin-top: 26px; }
@@ -154,7 +173,8 @@ main { min-height: 62vh; }
 .work-info .artist a:hover { color: var(--mute); }
 .work-info .title { font-size: 10px; letter-spacing: .2em; margin-top: 14px; line-height: 1.9; }
 .work-info .meta { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 18px; line-height: 2.2; }
-.work-info .price { font-size: 10px; letter-spacing: .2em; margin-top: 28px; }
+.work-info .price { font-size: 10px; letter-spacing: .2em; margin-top: 26px; }
+.work-info .status { font-size: 7.5px; letter-spacing: .26em; color: var(--mute); margin-top: 12px; }
 .act { display: inline-block; margin-top: 30px; font-size: 9px; font-weight: 500; letter-spacing: .3em;
        border: 0; border-bottom: 1px solid var(--ink); padding: 0 0 5px; cursor: pointer;
        background: none; font-family: inherit; color: var(--ink); text-transform: uppercase;
@@ -168,8 +188,20 @@ main { min-height: 62vh; }
 
 /* inquiry */
 .inq { max-height: 0; overflow: hidden; opacity: 0;
-       transition: max-height .5s cubic-bezier(.2,.6,.2,1), opacity .4s ease .1s; }
-.inq.show { max-height: 560px; opacity: 1; margin-top: 30px; }
+       transition: max-height .6s cubic-bezier(.2,.6,.2,1), opacity .4s ease .1s; }
+.inq.show { max-height: 1200px; opacity: 1; margin-top: 34px; }
+.inq .fhead { font-size: 8.5px; font-weight: 500; letter-spacing: .28em; margin-top: 26px;
+              padding-top: 22px; border-top: 1px solid var(--hair); }
+.inq .row2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; }
+@media (max-width: 1080px) { .inq .row2 { grid-template-columns: 1fr; } }
+.inq select { width: 100%; border: 0; border-bottom: 1px solid var(--ink); font-family: inherit;
+       font-size: 10px; letter-spacing: .1em; padding: 7px 0; outline: none; background: transparent;
+       border-radius: 0; text-transform: uppercase; color: var(--ink); appearance: none;
+       -webkit-appearance: none; cursor: pointer; }
+.inq .ck { display: flex; gap: 12px; align-items: baseline; margin-top: 16px; cursor: pointer; }
+.inq .ck input { width: 11px; height: 11px; accent-color: var(--ink); flex: none; transform: translateY(1px); }
+.inq .ck span { font-size: 8px; letter-spacing: .2em; color: var(--mute); line-height: 2; }
+.inq .ck:hover span { color: var(--ink); }
 .inq label { display: block; font-size: 7.5px; letter-spacing: .24em; color: var(--mute); margin: 18px 0 7px; }
 .inq input, .inq textarea { width: 100%; border: 0; border-bottom: 1px solid var(--ink);
        font-family: inherit; font-size: 12px; letter-spacing: .06em; padding: 7px 0; outline: none;
@@ -197,7 +229,7 @@ main { min-height: 62vh; }
 .prose { max-width: 620px; font-size: 10px; letter-spacing: .16em; line-height: 2.5; }
 .prose p { margin-bottom: 26px; }
 footer { margin-top: 130px; border-top: 1px solid var(--hair); }
-footer .wrap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 34px;
+footer .wrap { display: grid; grid-template-columns: repeat(5, 1fr); gap: 34px;
                padding-top: 52px; padding-bottom: 72px; }
 @media (max-width: 880px) { footer .wrap { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { footer .wrap { grid-template-columns: 1fr; } }
@@ -259,7 +291,7 @@ def page(title, body, active="", depth=0):
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
-<link rel="icon" href="{FAVICON}">
+<link rel="preconnect" href="https://cdn.shopify.com">\n<link rel="icon" href="{FAVICON}">
 <link rel="stylesheet" href="/assets/chase.css"><script src="/assets/chase.js" defer></script></head>
 <body>
 <header><div class="wrap">
@@ -271,6 +303,7 @@ def page(title, body, active="", depth=0):
   <div class="col"><b>NEW YORK</b><br>413 WEST BROADWAY<br>BY APPOINTMENT</div>
   <div class="col"><b>PALM BEACH</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
   <div class="col"><b>LOS ANGELES</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
+  <div class="col"><b>FOLLOW</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>INFO@CHASECONTEMPORARY.COM</div>
   <div class="col news"><b>NEWSLETTER</b>
     <form onsubmit="newsl(event)"><input placeholder="Email address" aria-label="Email address" required type="email"><button aria-label="Subscribe">&rarr;</button></form>
   </div>
@@ -278,11 +311,12 @@ def page(title, body, active="", depth=0):
 <div class="lb" id="lb"></div>
 </body></html>"""
 
-def card(p, depth=0, cls=""):
+def card(p, depth=0, cls="", num=None):
     pre = "../" * depth
+    n = f'<div class="num">{num:02d}</div>' if num else ""
     return f"""<div class="card r {cls}"><a href="{pre}works/{p['handle']}.html">
   <div class="im">{pic(p, 900, "fx")}</div>
-  <div class="cap"><div class="l"><div class="artist">{esc(p['vendor'])}</div>
+  {n}<div class="cap"><div class="l"><div class="artist">{esc(p['vendor'])}</div>
   <div class="title">{esc(p['title'])}</div></div>
   <div class="price">{price_line(p)}</div></div></a></div>"""
 
@@ -306,8 +340,9 @@ body = f"""
   <div class="hero r in"><a href="exhibitions/index.html">{pic(hero_p, 1600, "fx", "92vw")}</a>
     <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
     <span class="s">CURRENT EXHIBITION</span></div></div>
+  <div class="statement r">CONTEMPORARY AND STREET ART — HAMBLETON, RETNA, SCHARF, VALENCIA — IN NEW YORK, PALM BEACH, AND LOS ANGELES.</div>
   <div class="section-label r">SELECTED WORKS</div>
-  <div class="grid">{''.join(card(p) for p in featured)}</div>
+  <div class="feat">{''.join(card(p, 0, cls) for p, cls in zip(featured, ["f-a","f-b","f-c","f-d","f-e","f-f"]))}</div>
   <div class="section-label r">ARTISTS</div>
   <ul class="index-list r">
     {''.join(f'<li><a href="artists/{c["handle"]}.html"><span class="n">{esc(c["title"])}</span><span class="c">{len(col_products.get(c["handle"], []))} WORKS</span></a></li>' for c in artists)}
@@ -328,7 +363,7 @@ for c in artists:
     <div class="page-title r in">{esc(c['title'])}</div>
     <div class="page-sub r in">{len(ps)} WORKS</div>
     <div class="section-label"></div>
-    <div class="grid">{''.join(card(p, 1) for p in ps)}</div></div>"""
+    <div class="grid">{''.join(card(p, 1, num=i + 1) for i, p in enumerate(ps))}</div></div>"""
     open(os.path.join(OUT, "artists", f"{c['handle']}.html"), "w").write(
         page(f"{c['title']} — Chase Contemporary", body, "ARTISTS", 1))
 
@@ -351,7 +386,7 @@ for p in products:
     rel = ""
     if related:
         rel = f"""<div class="rel"><div class="section-label r">MORE FROM {esc(p['vendor'])}</div>
-        <div class="grid">{''.join(card(s, 1) for s in related)}</div></div>"""
+        <div class="grid">{''.join(card(w, 1) for w in related)}</div></div>"""
     body = f"""<div class="wrap">{crumb}<div class="work">
   <div class="work-img r in">{pic(p, 1400, "fx", "(max-width: 880px) 92vw, 60vw")}</div>
   <div class="work-info r in">
@@ -359,13 +394,31 @@ for p in products:
     <div class="title">{esc(p['title'])}</div>
     <div class="meta">{'<br>'.join(esc(l) for l in det)}</div>
     <div class="price">{price_line(p)}</div>
+    <div class="status">AVAILABLE</div>
     <button class="act" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
     <form class="inq" id="inq" onsubmit="sendInq(event)">
-      <label for="f-n">NAME</label><input id="f-n" required autocomplete="name">
-      <label for="f-e">EMAIL</label><input id="f-e" type="email" required autocomplete="email">
-      <label for="f-m">MESSAGE</label><textarea id="f-m">I am interested in {esc(p['title'])} by {esc(p['vendor'])}.</textarea>
-      <button class="act" type="submit">SEND</button>
-      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.</div>
+      <div class="fhead">INQUIRE — {esc(p['title'])}</div>
+      <div class="row2">
+        <div><label for="f-fn">FIRST NAME *</label><input id="f-fn" required autocomplete="given-name"></div>
+        <div><label for="f-ln">LAST NAME *</label><input id="f-ln" required autocomplete="family-name"></div>
+      </div>
+      <div class="row2">
+        <div><label for="f-e">EMAIL *</label><input id="f-e" type="email" required autocomplete="email"></div>
+        <div><label for="f-p">PHONE</label><input id="f-p" type="tel" autocomplete="tel"></div>
+      </div>
+      <div class="row2">
+        <div><label for="f-c">CITY</label><input id="f-c" autocomplete="address-level2"></div>
+        <div><label for="f-h">HOW DID YOU FIND US</label>
+          <select id="f-h"><option value="" selected>SELECT</option><option>INSTAGRAM</option>
+          <option>SEARCH</option><option>ART FAIR</option><option>PRESS</option>
+          <option>WORD OF MOUTH</option><option>WALKED BY</option></select></div>
+      </div>
+      <label for="f-m">MESSAGE</label>
+      <textarea id="f-m">I am interested in {esc(p['title'])} by {esc(p['vendor'])}. Please send availability, additional images, and a condition report.</textarea>
+      <label class="ck"><input type="checkbox" checked><span>KEEP ME INFORMED OF NEW WORKS BY {esc(p['vendor'].upper())} AND GALLERY EXHIBITIONS</span></label>
+      <label class="ck"><input type="checkbox"><span>I AM AN ART ADVISOR OR INTERIOR DESIGNER (TRADE)</span></label>
+      <button class="act" type="submit">SEND INQUIRY</button>
+      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     <div class="assure">HAND-SIGNED ORIGINALS · CERTIFICATE OF AUTHENTICITY<br>WORLDWIDE FINE-ART SHIPPING · CARD, ACH, WIRE, FINANCING</div>
@@ -380,6 +433,7 @@ if(l) l.innerHTML='<img src="{imgsrc(p, 2400)}" alt="{esc(p['title'])}">';}});</
 grid = ''.join(card(p, 1) for p in pele if p.get("images"))
 body = f"""<div class="wrap"><div class="page-title r in">{esc(EXHIBITION['title'])}</div>
 <div class="page-sub r in">{esc(EXHIBITION['sub'])} · CURRENT EXHIBITION</div>
+<div class="statement r" style="margin-top:56px;">A COLLECTION CELEBRATING THE KING — WORKS HONORING PELÉ'S LEGACY, PRESENTED BY THE GALLERY.</div>
 <div class="section-label"></div>
 <div class="grid">{grid}</div>
 <div class="section-label r">ARCHIVE</div>

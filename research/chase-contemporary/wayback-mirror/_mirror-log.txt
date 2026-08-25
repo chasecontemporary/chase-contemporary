@@ -18,3 +18,8 @@ OK /art-fairs/past/all/2020 20200920213330 8329
 FAIL /art-fairs/past/all/2021 20210919165805 <urlopen error timed out>
 OK /art-fairs/past/all/all 20200920202523 9874
 FAIL /artistpage/andres-valencia 20221129010501 <urlopen error timed out>
+FAIL /artistpage/andres-valencia/arnold 20230203204719 The read operation timed out
+FAIL /artistpage/andres-valencia/birthday-clowns 20230203203325 <urlopen error timed out>
+OK /artistpage/andres-valencia/happy-clowns 20230203202334 774230
+FAIL /artistpage/andres-valencia/invasion-of-ukraine 20230203190559 <urlopen error timed out>
+OK /artistpage/andres-valencia/max-the-clown 20230203192308 774374

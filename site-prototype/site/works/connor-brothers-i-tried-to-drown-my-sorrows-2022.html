@@ -1,6 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Tried To Drown My Sorrows, 2022 — The Connor Brothers</title>
+<link rel="preconnect" href="https://cdn.shopify.com">
 <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 32 32&#x27;&gt;&lt;rect width=&#x27;32&#x27; height=&#x27;32&#x27; fill=&#x27;white&#x27;/&gt;&lt;text x=&#x27;16&#x27; y=&#x27;21&#x27; font-family=&#x27;Helvetica&#x27; font-size=&#x27;13&#x27; letter-spacing=&#x27;1&#x27; text-anchor=&#x27;middle&#x27; fill=&#x27;#111&#x27;&gt;CC&lt;/text&gt;&lt;/svg&gt;">
 <link rel="stylesheet" href="/assets/chase.css"><script src="/assets/chase.js" defer></script></head>
 <body>
@@ -15,13 +16,31 @@
     <div class="title">I Tried To Drown My Sorrows, 2022</div>
     <div class="meta">Mixed Media on Canvas<br>51.18 x 35.43 in</div>
     <div class="price">Price on request</div>
+    <div class="status">AVAILABLE</div>
     <button class="act" onclick="inq(this)">INQUIRE</button>
     <form class="inq" id="inq" onsubmit="sendInq(event)">
-      <label for="f-n">NAME</label><input id="f-n" required autocomplete="name">
-      <label for="f-e">EMAIL</label><input id="f-e" type="email" required autocomplete="email">
-      <label for="f-m">MESSAGE</label><textarea id="f-m">I am interested in I Tried To Drown My Sorrows, 2022 by The Connor Brothers.</textarea>
-      <button class="act" type="submit">SEND</button>
-      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.</div>
+      <div class="fhead">INQUIRE — I Tried To Drown My Sorrows, 2022</div>
+      <div class="row2">
+        <div><label for="f-fn">FIRST NAME *</label><input id="f-fn" required autocomplete="given-name"></div>
+        <div><label for="f-ln">LAST NAME *</label><input id="f-ln" required autocomplete="family-name"></div>
+      </div>
+      <div class="row2">
+        <div><label for="f-e">EMAIL *</label><input id="f-e" type="email" required autocomplete="email"></div>
+        <div><label for="f-p">PHONE</label><input id="f-p" type="tel" autocomplete="tel"></div>
+      </div>
+      <div class="row2">
+        <div><label for="f-c">CITY</label><input id="f-c" autocomplete="address-level2"></div>
+        <div><label for="f-h">HOW DID YOU FIND US</label>
+          <select id="f-h"><option value="" selected>SELECT</option><option>INSTAGRAM</option>
+          <option>SEARCH</option><option>ART FAIR</option><option>PRESS</option>
+          <option>WORD OF MOUTH</option><option>WALKED BY</option></select></div>
+      </div>
+      <label for="f-m">MESSAGE</label>
+      <textarea id="f-m">I am interested in I Tried To Drown My Sorrows, 2022 by The Connor Brothers. Please send availability, additional images, and a condition report.</textarea>
+      <label class="ck"><input type="checkbox" checked><span>KEEP ME INFORMED OF NEW WORKS BY THE CONNOR BROTHERS AND GALLERY EXHIBITIONS</span></label>
+      <label class="ck"><input type="checkbox"><span>I AM AN ART ADVISOR OR INTERIOR DESIGNER (TRADE)</span></label>
+      <button class="act" type="submit">SEND INQUIRY</button>
+      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     <div class="assure">HAND-SIGNED ORIGINALS · CERTIFICATE OF AUTHENTICITY<br>WORLDWIDE FINE-ART SHIPPING · CARD, ACH, WIRE, FINANCING</div>
@@ -47,6 +66,7 @@ if(l) l.innerHTML='<img src="https://cdn.shopify.com/s/files/1/0709/4324/4439/fi
   <div class="col"><b>NEW YORK</b><br>413 WEST BROADWAY<br>BY APPOINTMENT</div>
   <div class="col"><b>PALM BEACH</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
   <div class="col"><b>LOS ANGELES</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
+  <div class="col"><b>FOLLOW</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>INFO@CHASECONTEMPORARY.COM</div>
   <div class="col news"><b>NEWSLETTER</b>
     <form onsubmit="newsl(event)"><input placeholder="Email address" aria-label="Email address" required type="email"><button aria-label="Subscribe">&rarr;</button></form>
   </div>
