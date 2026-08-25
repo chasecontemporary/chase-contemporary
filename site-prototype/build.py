@@ -61,8 +61,10 @@ def max_phys_w(ps):
 def price_line(p):
     if is_edition(p):
         v = p["variants"][0] if p["variants"] else {}
-        try: return f"${float(v.get('price', 0)):,.0f}"
-        except (TypeError, ValueError): return "Price on request"
+        try:
+            n = float(v.get("price", 0))
+            if n > 0: return f"${n:,.0f}"
+        except (TypeError, ValueError): pass
     return "Price on request"
 def imgsrc(p, w):
     if not p.get("images"): return ""
@@ -384,12 +386,11 @@ def page(title, body, active="", depth=0):
 def card(p, depth=0, cls="", num=None, max_w=None):
     pre = "../" * depth
     n = f'<div class="num">{num:02d}</div>' if num else ""
-    st = f"width:{scale_pct(p, max_w)}%" if max_w else ""
     d = phys(p)
     dims = f' — {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
     price = f'<div class="price">{price_line(p)}</div>' 
     return f"""<div class="card r {cls}"><a href="{pre}works/{p['handle']}.html">
-  <div class="im">{pic(p, 900, "fx", style=st)}</div>
+  <div class="im">{pic(p, 900, "fx")}</div>
   {n}<div class="cap"><div class="artist">{esc(p['vendor'])}</div>
   <div class="title">{esc(p['title'])}{dims}</div>
   {price}</div></a></div>"""

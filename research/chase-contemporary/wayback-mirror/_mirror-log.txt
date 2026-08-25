@@ -52,3 +52,5 @@ OK /artistpage/carole-feuerman/the-thinker 20221208195237 696258
 FAIL /artistpage/connor-brothers 20221202060312 <urlopen error timed out>
 FAIL /artistpage/connor-brothers/a-dangerous-idea 20221208192500 <urlopen error timed out>
 OK /artistpage/connor-brothers/absence-makes-the-days-grow-longer 20221202065646 695728
+OK /artistpage/connor-brothers/all-my-life-i've-been-a-liar 20221129002433 680215
+OK /artistpage/connor-brothers/all-she-wanted 20221208193157 696285
