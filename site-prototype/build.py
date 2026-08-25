@@ -161,18 +161,17 @@ main { min-height: 62vh; }
 /* ---------- works grid: natural proportions, baseline-aligned ---------- */
 .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 56px; row-gap: 96px; }
 @media (max-width: 720px) { .grid { grid-template-columns: 1fr; row-gap: 64px; } }
-.card a { display: block; }
-.card .im { display: flex; align-items: flex-end; min-height: 44vh; }
-@media (max-width: 720px) { .card .im { min-height: 0; } }
+.card { display: flex; flex-direction: column; }
+.card a { display: flex; flex-direction: column; height: 100%; }
+.card .im { display: flex; align-items: flex-end; flex: 1; min-height: 34vh; }
+@media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
 .card img { width: 100%; height: auto; max-height: 62vh; object-fit: contain; object-position: left bottom;
             transition: opacity .7s ease; }
 .card a:hover img.ld { opacity: .93; }
-.card .cap { margin-top: 16px; display: flex; justify-content: space-between; gap: 18px; align-items: baseline; }
-.cap .l { min-width: 0; }
+.card .cap { margin-top: 16px; }
 .cap .artist { font-size: 9.5px; font-weight: 500; letter-spacing: .22em; }
-.cap .title { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 6px;
-              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cap .price { font-size: 8.5px; letter-spacing: .16em; color: var(--ink); white-space: nowrap; }
+.cap .title { font-size: 8.5px; letter-spacing: .18em; color: var(--mute); margin-top: 6px; line-height: 1.9; }
+.cap .price { font-size: 8.5px; letter-spacing: .16em; color: var(--ink); margin-top: 6px; }
 .card a:hover .artist { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 
 /* ---------- artist index ---------- */
@@ -242,25 +241,6 @@ main { min-height: 62vh; }
 @media (max-width: 720px) { .rel .grid { grid-template-columns: 1fr; } }
 .rel .card .im { min-height: 0; }
 .rel .card img { max-height: 34vh; }
-
-/* ---------- in-scale room view: gallery elevation ---------- */
-.vtoggle { display: flex; gap: 22px; margin: 18px 0 0; }
-.vtoggle button { border: 0; background: none; font-family: inherit; cursor: pointer;
-  font-size: 7.5px; letter-spacing: .28em; color: var(--mute); text-transform: uppercase;
-  padding: 0 0 4px; border-bottom: 1px solid transparent; }
-.vtoggle button.on { color: var(--ink); border-bottom-color: var(--ink); }
-.scale-view { display: none; position: relative; height: 58vh; min-height: 380px;
-  background: linear-gradient(#f8f7f4 0%, #f5f4f0 100%); overflow: hidden; }
-.scale-view.show { display: block; }
-.scale-view .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
-  background: linear-gradient(#edebe6, #f2f0ec); border-top: 1px solid #e4e1da; }
-.scale-view .art { position: absolute; box-shadow: 0 3px 14px rgba(17,17,17,.10), 0 14px 44px rgba(17,17,17,.06); }
-.scale-view .fig { position: absolute; }
-.scale-view .fig .bd { fill: #dcd9d2; }
-.scale-view .fig .sh { fill: rgba(17,17,17,.06); }
-.scale-view .cap9 { position: absolute; left: 22px; bottom: 16px; font-size: 7px;
-  letter-spacing: .26em; color: #a09c93; }
-.work-img.hid { display: none; }
 
 /* ---------- mobile inquire bar ---------- */
 .mbar { display: none; }
@@ -336,10 +316,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
   }
 });
-function vmode(m){ document.getElementById('iv').classList.toggle('hid', m===1);
-  document.getElementById('sv').classList.toggle('show', m===1);
-  document.getElementById('tb-i').classList.toggle('on', m===0);
-  document.getElementById('tb-s').classList.toggle('on', m===1); }
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
   setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
 function sendInq(e){ e.preventDefault();
@@ -389,11 +365,12 @@ def card(p, depth=0, cls="", num=None, max_w=None):
     st = f"width:{scale_pct(p, max_w)}%" if max_w else ""
     d = phys(p)
     dims = f' — {d[0]:g} × {d[1]:g} IN' if d and max_w else ""
+    price = f'<div class="price">{price_line(p)}</div>' if is_edition(p) else ""
     return f"""<div class="card r {cls}"><a href="{pre}works/{p['handle']}.html">
   <div class="im">{pic(p, 900, "fx", style=st)}</div>
-  {n}<div class="cap"><div class="l"><div class="artist">{esc(p['vendor'])}</div>
-  <div class="title">{esc(p['title'])}{dims}</div></div>
-  <div class="price">{price_line(p)}</div></div></a></div>"""
+  {n}<div class="cap"><div class="artist">{esc(p['vendor'])}</div>
+  <div class="title">{esc(p['title'])}{dims}</div>
+  {price}</div></a></div>"""
 
 # ---------- build ----------
 os.makedirs(OUT, exist_ok=True)
@@ -463,33 +440,8 @@ for p in products:
     if related:
         rel = f"""<div class="rel"><div class="section-label r">MORE FROM {esc(p['vendor'])}</div>
         <div class="grid">{''.join(card(w, 1) for w in related)}</div></div>"""
-    d = phys(p)
-    scale_html, toggle_html = "", ""
-    if d:
-        WALL_IN, EYE_IN, FIG_IN = 126.0, 57.0, 68.0
-        # wall = 126in mapped to the 86% above the floor strip; figure stands on the floor line
-        WALL_PCT = 86.0
-        top_pct = (WALL_IN - (EYE_IN + d[0] / 2)) / WALL_IN * WALL_PCT
-        h_pct = d[0] / WALL_IN * WALL_PCT
-        fig_pct = FIG_IN / WALL_IN * WALL_PCT
-        scale_html = f"""<div class="scale-view" id="sv">
-          <div class="floor"></div>
-          <img class="art" src="{imgsrc(p, 1000)}" alt="" style="top:{top_pct:.1f}%;height:{h_pct:.1f}%;width:auto;left:40%;transform:translateX(-50%)">
-          <svg class="fig" viewBox="0 0 56 158" style="height:{fig_pct:.1f}%;left:63%;bottom:{100 - WALL_PCT - 0.5:.1f}%" xmlns="http://www.w3.org/2000/svg">
-            <ellipse class="sh" cx="28" cy="155" rx="25" ry="3"/>
-            <g class="bd"><circle cx="28" cy="11" r="11"/>
-              <rect x="15" y="25" width="26" height="54" rx="11"/>
-              <rect x="7.5" y="27" width="8" height="46" rx="4"/>
-              <rect x="40.5" y="27" width="8" height="46" rx="4"/>
-              <rect x="16.5" y="70" width="10.5" height="88" rx="5.2"/>
-              <rect x="29" y="70" width="10.5" height="88" rx="5.2"/></g>
-          </svg>
-          <div class="cap9">SHOWN TO SCALE — {d[0]:g} × {d[1]:g} IN · FIGURE 5&#x2032;8&#x2033;</div>
-        </div>"""
-        toggle_html = """<div class="vtoggle"><button class="on" id="tb-i" onclick="vmode(0)">IMAGE</button><button id="tb-s" onclick="vmode(1)">IN SCALE</button></div>"""
     body = f"""<div class="wrap">{crumb}<div class="work">
-  <div><div class="work-img r in" id="iv">{pic(p, 1400, "fx", "(max-width: 880px) 92vw, 60vw")}</div>
-  {scale_html}{toggle_html}</div>
+  <div class="work-img r in">{pic(p, 1400, "fx", "(max-width: 880px) 92vw, 60vw")}</div>
   <div class="work-info r in">
     <div class="artist"><a href="../artists/{c['handle'] + '.html' if c else '#'}">{esc(p['vendor'])}</a></div>
     <div class="title">{esc(p['title'])}</div>

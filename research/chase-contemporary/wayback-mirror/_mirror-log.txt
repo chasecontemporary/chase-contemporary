@@ -40,3 +40,6 @@ OK /artistpage/carole-feuerman 20221208205002 845137
 FAIL /artistpage/carole-feuerman/capri 20221202061019 <urlopen error timed out>
 OK /artistpage/carole-feuerman/general%E2%80%99s-illegitimate-daughter 20221129003759 686384
 OK /artistpage/carole-feuerman/kendall-island 20221202052744 695065
+OK /artistpage/carole-feuerman/miniature-balance 20221129005947 686170
+OK /artistpage/carole-feuerman/miniature-serena-(blue) 20221208195734 695529
+OK /artistpage/carole-feuerman/miniature-serena-(pink) 20221129014300 686536

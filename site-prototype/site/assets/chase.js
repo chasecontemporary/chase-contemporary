@@ -35,10 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
   }
 });
-function vmode(m){ document.getElementById('iv').classList.toggle('hid', m===1);
-  document.getElementById('sv').classList.toggle('show', m===1);
-  document.getElementById('tb-i').classList.toggle('on', m===0);
-  document.getElementById('tb-s').classList.toggle('on', m===1); }
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
   setTimeout(function(){ var f=document.querySelector('#inq input'); if(f) f.focus(); }, 350); }
 function sendInq(e){ e.preventDefault();
