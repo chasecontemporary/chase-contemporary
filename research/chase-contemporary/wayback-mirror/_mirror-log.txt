@@ -79,3 +79,5 @@ OK /artistpage/fabiano-senk/carga-da-vida-(load-of-life) 20221202051645 688874
 OK /artistpage/fabiano-senk/corrupt-man 20221202060610 694826
 FAIL /artistpage/fabiano-senk/minha-lua-particular-(my-private-moon) 20221208183954 The read operation timed out
 OK /artistpage/fabiano-senk/onde-o-vento-me-levar-(where-the-wind-takes-me) 20221129002815 680281
+OK /artistpage/fabiano-senk/sanctuary 20221129011631 685849
+FAIL /artistpage/fabiano-senk/sonho-americano-(american-dream) 20221202064038 <urlopen error timed out>

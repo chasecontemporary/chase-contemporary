@@ -167,10 +167,9 @@ main { min-height: 62vh; }
 .card .num { font-size: 7.5px; letter-spacing: .3em; color: var(--mute); margin-bottom: 12px; }
 
 /* ---------- hero ---------- */
-.hero { display: block; overflow: hidden; margin-top: 34px; }
-.hero img { width: 100vw; height: 86vh; object-fit: cover; object-position: center 28%;
+.hero { display: block; overflow: hidden; margin-top: 30px; }
+.hero img { width: 100%; max-height: 76vh; object-fit: cover; object-position: center 28%;
             transform: scale(1.06); will-change: transform; }
-@media (max-width: 720px) { .hero img { height: 60vh; } }
 .hero-cap { display: flex; justify-content: space-between; align-items: baseline;
             margin-top: 18px; flex-wrap: wrap; gap: 8px; }
 .hero-cap .t { font-size: 11px; font-weight: 500; letter-spacing: .24em; }
@@ -320,7 +319,7 @@ a.artist:hover::after { transform: scaleX(1); }
 .prose { max-width: 620px; font-size: 10px; letter-spacing: .16em; line-height: 2.5; }
 .prose p { margin-bottom: 26px; }
 footer { margin-top: calc(var(--sp) + 24px); border-top: 1px solid var(--hair); }
-footer .wrap { display: grid; grid-template-columns: repeat(5, 1fr); gap: 34px;
+footer .wrap { display: grid; grid-template-columns: 2fr 1.4fr 1.4fr; gap: 34px;
                padding-top: 52px; padding-bottom: 72px; }
 @media (max-width: 880px) { footer .wrap { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { footer .wrap { grid-template-columns: 1fr; } }
@@ -442,11 +441,7 @@ function inqPre(kind){
   var title = (document.querySelector('input[name=artwork_title]')||{}).value || 'this work';
   var artist = (document.querySelector('input[name=artist]')||{}).value || '';
   var by = artist ? ' by ' + artist : '';
-  if (t) {
-    if (kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
-    if (kind === 'viewing') t.value = 'I would like to schedule a private viewing of ' + title + by + '.';
-    if (kind === 'images') t.value = 'Please send additional images and a condition report for ' + title + by + '.';
-  }
+  if (t && kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
   inq(document.getElementById('inqbtn'));
 }
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
@@ -483,10 +478,8 @@ def page(title, body, active="", depth=0):
 </header>
 <main>{body}</main>
 <footer><div class="wrap">
-  <div class="col"><b>NEW YORK</b><br>413 WEST BROADWAY<br>BY APPOINTMENT</div>
-  <div class="col"><b>PALM BEACH</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
-  <div class="col"><b>LOS ANGELES</b><br>ADDRESS TK<br>BY APPOINTMENT</div>
-  <div class="col"><b>FOLLOW</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>INFO@CHASECONTEMPORARY.COM</div>
+  <div class="col"><b>CHASE CONTEMPORARY</b><br>NEW YORK · PALM BEACH · LOS ANGELES<br>ONLINE WORLDWIDE</div>
+  <div class="col"><b>CONTACT</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>INFO@CHASECONTEMPORARY.COM</div>
   <div class="col news"><b>NEWSLETTER</b>
     <form onsubmit="newsl(event)"><input placeholder="Email address" aria-label="Email address" required type="email"><button aria-label="Subscribe">&rarr;</button></form>
   </div>
@@ -527,8 +520,8 @@ hero_p = next((p for p in pele if p.get("images")), products[0])
 featured = [p for p in products if p.get("images") and not is_edition(p)][:6]
 
 body = f"""
-<a class="hero" href="exhibitions/index.html">{pic(hero_p, 2000, "fx", "100vw")}</a>
 <div class="wrap">
+  <a class="hero r in" href="exhibitions/index.html">{pic(hero_p, 1600, "fx", "92vw")}</a>
   <div class="hero-cap"><span class="t">{esc(EXHIBITION['title'])} — {esc(EXHIBITION['sub'])}</span>
     <span class="s">CURRENT EXHIBITION</span></div>
   <div class="statement r">CONTEMPORARY AND STREET ART — HAMBLETON, RETNA, SCHARF, VALENCIA — IN NEW YORK, PALM BEACH, AND LOS ANGELES.</div>
@@ -588,11 +581,7 @@ for p in products:
     <div class="price">{price_line(p)}</div>
     <div class="status">AVAILABLE</div>
     <button class="btn-inq" id="inqbtn" onclick="inq(this)">{"ACQUIRE" if ed else "INQUIRE"}</button>
-    <div class="alt-acts" id="altacts">
-      {"" if ed else '<button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button>'}
-      <button onclick="inqPre('viewing')">SCHEDULE A PRIVATE VIEWING</button>
-      <button onclick="inqPre('images')">REQUEST IMAGES &amp; CONDITION REPORT</button>
-    </div>
+    {"" if ed else '<div class="alt-acts" id="altacts"><button onclick="inqPre(&#x27;hold&#x27;)">PLACE A 72-HOUR HOLD</button></div>'}
     <form class="inq" id="inq" onsubmit="sendInq(event)">
       <div class="fhead">INQUIRE — {esc(p['title'])}</div>
       <div class="row2">
@@ -611,7 +600,7 @@ for p in products:
           <option>WORD OF MOUTH</option><option>WALKED BY</option></select></div>
       </div>
       <label for="f-m">MESSAGE</label>
-      <textarea id="f-m">I am interested in {esc(p['title'])} by {esc(p['vendor'])}. Please send availability, additional images, and a condition report.</textarea>
+      <textarea id="f-m">I am interested in {esc(p['title'])} by {esc(p['vendor'])}. Please send availability and payment options.</textarea>
       <label class="ck"><input type="checkbox" checked><span>KEEP ME INFORMED OF NEW WORKS BY {esc(p['vendor'].upper())} AND GALLERY EXHIBITIONS</span></label>
       <label class="ck"><input type="checkbox"><span>I AM AN ART ADVISOR OR INTERIOR DESIGNER (TRADE)</span></label>
       <input type="hidden" name="artwork_handle" value="{esc(p['handle'])}">
@@ -625,7 +614,7 @@ for p in products:
       <input type="hidden" name="seconds_on_page" id="cc-secs">
       <button class="btn-inq" type="submit" style="margin-top:26px">SEND INQUIRY</button>
       <div class="note" style="margin-top:12px">ATTACHED AUTOMATICALLY FOR THE GALLERY: THIS ARTWORK, PRICE BAND, YOUR PATH THROUGH THE SITE, AND HOW YOU ARRIVED.</div>
-      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES DURING GALLERY HOURS.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
+      <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
     </form>
     <div class="inq-done" id="inq-done">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     <div class="assure">HAND-SIGNED ORIGINALS · CERTIFICATE OF AUTHENTICITY<br>WORLDWIDE FINE-ART SHIPPING · CARD, ACH, WIRE, FINANCING</div>
@@ -667,8 +656,8 @@ body = """<div class="wrap"><div class="page-title r in">CONTACT</div>
 <div class="section-label"></div>
 <div class="prose r in">
 <p>INFO@CHASECONTEMPORARY.COM</p>
-<p>NEW YORK · PALM BEACH · LOS ANGELES</p>
-<p>FOR ACQUISITIONS, PRIVATE VIEWINGS, AND CONSIGNMENT INQUIRIES, A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES DURING GALLERY HOURS.</p>
+<p>NEW YORK · PALM BEACH · LOS ANGELES · ONLINE WORLDWIDE</p>
+<p>FOR ACQUISITIONS AND ALL INQUIRIES, A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES.</p>
 </div></div>"""
 open(os.path.join(OUT, "contact.html"), "w").write(page("Contact — Chase Contemporary", body, "CONTACT"))
 

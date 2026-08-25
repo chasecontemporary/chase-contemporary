@@ -106,11 +106,7 @@ function inqPre(kind){
   var title = (document.querySelector('input[name=artwork_title]')||{}).value || 'this work';
   var artist = (document.querySelector('input[name=artist]')||{}).value || '';
   var by = artist ? ' by ' + artist : '';
-  if (t) {
-    if (kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
-    if (kind === 'viewing') t.value = 'I would like to schedule a private viewing of ' + title + by + '.';
-    if (kind === 'images') t.value = 'Please send additional images and a condition report for ' + title + by + '.';
-  }
+  if (t && kind === 'hold') t.value = 'I would like to place a 72-hour hold on ' + title + by + '. Please send the deposit link.';
   inq(document.getElementById('inqbtn'));
 }
 function inq(btn){ document.getElementById('inq').classList.add('show'); if(btn) btn.style.display='none';
