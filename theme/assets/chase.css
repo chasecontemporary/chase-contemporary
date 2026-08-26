@@ -579,8 +579,10 @@ html[style*="--pagein-skip"] body { animation: none; }
 }
 
 /* ---------- contact split ---------- */
-.csplit { display: grid; grid-template-columns: 5fr 7fr; gap: calc(var(--colgap) * 1.6);
-  align-items: start; }
+.csplit { display: grid; grid-template-columns: minmax(300px, 430px) minmax(0, 780px);
+  gap: clamp(48px, 7vw, 140px); align-items: start; }
+.cleft .big { margin-top: 0; }
+.cform .inq > label:first-of-type { margin-top: 0; }
 .cleft { position: sticky; top: 40px; }
 .cleft .big { font-size: clamp(16px, 2vw, 27px); font-weight: 500; letter-spacing: .05em;
   line-height: 1.9; max-width: 420px; }
