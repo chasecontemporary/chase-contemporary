@@ -354,7 +354,7 @@ body.exhpage main { min-height: 0; }
 
 
 /* footer mark */
-.foot-mark { display: flex; justify-content: center; padding: 26px 0 54px; }
+.foot-mark { padding: 26px var(--pad) 54px; }
 .foot-mark img { height: 44px; width: auto; opacity: .95; }
 
 /* ---------- ink-in editorial statement ---------- */

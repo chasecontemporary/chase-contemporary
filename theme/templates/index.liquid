@@ -39,7 +39,7 @@
       <div class="section-label vroom-label">SELECTED WORKS</div>
       {%- assign shown = 0 -%}
       {%- for product in collections.all.products limit: 30 -%}
-        {%- if product.featured_image and product.type != 'Print' and shown < 6 -%}
+        {%- if product.featured_image and product.featured_image.width >= 1600 and product.featured_image.height >= 1200 and product.type != 'Print' and shown < 6 -%}
         {%- assign img = product.featured_image -%}
         {%- assign vhandle = product.vendor | handleize -%}
         <div class="vroom-slide" data-i="{{ shown }}">
