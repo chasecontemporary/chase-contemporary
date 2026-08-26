@@ -39,16 +39,23 @@ export default function Kanban({ initial }) {
   const c = openLead?.collectors || {};
   const a = openLead?.artwork;
   const [agreed, setAgreed] = useState('');
-  const genInvoice = async () => {
+  const sale = openLead?.openSale;
+  const saleTotal = sale ? sale.sale_items.reduce((s, i) => s + i.agreed_cents, 0) : 0;
+  const inSale = sale && sale.sale_items.some(i => i.inquiry_id === openLead?.id);
+  const addToSale = async () => {
     const amount = agreed || (a?.price_cents ? a.price_cents / 100 : '');
     if (!amount) { alert('Enter the agreed price first.'); return; }
     const fd = new FormData();
-    fd.set('action', 'invoice_from_lead'); fd.set('id', openLead.id); fd.set('amount', amount);
+    fd.set('action', 'sale_add_item'); fd.set('id', openLead.id); fd.set('amount', amount);
+    await fetch('/api/act', { method: 'POST', body: fd });
+    window.location.reload();
+  };
+  const invoiceSale = async () => {
+    const fd = new FormData();
+    fd.set('action', 'invoice_from_sale'); fd.set('id', sale.id);
     const res = await fetch('/api/act', { method: 'POST', body: fd });
     const j = await res.json().catch(() => ({}));
-    setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, status: 'invoice' } : l));
-    setOpenLead(o => ({ ...o, status: 'invoice' }));
-    if (j.invoice_number) window.location.href = '/finance';
+    if (j.ok) window.location.href = '/finance';
   };
 
   return <>
@@ -116,14 +123,22 @@ export default function Kanban({ initial }) {
         {openLead.message && <div className="msg">{openLead.message}</div>}
         {!['invoice','paid'].includes(openLead.status) && <div style={{marginTop:18, padding:'14px 16px',
           background:'#f5f5f7', borderRadius:12}}>
-          <div style={{fontSize:12, fontWeight:600, marginBottom:8}}>Close the sale</div>
-          <div style={{display:'flex', gap:8}}>
+          <div style={{fontSize:12, fontWeight:600, marginBottom:8}}>
+            {sale ? `Open sale · ${sale.sale_items.length} work${sale.sale_items.length > 1 ? 's' : ''} · ${usd(saleTotal)}` : 'Start a sale'}
+          </div>
+          {sale && sale.sale_items.map(i => <div key={i.id} style={{fontSize:12, color:'#515154',
+            display:'flex', justifyContent:'space-between', padding:'3px 0'}}>
+            <span>{i.title}</span><span style={{fontVariantNumeric:'tabular-nums'}}>{usd(i.agreed_cents)}</span>
+          </div>)}
+          {!inSale && <div style={{display:'flex', gap:8, marginTop:8}}>
             <input type="number" step="0.01" placeholder={a?.price_cents ? 'Agreed $ (' + Math.round(a.price_cents/100).toLocaleString() + ')' : 'Agreed price $'}
               value={agreed} onChange={e => setAgreed(e.target.value)}
               style={{flex:1, border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit',
                 fontSize:13.5, padding:'8px 12px', outline:'none'}}/>
-            <button className="btn" onClick={genInvoice}>Generate invoice</button>
-          </div>
+            <button className="btn" onClick={addToSale}>{sale ? 'Add to sale' : 'Start sale'}</button>
+          </div>}
+          {sale && sale.sale_items.length > 0 && <button className="btn" style={{width:'100%', marginTop:10}}
+            onClick={invoiceSale}>Generate invoice · {usd(saleTotal)}</button>}
         </div>}
         <div className="acts">
           {!openLead.contacted_at && <button className="btn ghost" onClick={() => markAnswered(openLead.id)}>Mark answered</button>}

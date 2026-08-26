@@ -48,3 +48,6 @@ Artcloud CSVs (Contacts, Inventory, Invoices via Actions>Export + QBO sales expo
 - Next-action date per card (0/2/7/21 cadence), overdue = red
 - Stage-appropriate drawer CTAs: send hold link / send invoice / mark paid (arrives w/ Stripe)
 - Loss reasons on closed-lost for learning
+
+## Structural thesis (8/26, Devyn)
+Engine mirrors MoaOS structurally: the Sale = the project container; the deliverable is built in (the painting/s); leads attach to sales; ONE invoice per sale with line items (industry standard); money/commissions hang off the sale. Bundling: multiple inquiries from one collector merge into one open sale.

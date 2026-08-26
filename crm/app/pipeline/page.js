@@ -15,7 +15,15 @@ export default async function Pipeline() {
       .in('handle', handles);
     (arts || []).forEach(a => { artMap[a.handle] = a; });
   }
-  const leads = (rows || []).map(r => ({ ...r, artwork: artMap[r.artwork_handle] || null }));
+  const collectorIds = [...new Set((rows || []).map(r => r.collector_id).filter(Boolean))];
+  let saleMap = {};
+  if (collectorIds.length) {
+    const { data: sales } = await db.from('sales')
+      .select('*, sale_items(*)').eq('status', 'open').in('collector_id', collectorIds);
+    (sales || []).forEach(s => { saleMap[s.collector_id] = s; });
+  }
+  const leads = (rows || []).map(r => ({ ...r, artwork: artMap[r.artwork_handle] || null,
+    openSale: saleMap[r.collector_id] || null }));
   return <Shell active="pipeline">
     <div className="h1">Pipeline</div>
     <div className="sub">{leads.length} open · drag between stages · click a lead for the full picture</div>
