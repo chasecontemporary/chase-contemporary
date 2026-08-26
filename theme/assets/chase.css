@@ -401,3 +401,10 @@ body.exhpage main { min-height: 0; }
   .vroom-slide { position: static; opacity: 1; transform: none; pointer-events: auto; margin: 60px 0; }
   .vroom-idx { display: none; }
 }
+
+
+/* collection grids: work + caption centered in cell (equal side padding) */
+.grid .card .im { justify-content: center; }
+.grid .card .im img { object-position: center bottom; }
+.grid .card .cap { margin-left: auto; margin-right: auto; }
+.grid .card .num { text-align: left; }
