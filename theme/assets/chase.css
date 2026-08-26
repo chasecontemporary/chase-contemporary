@@ -515,3 +515,35 @@ html[style*="--pagein-skip"] body { animation: none; }
 @media (max-width: 720px) { .props { grid-template-columns: 1fr; } }
 .prop .ph { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
 .prop .pb { font-size: 11px; letter-spacing: .04em; line-height: 2.1; color: var(--mute); margin-top: 10px; }
+
+
+/* ---------- press cards ---------- */
+.pcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--colgap);
+  row-gap: calc(var(--rowgap) * .8); max-width: 1240px; margin-bottom: 50px; }
+@media (max-width: 980px) { .pcards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .pcards { grid-template-columns: 1fr; } }
+.pcard { display: block; }
+.pcard .pim { overflow: hidden; aspect-ratio: 4 / 3; background: #f4f4f4; }
+.pcard .pim img { width: 100%; height: 100%; object-fit: cover; opacity: 0;
+  transition: opacity .6s ease, transform 1.4s var(--ease), filter 1.4s var(--ease); }
+.pcard .pim img.ld { opacity: 1; }
+.pcard:hover .pim img.ld { transform: scale(1.05); }
+.pcard .po { font-size: 10px; font-weight: 600; letter-spacing: .06em; margin-top: 16px;
+  color: var(--mute); transition: color .3s ease; }
+.pcard:hover .po { color: var(--ink); }
+.pcard .ph2 { font-size: 11.5px; font-weight: 500; letter-spacing: .04em; line-height: 1.9; margin-top: 8px; }
+.pcard .ph2 span { background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat; background-size: 0% 1px; background-position: 0 92%;
+  transition: background-size .6s var(--ease); }
+.pcard:hover .ph2 span { background-size: 100% 1px; }
+.pcards .pcard:nth-child(3n+2) { transition-delay: .07s; }
+.pcards .pcard:nth-child(3n+3) { transition-delay: .14s; }
+
+/* bernie ledger */
+.bernie-list li a { display: flex; align-items: baseline; gap: 30px; width: 100%; }
+.bernie-list .o { flex: none; width: 170px; }
+.bernie-list .ar { margin-left: auto; color: var(--mute); font-size: 12px;
+  transition: transform .3s var(--ease), color .3s ease; }
+.bernie-list li:hover .ar { transform: translate(3px, -3px); color: var(--ink); }
+.bernie-list .h { color: var(--ink); }
+@media (max-width: 720px) { .bernie-list li a { flex-direction: column; gap: 6px; } .bernie-list .ar { display: none; } }
