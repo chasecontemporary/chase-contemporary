@@ -95,17 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
       document.body.classList.add('leaving');
       setTimeout(function () { location.href = href; }, 170);
     });
-    var hero = document.querySelector('.hero img');
-    if (hero) {
-      var hraf = null;
-      window.addEventListener('scroll', function () {
-        if (hraf) return;
-        hraf = requestAnimationFrame(function () {
-          hraf = null;
-          hero.style.transform = 'scale(1.06) translateY(' + (window.scrollY * 0.08) + 'px)';
-        });
-      }, { passive: true });
-    }
   }
 
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
