@@ -510,8 +510,8 @@ html[style*="--pagein-skip"] body { animation: none; }
 .press-list .h { font-size: 11px; letter-spacing: .04em; color: var(--mute); line-height: 1.9; }
 @media (max-width: 720px) { .press-list li { flex-direction: column; gap: 6px; } .press-list .o { width: auto; } }
 
-.props { display: grid; grid-template-columns: repeat(2, minmax(0, 560px));
-  justify-content: start; gap: 44px var(--colgap); margin-top: calc(var(--sp) * .7); }
+.props { display: grid; grid-template-columns: minmax(300px, 430px) minmax(0, 780px);
+  gap: 44px clamp(48px, 7vw, 140px); margin-top: calc(var(--sp) * .7); }
 .prop .pb { max-width: 480px; }
 @media (max-width: 720px) { .props { grid-template-columns: 1fr; } }
 .prop .ph { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
