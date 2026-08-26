@@ -1,0 +1,2 @@
+invoice_number,client_email,date,status,item_description,item_price,paid
+500,import.test@dvn.design,2024-11-02,Closed,Import Test Work by Test Artist,12500,Yes

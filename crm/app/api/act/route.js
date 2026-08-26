@@ -2,17 +2,20 @@ import { db } from '../../../lib/db';
 
 export async function POST(req) {
   const form = await req.formData();
+  const rep = decodeURIComponent((req.headers.get('cookie') || '').match(/cc_rep=([^;]+)/)?.[1] || 'rep');
   const action = form.get('action');
   const id = form.get('id');
   const back = form.get('back') || '/today';
   if (action === 'claim') {
-    await db.from('inquiries').update({ owner: form.get('owner') }).eq('id', id);
+    await db.from('inquiries').update({ owner: rep }).eq('id', id);
   } else if (action === 'contacted') {
-    await db.from('inquiries').update({ status: 'contacted', contacted_at: new Date().toISOString() }).eq('id', id);
-    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'contacted', actor: form.get('owner') || 'rep' });
+    const { data: cur } = await db.from('inquiries').select('owner').eq('id', id).single();
+    await db.from('inquiries').update({ status: 'contacted', contacted_at: new Date().toISOString(),
+      owner: cur?.owner || rep }).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'contacted', actor: rep });
   } else if (action === 'status') {
     await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
-    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: 'rep' });
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: rep });
   } else if (action === 'rule_add') {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
@@ -44,9 +47,9 @@ export async function POST(req) {
       amount_cents: Math.round(Number(form.get('amount') || 0) * 100),
       purchased_at: form.get('date') || new Date().toISOString().slice(0, 10), source: 'manual' });
     await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
-      kind: 'purchase_logged', body: `${form.get('title')} · $${form.get('amount')}`, actor: 'rep' });
+      kind: 'purchase_logged', body: `${form.get('title')} · $${form.get('amount')}`, actor: rep });
   } else if (action === 'note') {
-    await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: 'rep' });
+    await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep });
   }
   return new Response(null, { status: 302, headers: { Location: back } });
 }

@@ -1,2 +1,5 @@
 SECRETS.local.md
 .DS_Store
+
+# real exports (PII) never in git
+data/

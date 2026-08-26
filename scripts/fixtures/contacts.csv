@@ -1,0 +1,3 @@
+salutation,firstname,lastname,spouse_first_name,spouse_last_name,email,is_subscribed,billing_address_line1,billing_city,billing_state,billing_zip,billing_country,phone_mobile,company,tags,artist_interests,origin,notes,import_key
+Mr.,Import,Testman,Ann,Testman,import.test@dvn.design,Yes,1 Ocean Blvd,Palm Beach,FL,33480,USA,561-555-0100,Testco,"vip, miami-2023",Richard Hambleton,Art Miami,met at booth,AC-1001
+,Second,Person,,,second.import@dvn.design,No,,New York,NY,,USA,,,,,Website,,AC-1002

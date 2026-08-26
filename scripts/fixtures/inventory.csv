@@ -1,0 +1,2 @@
+title,inventory_number,sku,artist_first_name,artist_last_name,price,medium,height,width,units,active,type,import_key
+Import Test Work,9001,SKU-9001,Test,Artist,12500,Oil on canvas,40,30,in,Yes,Artwork,AC-INV-1
