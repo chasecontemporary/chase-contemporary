@@ -8,28 +8,25 @@
       {%- assign img = product.featured_image -%}
       {%- if img -%}
       <div class="hcar-slide">
-        <a class="hcar-work" href="{{ product.url | within: pele }}">
-          <img src="{{ img | image_url: width: 1600 }}"
-            srcset="{{ img | image_url: width: 1600 }} 1x, {{ img | image_url: width: 2400 }} 2x"
-            sizes="86vw" width="{{ img.width }}" height="{{ img.height }}"
+        <a class="hcar-work" href="{{ product.url | within: pele }}"
+           data-artist="{{ product.vendor | escape }}" data-title="{{ product.title | escape }}">
+          <img src="{{ img | image_url: width: 1800 }}"
+            srcset="{{ img | image_url: width: 1800 }} 1x, {{ img | image_url: width: 2800 }} 2x"
+            sizes="92vw" width="{{ img.width }}" height="{{ img.height }}"
             alt="{{ product.title | escape }}" loading="eager"
             {% if forloop.first %}fetchpriority="high"{% endif %}
             decoding="async" onload="this.classList.add('ld')">
         </a>
-        <div class="hcar-cap">
-          <span class="a">{{ product.vendor }}</span>
-          <span class="t">{{ product.title }}</span>
-        </div>
       </div>
       {%- endif -%}
       {%- endfor -%}
     </div>
-    <button class="hcar-arrow l" aria-label="Previous">&#8249;</button>
-    <button class="hcar-arrow r" aria-label="Next">&#8250;</button>
+    <button class="hcar-zone l" aria-label="Previous work"></button>
+    <button class="hcar-zone r" aria-label="Next work"></button>
   </div>
-  <div class="hcar-cta r in">
-    <span class="hcar-idx"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }}</span>
-    <a class="hcar-link" href="{{ pele.url }}">{{ pele.title | upcase }} · VIEW THE COLLECTION</a>
+  <div class="hero-cap" id="hcar-cap">
+    <span class="t"><span id="hc-artist">{{ pele.products.first.vendor }}</span> · <span id="hc-title">{{ pele.products.first.title }}</span></span>
+    <span class="s"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }} &nbsp;·&nbsp; <a class="hcar-link" href="{{ pele.url }}">VIEW THE COLLECTION</a></span>
   </div>
 {%- endif -%}
   <div class="statement r">HAND-SIGNED ORIGINALS · LIMITED EDITION WORKS · AUTHENTICATED ART</div>

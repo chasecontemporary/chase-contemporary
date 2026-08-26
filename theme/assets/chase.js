@@ -34,20 +34,36 @@ document.addEventListener('DOMContentLoaded', function () {
   /* landing carousel */
   var hc = document.getElementById('hcar-track');
   if (hc) {
+    var slides = hc.querySelectorAll('.hcar-slide');
     hc.querySelectorAll('img').forEach(function (im) {
       var w = new Image(); w.src = im.currentSrc || im.src;
       if (im.complete && im.naturalWidth) im.classList.add('ld');
     });
     var hpos = document.getElementById('hcar-pos');
+    var hart = document.getElementById('hc-artist'), htit = document.getElementById('hc-title');
+    var hcap = document.getElementById('hcar-cap');
+    var sizeHcap = function () {
+      var i = Math.round(hc.scrollLeft / hc.clientWidth);
+      var s = slides[i]; if (!s) return;
+      var im = s.querySelector('img');
+      if (im && hcap && im.clientWidth) hcap.style.width = im.clientWidth + 'px';
+    };
     var hupd = function () {
-      var i = Math.round(hc.scrollLeft / hc.clientWidth) + 1;
-      if (hpos) hpos.textContent = (i < 10 ? '0' : '') + i;
+      var i = Math.round(hc.scrollLeft / hc.clientWidth);
+      var s = slides[i]; if (!s) return;
+      var a = s.querySelector('.hcar-work');
+      if (hpos) hpos.textContent = ((i + 1) < 10 ? '0' : '') + (i + 1);
+      if (a && hart) hart.textContent = a.getAttribute('data-artist') || '';
+      if (a && htit) htit.textContent = a.getAttribute('data-title') || '';
+      sizeHcap();
     };
     hc.addEventListener('scroll', function(){ requestAnimationFrame(hupd); }, { passive: true });
+    window.addEventListener('load', sizeHcap);
+    window.addEventListener('resize', function(){ setTimeout(sizeHcap, 120); }, { passive: true });
     var hby = function (d) { hc.scrollBy({ left: d * hc.clientWidth, behavior: 'smooth' }); };
-    var hl = document.querySelector('.hcar-arrow.l'), hr = document.querySelector('.hcar-arrow.r');
-    if (hl) hl.addEventListener('click', function(){ hby(-1); });
-    if (hr) hr.addEventListener('click', function(){ hby(1); });
+    var zl = document.querySelector('.hcar-zone.l'), zr = document.querySelector('.hcar-zone.r');
+    if (zl) zl.addEventListener('click', function(){ hby(-1); });
+    if (zr) zr.addEventListener('click', function(){ hby(1); });
     hupd();
   }
 
