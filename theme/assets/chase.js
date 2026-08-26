@@ -132,11 +132,29 @@ document.addEventListener('DOMContentLoaded', function () {
           if (r.bottom < -100 || r.top > vh + 100) return;
           var p = (vh * 0.82 - r.top) / (r.height + vh * 0.25);
           p = Math.max(0, Math.min(1, p));
-          var n = Math.round(p * el._spans.length);
+          var n = Math.max(Math.round(p * el._spans.length), el._floor || 0);
           for (var i = 0; i < el._spans.length; i++) el._spans[i].classList.toggle('on', i < n);
         });
       };
       window.addEventListener('scroll', function(){ requestAnimationFrame(inkTick); }, { passive: true });
+      /* elements visible at load: timed cascade instead of instant */
+      var vh0 = window.innerHeight;
+      inks.forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.top < vh0 * 0.85 && r.bottom > 0) {
+          el._floor = 0;
+          var t0 = null, dur = 1200 + el._spans.length * 6;
+          var step = function (ts) {
+            if (!t0) t0 = ts;
+            var q = Math.min(1, (ts - t0) / dur);
+            q = 1 - Math.pow(1 - q, 2.2);
+            el._floor = Math.round(q * el._spans.length);
+            inkTick();
+            if (q < 1) requestAnimationFrame(step);
+          };
+          setTimeout(function(){ requestAnimationFrame(step); }, 350);
+        }
+      });
       inkTick();
     }
   }
