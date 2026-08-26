@@ -12,6 +12,7 @@
   {{ content_for_header }}
 </head>
 <body>
+<a class="skip" href="#main">SKIP TO CONTENT</a>
 <header>
   <a class="mark" href="{{ routes.root_url }}">CHASE CONTEMPORARY</a>
   <nav>
@@ -21,7 +22,7 @@
     <a href="{{ pages.contact.url | default: '/pages/contact' }}" {% if page.handle == 'contact' %}class="on"{% endif %}>CONTACT</a>
   </nav>
 </header>
-<main>{{ content_for_layout }}</main>
+<main id="main">{{ content_for_layout }}</main>
 <footer><div class="wrap">
   <div class="col"><b>CHASE CONTEMPORARY</b><br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
   <div class="col"><b>CONTACT</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>{{ shop.email | default: 'INFO@CHASECONTEMPORARY.COM' }}</div>

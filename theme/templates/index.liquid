@@ -5,7 +5,7 @@
   <a class="hero r in" href="{{ pele.url }}">
     <img class="fx" src="{{ hero.featured_image | image_url: width: 1600 }}" alt="{{ pele.title | escape }}"
       width="{{ hero.featured_image.width }}" height="{{ hero.featured_image.height }}"
-      decoding="async" onload="this.classList.add('ld')">
+      decoding="async" fetchpriority="high" onload="this.classList.add('ld')">
   </a>
   <div class="hero-cap"><span class="t">{{ pele.title }} · A COLLECTION</span><span class="s">CURRENT EXHIBITION</span></div>
   {%- endif -%}

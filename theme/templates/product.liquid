@@ -13,6 +13,7 @@
       <img class="fx" src="{{ img | image_url: width: 1400 }}"
         srcset="{{ img | image_url: width: 1400 }} 1x, {{ img | image_url: width: 2400 }} 2x"
         sizes="(max-width: 880px) 92vw, 60vw" width="{{ img.width }}" height="{{ img.height }}"
+        data-zoom="{{ img | image_url: width: 2400 }}" fetchpriority="high"
         alt="{{ product.title | escape }}" decoding="async" onload="this.classList.add('ld')">
       {%- endif -%}
     </div>
@@ -25,7 +26,7 @@
       <div class="meta">{{ product.description | strip_html | truncate: 200 | replace: '—', ',' | replace: '–', ',' }}</div>
       <div class="price">{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}Price on request{% endif %}</div>
       <div class="status">{% if product.available %}AVAILABLE{% else %}SOLD{% endif %}</div>
-      <button class="btn-inq" id="inqbtn" onclick="inq()">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</button>
+      <button class="btn-inq" id="inqbtn" aria-expanded="false" aria-haspopup="dialog" onclick="inq()">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</button>
       {%- unless is_edition -%}
       <div class="alt-acts" id="altacts"><button onclick="inqPre('hold')">PLACE A 72-HOUR HOLD</button></div>
       {%- endunless -%}
@@ -95,8 +96,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   document.body.classList.add('workpage');
-  var l = document.getElementById('lb');
-  if (l) l.innerHTML = '<img src="{{ product.featured_image | image_url: width: 2400 }}" alt="{{ product.title | escape }}">';
   {% if form.posted_successfully? %}inq();{% endif %}
 });
 </script>

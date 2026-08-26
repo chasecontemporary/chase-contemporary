@@ -1,11 +1,13 @@
 
-:root { --ink: #111; --mute: #79766f; --hair: #eceae6; --pad: 72px; --colgap: 44px; --rowgap: 88px; --sp: 96px; }
+:root { --ink: #111; --mute: #79766f; --hair: #eceae6; --pad: 72px; --colgap: 44px; --rowgap: 88px; --sp: 96px;
+        --ease: cubic-bezier(.2,.6,.2,1); --fast: .18s; --dur: .34s; --slow: .6s; }
 @media (max-width: 1080px) { :root { --pad: 44px; } }
 @font-face { font-family: 'NSN'; src: url('nimbus-sans-novus-regular.ttf'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'NSN'; src: url('nimbus-sans-novus-medium.ttf'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'NSN'; src: url('nimbus-sans-novus-light.ttf'); font-weight: 300; font-display: swap; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
 html { scroll-behavior: smooth; }
 body { font-family: 'NSN', 'Helvetica Neue', Arial, sans-serif; background: #fff; color: var(--ink);
        -webkit-font-smoothing: antialiased; text-transform: uppercase;
@@ -248,3 +250,45 @@ footer .col b { color: var(--ink); font-weight: 500; }
               padding: 7px 0; width: 100%; outline: none; text-transform: none; background: transparent; }
 .news button { border: 0; background: none; font-family: inherit; font-size: 11px; cursor: pointer;
                color: var(--ink); padding: 0 0 4px; }
+
+
+/* ---------- expert polish layer ---------- */
+@media (max-width: 880px) {
+  .inq input, .inq textarea, .inq select, .news input { font-size: 16px; letter-spacing: .02em; }
+  nav a { padding: 12px 4px; margin: -12px -4px; }
+}
+
+/* image ground: no white flash while art loads */
+.card .im, .work-img { background: #f7f6f3; }
+.card .im img, .work-img img { background: #f7f6f3; }
+img.fx.ld { background: transparent; }
+
+/* press states */
+.btn-inq:active { transform: scale(.992); }
+.btn-inq[disabled] { opacity: .55; cursor: default; }
+.act:active, .alt-acts button:active { opacity: .6; }
+
+/* reveal stagger: second column trails by a beat */
+.grid .card:nth-child(2n) { transition-delay: .07s; }
+.feat > :nth-child(2) .card, .feat > :nth-child(4) .card { transition-delay: .08s; }
+
+/* drawer content lands a beat after the panel */
+.drawer .inq, .drawer .inq-done { opacity: 0; transform: translateY(10px);
+  transition: opacity var(--dur) var(--ease) .16s, transform var(--dur) var(--ease) .16s; }
+.drawer.open .inq, .drawer.open .inq-done { opacity: 1; transform: none; }
+
+/* scrim depth */
+.scrim { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+
+/* form validation, monochrome */
+.inq input:user-invalid, .inq textarea:user-invalid { border-bottom-width: 2px; }
+
+/* skip link */
+.skip { position: fixed; top: -60px; left: 16px; z-index: 100; background: var(--ink); color: #fff;
+  font-size: 9px; letter-spacing: .24em; padding: 12px 18px; transition: top var(--fast) ease; }
+.skip:focus { top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .grid .card, .feat .card, .drawer .inq, .drawer .inq-done { transition-delay: 0s; }
+  .btn-inq:active { transform: none; }
+}
