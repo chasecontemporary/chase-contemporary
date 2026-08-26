@@ -36,16 +36,30 @@
     <p class="ink-p" id="inkp">We bring together extraordinary works from some of the most compelling artists of our time, photography, painting, and mixed media selected for their artistic integrity, cultural resonance, and the stories they carry. Every piece in the collection is chosen because it endures.</p>
   </section>
   <div class="section-label r">SELECTED WORKS</div>
-  <div class="feat">
-    {%- assign featured = "raphael-mazzucco-vietnam-water-wheel-2015,raphael-mazzucco-new-mexico-2015,tunney-grattitude-2021-2,subject-and-object-2015,ole-aakjaer-universal-soldier-2018,shuishi-searching-2022" | split: "," -%}
-    {%- assign classes = "f-a,f-b,f-c,f-d,f-e,f-f" | split: "," -%}
-    {%- for h in featured -%}
-      {%- assign fp = all_products[h] -%}
-      {%- if fp and fp.featured_image -%}
-        <div class="{{ classes[forloop.index0] }}">{% render 'card', card_product: fp %}</div>
-      {%- endif -%}
-    {%- endfor -%}
+  </div><!-- /wrap: corridor runs full-bleed -->
+  <div class="corr r in" id="corr">
+    <div class="corr-track" id="corr-track">
+      {%- assign shown = 0 -%}
+      {%- for product in collections.all.products limit: 60 -%}
+        {%- assign img = product.featured_image -%}
+        {%- if img and img.width >= 1600 and img.height >= 1200 and product.type != 'Print' and shown < 14 -%}
+        {%- assign vhandle = product.vendor | handleize -%}
+        <div class="corr-item">
+          <a href="{{ product.url }}" draggable="false">
+            <img src="{{ img | image_url: width: 1100 }}"
+              srcset="{{ img | image_url: width: 1100 }} 1x, {{ img | image_url: width: 2048 }} 2x"
+              sizes="40vw" width="{{ img.width }}" height="{{ img.height }}"
+              alt="{{ product.title | escape }}" loading="lazy" decoding="async" draggable="false"
+              onload="this.classList.add('ld')">
+            <div class="corr-cap"><span class="a">{{ product.vendor }}</span><span class="t">{{ product.title }}</span></div>
+          </a>
+        </div>
+        {%- assign shown = shown | plus: 1 -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
   </div>
+  <div class="wrap">
   <div class="section-label r">ARTISTS</div>
   <ul class="index-list r">
     {%- for c in collections -%}

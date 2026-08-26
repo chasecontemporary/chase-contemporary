@@ -430,3 +430,20 @@ header { view-transition-name: site-header; }
 }
 
 html[style*="--pagein-skip"] body { animation: none; }
+
+
+/* ---------- infinite corridor ---------- */
+.corr { overflow: hidden; cursor: grab; margin-top: 8px; }
+.corr.dragging { cursor: grabbing; }
+.corr-track { display: flex; align-items: flex-end; gap: 7vw; padding: 10px var(--pad) 0;
+  width: max-content; will-change: transform; }
+.corr-item { flex: none; }
+.corr-item a { display: block; }
+.corr-item img { height: 44vh; width: auto; max-width: 70vw; object-fit: contain;
+  opacity: 0; transition: opacity .6s ease; user-select: none; -webkit-user-drag: none; }
+.corr-item img.ld { opacity: 1; }
+.corr-item a:hover img.ld { opacity: .95; }
+.corr-cap { margin-top: 13px; }
+.corr-cap .a { font-size: 10.5px; font-weight: 600; letter-spacing: .04em; }
+.corr-cap .t { font-size: 10px; letter-spacing: .03em; color: var(--mute); margin-left: 9px; }
+@media (max-width: 720px) { .corr-item img { height: 32vh; max-width: 82vw; } .corr-track { gap: 9vw; } }
