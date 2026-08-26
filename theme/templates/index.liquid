@@ -36,12 +36,12 @@
   </section>
   <div class="section-label r">SELECTED WORKS</div>
   <div class="feat">
-    {%- assign shown = 0 -%}
-    {%- assign classes = 'f-a,f-b,f-c,f-d,f-e,f-f' | split: ',' -%}
-    {%- for product in collections.all.products limit: 30 -%}
-      {%- if product.featured_image and product.featured_image.width >= 1600 and product.featured_image.height >= 1200 and product.type != 'Print' and shown < 6 -%}
-        <div class="{{ classes[shown] }}">{% render 'card', card_product: product %}</div>
-        {%- assign shown = shown | plus: 1 -%}
+    {%- assign featured = "raphael-mazzucco-vietnam-water-wheel-2015,raphael-mazzucco-new-mexico-2015,tunney-grattitude-2021-2,subject-and-object-2015,ole-aakjaer-universal-soldier-2018,shuishi-searching-2022" | split: "," -%}
+    {%- assign classes = "f-a,f-b,f-c,f-d,f-e,f-f" | split: "," -%}
+    {%- for h in featured -%}
+      {%- assign fp = all_products[h] -%}
+      {%- if fp and fp.featured_image -%}
+        <div class="{{ classes[forloop.index0] }}">{% render 'card', card_product: fp %}</div>
       {%- endif -%}
     {%- endfor -%}
   </div>
