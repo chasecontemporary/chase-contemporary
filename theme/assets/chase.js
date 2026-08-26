@@ -59,30 +59,12 @@ document.addEventListener('DOMContentLoaded', function () {
   /* gallery view: A = structured auto-carousel, B = staggered swipe canvas */
   var fca = document.getElementById('fcanvas'), fct = document.getElementById('fc-track');
   if (fca && fct) {
-    var gmode = 'b';
-    try {
-      var qp = new URLSearchParams(location.search).get('gallery');
-      if (qp === 'a' || qp === 'b') { gmode = qp; sessionStorage.setItem('ccgal', qp); }
-      else gmode = sessionStorage.getItem('ccgal') || 'b';
-    } catch (e) {}
+    var gmode = 'a';
     var fitems = Array.prototype.slice.call(fct.children);
     fitems.sort(function(){ return Math.random() - 0.5; });
     fct.innerHTML = '';
-    if (gmode === 'a') {
-      fct.classList.add('fc-row');
-      fitems.forEach(function (it) { fct.appendChild(it); });
-    } else {
-      var FCLS = ['f-a','f-b','f-c','f-d','f-e','f-f'];
-      for (var pi = 0; pi < fitems.length; pi += 6) {
-        var panel = document.createElement('div'); panel.className = 'fc-panel';
-        var grid = document.createElement('div'); grid.className = 'fc-grid';
-        fitems.slice(pi, pi + 6).forEach(function (it, k) {
-          var wrap = document.createElement('div'); wrap.className = FCLS[k] || 'f-c';
-          wrap.appendChild(it); grid.appendChild(wrap);
-        });
-        panel.appendChild(grid); fct.appendChild(panel);
-      }
-    }
+    fct.classList.add('fc-row');
+    fitems.forEach(function (it) { fct.appendChild(it); });
     var fBase = 0;
     Array.prototype.slice.call(fct.children).forEach(function (p) {
       var c = p.cloneNode(true); c.setAttribute('aria-hidden', 'true'); fct.appendChild(c);
