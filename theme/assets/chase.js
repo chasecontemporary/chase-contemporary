@@ -31,6 +31,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  /* hero caption bound to artwork width */
+  var hero = document.querySelector('.hero img'), hcap = document.querySelector('.hero-cap');
+  if (hero && hcap) {
+    var sizeHero = function () { if (hero.clientWidth) hcap.style.width = hero.clientWidth + 'px'; };
+    sizeHero(); hero.addEventListener('load', sizeHero);
+    window.addEventListener('resize', function(){ setTimeout(sizeHero, 100); }, { passive: true });
+  }
+
+  /* exhibition room */
+  var exh = document.getElementById('exh');
+  if (exh) {
+    document.body.classList.add('exhpage');
+    var slides = exh.querySelectorAll('.exh-slide');
+    var pos = document.getElementById('exh-pos');
+    var upd = function () {
+      var i = Math.round(exh.scrollLeft / exh.clientWidth) + 1;
+      if (pos) pos.textContent = (i < 10 ? '0' : '') + i;
+    };
+    exh.addEventListener('scroll', function(){ requestAnimationFrame(upd); }, { passive: true });
+    exh.addEventListener('wheel', function (e) {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        exh.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+    var by = function (dir) { exh.scrollBy({ left: dir * exh.clientWidth, behavior: 'smooth' }); };
+    document.addEventListener('keydown', function (e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight') by(1);
+      if (e.key === 'ArrowLeft') by(-1);
+    });
+    var al = document.querySelector('.exh-arrow.l'), ar = document.querySelector('.exh-arrow.r');
+    if (al) al.addEventListener('click', function(){ by(-1); });
+    if (ar) ar.addEventListener('click', function(){ by(1); });
+    upd();
+  }
+
   /* caption width = rendered artwork width (wall-label rule) */
   var sizeCaps = function () {
     document.querySelectorAll('.card').forEach(function (c) {
@@ -39,6 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   };
   sizeCaps();
+  window.addEventListener('load', sizeCaps);
+  setTimeout(sizeCaps, 600);
   document.querySelectorAll('.card .cim img').forEach(function (im) {
     im.addEventListener('load', sizeCaps);
   });

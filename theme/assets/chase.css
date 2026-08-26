@@ -28,8 +28,7 @@ img.fx { opacity: 0; transition: opacity .7s ease; } img.fx.ld { opacity: 1; }
 html, body { overflow-x: hidden; }
 header { position: sticky; top: 0; z-index: 40; background: #fff; height: 84px;
          display: flex; align-items: center; justify-content: space-between;
-         padding: 0 var(--pad); border-bottom: 1px solid transparent; transition: border-color .3s ease; }
-header.sc { border-bottom-color: var(--hair); }
+         padding: 0 var(--pad); }
 .mark { display: block; line-height: 0; }
 .mark img { height: 46px; width: auto; display: block; }
 nav { display: flex; align-items: center; gap: 34px; }
@@ -84,7 +83,7 @@ main { min-height: 62vh; }
 .hero { display: block; overflow: hidden; margin-top: 30px; }
 .hero img { width: 100%; max-height: 82vh; object-fit: contain; object-position: center; }
 .hero-cap { display: flex; justify-content: space-between; align-items: baseline;
-            margin-top: 18px; flex-wrap: wrap; gap: 8px; }
+            margin: 18px auto 0; flex-wrap: wrap; gap: 8px; max-width: 100%; }
 .hero-cap .t { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; }
 .hero-cap .s { font-size: 10px; letter-spacing: .04em; color: var(--mute); }
 .hero a:hover img { opacity: .96; } .hero img { transition: opacity .3s ease; }
@@ -296,3 +295,36 @@ img.fx.ld { background: transparent; }
   .grid .card, .feat .card, .drawer .inq, .drawer .inq-done { transition-delay: 0s; }
   .btn-inq:active { transform: none; }
 }
+
+
+/* ---------- exhibition room (signature collection) ---------- */
+.exh { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+       height: calc(100vh - 84px); scrollbar-width: none; overscroll-behavior-x: contain; }
+.exh::-webkit-scrollbar { display: none; }
+.exh-slide { flex: 0 0 100vw; scroll-snap-align: center; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; gap: 30px; padding: 0 9vw 40px; }
+.exh-work { display: block; line-height: 0; }
+.exh-slide img { max-height: 62vh; max-width: 78vw; width: auto; height: auto;
+                 opacity: 0; transition: opacity .7s ease; }
+.exh-slide img.ld { opacity: 1; }
+.exh-cap { text-align: center; }
+.exh-cap .artist { font-size: 12px; font-weight: 600; letter-spacing: .05em; }
+.exh-cap .title { font-size: 10.5px; letter-spacing: .03em; color: var(--mute); margin-top: 6px; }
+.exh-cap .price { font-size: 10.5px; letter-spacing: .03em; margin-top: 6px; }
+.exh-cap .go { display: inline-block; margin-top: 14px; font-size: 10px; font-weight: 600;
+               letter-spacing: .08em; border-bottom: 1px solid var(--ink); padding-bottom: 3px; }
+.exh-cap .go:hover { color: var(--mute); border-color: var(--mute); }
+.exh-idx { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+           font-size: 10px; letter-spacing: .06em; color: var(--mute); z-index: 30; }
+.exh-arrow { position: fixed; top: 50%; transform: translateY(-50%); z-index: 30; border: 0;
+             background: none; cursor: pointer; font-size: 26px; line-height: 1; color: var(--ink);
+             padding: 18px 14px; font-family: inherit; opacity: .8; transition: opacity .2s ease; }
+.exh-arrow:hover { opacity: 1; }
+.exh-arrow.l { left: 14px; } .exh-arrow.r { right: 14px; }
+@media (max-width: 720px) {
+  .exh { height: calc(100vh - 66px); }
+  .exh-slide img { max-width: 88vw; max-height: 56vh; }
+  .exh-arrow { display: none; }
+}
+body.exhpage footer { display: none; }
+body.exhpage main { min-height: 0; }
