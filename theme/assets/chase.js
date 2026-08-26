@@ -318,6 +318,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  /* engine bridge: mirror inquiry submissions into the CRM backbone */
+  var ENGINE = 'https://chase-engine.vercel.app/api/inquiry';
+  document.querySelectorAll('form#inq, form#cf').forEach(function (f) {
+    f.addEventListener('submit', function () {
+      try {
+        var payload = {};
+        new FormData(f).forEach(function (v, k) {
+          var m = k.match(/^contact\[(.+)\]$/);
+          payload[m ? m[1] : k] = v;
+        });
+        fetch(ENGINE, {
+          method: 'POST', keepalive: true,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(function(){});
+      } catch (e) {}
+    });
+  });
+
   /* branded dropdowns (delegated; supports dynamic lists) */
   document.addEventListener('click', function (e) {
     var opt = e.target.closest ? e.target.closest('.dd-list button') : null;

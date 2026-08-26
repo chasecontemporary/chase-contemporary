@@ -1,16 +1,26 @@
 import { db } from '../../../lib/db';
 
-const CORS = {
-  'Access-Control-Allow-Origin': 'https://www.chasecontemporary.com',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+const ORIGINS = [
+  'https://www.chasecontemporary.com',
+  'https://chasecontemporary.com',
+  'https://chasecontemporaryshop.myshopify.com',
+];
+const corsFor = (req) => {
+  const o = req.headers.get('origin');
+  return {
+    'Access-Control-Allow-Origin': ORIGINS.includes(o) ? o : ORIGINS[0],
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
 };
+let CORS = {};
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: CORS });
+export async function OPTIONS(req) {
+  return new Response(null, { status: 204, headers: corsFor(req) });
 }
 
 export async function POST(req) {
+  CORS = corsFor(req);
   let p;
   try { p = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
 
