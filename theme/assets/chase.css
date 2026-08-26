@@ -337,8 +337,8 @@ body.exhpage main { min-height: 0; }
 .hcar-track::-webkit-scrollbar { display: none; }
 .hcar-slide { flex: 0 0 100%; scroll-snap-align: center; }
 .hcar-work { display: block; line-height: 0; }
-.hcar-slide img { display: block; margin: 0 auto; max-height: 76vh; max-width: 100%;
-  width: auto; height: auto; opacity: 0; transition: opacity .5s ease; }
+.hcar-slide img { display: block; margin: 0 auto; height: 70vh; max-width: 92%;
+  width: auto; object-fit: contain; opacity: 0; transition: opacity .5s ease; }
 .hcar-slide img.ld { opacity: 1; }
 .hcar-zone { position: absolute; top: 0; bottom: 0; width: 24%; z-index: 4; border: 0;
   background: none; padding: 0; }
@@ -348,6 +348,6 @@ body.exhpage main { min-height: 0; }
 .hcar-link:hover { color: var(--mute); border-color: var(--mute); }
 #hcar-cap .t #hc-artist { font-weight: 600; }
 @media (max-width: 720px) {
-  .hcar-slide img { max-height: 54vh; }
+  .hcar-slide img { height: 50vh; }
   .hcar-zone { width: 30%; }
 }
