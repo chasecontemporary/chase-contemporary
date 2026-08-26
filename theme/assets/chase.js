@@ -2,6 +2,7 @@
 window.addEventListener('pageshow', function (e) {
   if (e.persisted) document.body.classList.remove('leaving');
 });
+if ('CSSViewTransitionRule' in window) document.documentElement.style.setProperty('--pagein-skip', '1');
 document.addEventListener('DOMContentLoaded', function () {
   /* header-hairline */
   var hd = document.querySelector('header');
@@ -223,15 +224,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!rm) {
-    document.addEventListener('click', function (e) {
-      var a = e.target.closest ? e.target.closest('a[href]') : null;
-      if (!a || a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      var href = a.getAttribute('href');
-      if (!href || href.indexOf('#') === 0 || /^(https?:|mailto:|tel:)/.test(href)) return;
-      e.preventDefault();
-      document.body.classList.add('leaving');
-      setTimeout(function () { location.href = href; }, 170);
-    });
+    if (!('CSSViewTransitionRule' in window)) {
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var href = a.getAttribute('href');
+        if (!href || href.indexOf('#') === 0 || /^(https?:|mailto:|tel:)/.test(href)) return;
+        e.preventDefault();
+        document.body.classList.add('leaving');
+        setTimeout(function () { location.href = href; }, 170);
+      });
+    }
   }
 
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
