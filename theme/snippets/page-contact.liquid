@@ -1,0 +1,143 @@
+<div class="wrap">
+  <div class="page-title r in">CONTACT</div>
+  <div class="page-sub r in">A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES</div>
+  <div class="section-label"></div>
+  <div class="csplit">
+  <div class="cleft r in">
+    <p class="big inkfx ink-p">FOR ACQUISITIONS, PRESS, AND ALL INQUIRIES, A MEMBER OF THE GALLERY RESPONDS WITHIN MINUTES.</p>
+    <a class="em" href="mailto:info@chasecontemporary.com">INFO@CHASECONTEMPORARY.COM</a>
+    <a class="ig" href="https://www.instagram.com/chasecontemporary/" target="_blank" rel="noopener">INSTAGRAM &#8599;</a>
+  </div>
+  <div class="cform r in">
+  {% form 'contact', id: 'cf' %}
+    {%- if form.posted_successfully? -%}
+      <div class="inq-done show">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
+    {%- else -%}
+    <div class="inq">
+      <label>WHAT BRINGS YOU TO THE GALLERY *</label>
+      <div class="dd" id="dd-purpose">
+        <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">SELECT</button>
+        <div class="dd-list" role="listbox">
+          <button type="button" data-v="Acquiring a work">ACQUIRING A WORK</button>
+          <button type="button" data-v="Press and media">PRESS &amp; MEDIA</button>
+          <button type="button" data-v="Trade partnership">TRADE PARTNERSHIP</button>
+          <button type="button" data-v="General inquiry">GENERAL INQUIRY</button>
+        </div>
+        <input type="hidden" name="contact[purpose]" id="cf-purpose">
+      </div>
+
+      <div class="cf-acq" id="cf-acq">
+        <div class="row2">
+          <div><label>ARTIST</label>
+            <div class="dd" id="dd-artist">
+              <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">ANY ARTIST</button>
+              <div class="dd-list" role="listbox">
+                <button type="button" data-v="">ANY ARTIST</button>
+                {%- for c in collections -%}
+                {%- unless c.handle == 'all' or c.handle == 'frontpage' or c.handle == 'summer-sale' -%}
+                <button type="button" data-v="{{ c.title | escape }}">{{ c.title | upcase }}</button>
+                {%- endunless -%}
+                {%- endfor -%}
+              </div>
+              <input type="hidden" name="contact[artist_interest]" id="cf-artist">
+            </div></div>
+          <div><label>WORK</label>
+            <div class="dd" id="dd-work">
+              <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">ANY WORK</button>
+              <div class="dd-list" role="listbox"><button type="button" data-v="">ANY WORK</button></div>
+              <input type="hidden" name="contact[artwork]" id="cf-work">
+            </div></div>
+        </div>
+        <div class="row2">
+          <div><label>COMFORTABLE RANGE</label>
+            <div class="dd">
+              <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">PREFER TO DISCUSS</button>
+              <div class="dd-list" role="listbox">
+                <button type="button" data-v="Prefer to discuss">PREFER TO DISCUSS</button>
+                <button type="button" data-v="Under $10,000">UNDER $10,000</button>
+                <button type="button" data-v="$10,000-25,000">$10,000&ndash;25,000</button>
+                <button type="button" data-v="$25,000-50,000">$25,000&ndash;50,000</button>
+                <button type="button" data-v="$50,000-100,000">$50,000&ndash;100,000</button>
+                <button type="button" data-v="$100,000+">$100,000+</button>
+              </div>
+              <input type="hidden" name="contact[budget_range]">
+            </div></div>
+          <div><label>TIMEFRAME</label>
+            <div class="dd">
+              <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">SELECT</button>
+              <div class="dd-list" role="listbox">
+                <button type="button" data-v="Ready now">READY NOW</button>
+                <button type="button" data-v="Within 3 months">WITHIN 3 MONTHS</button>
+                <button type="button" data-v="Just following">JUST FOLLOWING</button>
+              </div>
+              <input type="hidden" name="contact[timeframe]">
+            </div></div>
+        </div>
+      </div>
+
+      <div class="cf-press" id="cf-press">
+        <label for="cf-outlet">OUTLET / PUBLICATION</label>
+        <input id="cf-outlet" name="contact[outlet]">
+      </div>
+
+      <div class="row2">
+        <div><label for="cf-fn">FIRST NAME *</label><input id="cf-fn" name="contact[first_name]" required autocomplete="given-name"></div>
+        <div><label for="cf-ln">LAST NAME *</label><input id="cf-ln" name="contact[last_name]" required autocomplete="family-name"></div>
+      </div>
+      <div class="row2">
+        <div><label for="cf-e">EMAIL *</label><input id="cf-e" type="email" name="contact[email]" required autocomplete="email"></div>
+        <div><label for="cf-p">PHONE</label><input id="cf-p" type="tel" name="contact[phone]" autocomplete="tel"></div>
+      </div>
+      <div class="row2">
+        <div><label for="cf-c">CITY</label><input id="cf-c" name="contact[city]" autocomplete="address-level2"></div>
+        <div><label>HOW DID YOU FIND US</label>
+          <div class="dd">
+            <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">SELECT</button>
+            <div class="dd-list" role="listbox">
+              <button type="button" data-v="Instagram">INSTAGRAM</button>
+              <button type="button" data-v="Search">SEARCH</button>
+              <button type="button" data-v="Art fair">ART FAIR</button>
+              <button type="button" data-v="Press">PRESS</button>
+              <button type="button" data-v="Word of mouth">WORD OF MOUTH</button>
+            </div>
+            <input type="hidden" name="contact[source]">
+          </div></div>
+      </div>
+      <label for="cf-m">MESSAGE</label>
+      <textarea id="cf-m" name="contact[body]"></textarea>
+      <label class="ck"><input type="checkbox" name="contact[newsletter_opt_in]" value="yes" checked><span>KEEP ME INFORMED OF NEW WORKS AND GALLERY EXHIBITIONS</span></label>
+      <label class="ck"><input type="checkbox" name="contact[trade]" value="yes" id="cf-trade"><span>I AM PURCHASING ON BEHALF OF A CLIENT (TRADE)</span></label>
+      <input type="hidden" name="contact[page_journey]" id="cc-journey">
+      <input type="hidden" name="contact[referrer]" id="cc-ref">
+      <input type="hidden" name="contact[utm]" id="cc-utm">
+      <input type="hidden" name="contact[seconds_on_page]" id="cc-secs">
+      <input type="hidden" name="contact[timezone]" id="cc-tz">
+      <input type="hidden" name="contact[locale]" id="cc-loc">
+      <input type="hidden" name="contact[device]" id="cc-dev">
+      <button class="btn-inq" type="submit" style="margin-top:28px">SEND</button>
+      <div class="note">YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
+    </div>
+    {%- endif -%}
+  {% endform %}
+  </div>
+  </div>
+  <script type="application/json" id="cf-works">
+  {
+    {%- for c in collections -%}
+    {%- unless c.handle == 'all' or c.handle == 'frontpage' or c.handle == 'summer-sale' -%}
+    {{ c.title | json }}: [
+      {%- for product in c.products limit: 40 -%}
+      { "t": {{ product.title | json }}, "v": {{ product.vendor | json }} }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]{%- unless forloop.last -%},{%- endunless -%}
+    {%- endunless -%}
+    {%- endfor -%}
+  }
+  </script>
+  <div class="props">
+    <div class="prop r"><div class="ph">CURATED CONTEMPORARY ART</div><div class="pb">Every work in our collection is personally selected for its artistic merit, cultural resonance, and lasting value.</div></div>
+    <div class="prop r"><div class="ph">AUTHENTICATED WORKS</div><div class="pb">Each work is accompanied by a Chase Contemporary Certificate of Authenticity, providing full provenance documentation and our personal guarantee of quality and integrity.</div></div>
+    <div class="prop r"><div class="ph">EXPERT GUIDANCE</div><div class="pb">Our team is available to help you find the right work for your space, taste, and collection goals.</div></div>
+    <div class="prop r"><div class="ph">SECURE CHECKOUT</div><div class="pb">Shop with confidence. All transactions are encrypted and secure.</div></div>
+  </div>
+</div>
