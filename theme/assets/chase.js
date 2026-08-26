@@ -114,22 +114,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ink-in statement */
-  var inkp = document.getElementById('inkp');
-  if (inkp) {
-    var words = inkp.textContent.trim().split(/\s+/);
-    inkp.innerHTML = words.map(function (w) { return '<span class="w">' + w + '</span>'; }).join(' ');
-    var spans = inkp.querySelectorAll('.w');
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      spans.forEach(function (s) { s.classList.add('on'); });
-    } else {
+  /* ink-in text (any .inkfx element) */
+  var inks = Array.prototype.slice.call(document.querySelectorAll('.inkfx, #inkp'));
+  if (inks.length) {
+    var rmInk = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    inks.forEach(function (el) {
+      var words = el.textContent.trim().split(/\s+/);
+      el.innerHTML = words.map(function (w) { return '<span class="w">' + w + '</span>'; }).join(' ');
+      el._spans = el.querySelectorAll('.w');
+      if (rmInk) el._spans.forEach(function (s) { s.classList.add('on'); });
+    });
+    if (!rmInk) {
       var inkTick = function () {
-        var r = inkp.getBoundingClientRect();
         var vh = window.innerHeight;
-        var p = (vh * 0.82 - r.top) / (r.height + vh * 0.25);
-        p = Math.max(0, Math.min(1, p));
-        var n = Math.round(p * spans.length);
-        spans.forEach(function (s, i) { s.classList.toggle('on', i < n); });
+        inks.forEach(function (el) {
+          var r = el.getBoundingClientRect();
+          if (r.bottom < -100 || r.top > vh + 100) return;
+          var p = (vh * 0.82 - r.top) / (r.height + vh * 0.25);
+          p = Math.max(0, Math.min(1, p));
+          var n = Math.round(p * el._spans.length);
+          for (var i = 0; i < el._spans.length; i++) el._spans[i].classList.toggle('on', i < n);
+        });
       };
       window.addEventListener('scroll', function(){ requestAnimationFrame(inkTick); }, { passive: true });
       inkTick();
@@ -406,3 +411,12 @@ function sendInq(e){ e.preventDefault();
   document.getElementById('inq-done').classList.add('show'); }
 function newsl(e){ e.preventDefault(); e.target.innerHTML =
   '<span style="font-size:8px;letter-spacing:.22em;">THANK YOU</span>'; }
+
+function bioToggle(btn){
+  var m = btn.previousElementSibling;
+  var open = m.classList.toggle('open');
+  btn.textContent = open ? 'READ LESS' : 'CONTINUE READING';
+}
+function exToggle(head){
+  head.parentElement.classList.toggle('open');
+}

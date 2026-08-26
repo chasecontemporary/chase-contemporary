@@ -241,7 +241,7 @@ a.artist:hover::after { transform: scaleX(1); }
 .prose { max-width: 620px; font-size: 11.5px; letter-spacing: .04em; line-height: 2.3; }
 .prose p { margin-bottom: 26px; }
 footer { margin-top: calc(var(--sp) + 24px); }
-footer .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 34px;
+footer .wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 34px;
                padding-top: 52px; padding-bottom: 72px; }
 @media (max-width: 880px) { footer .wrap { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { footer .wrap { grid-template-columns: 1fr; } }
@@ -463,3 +463,55 @@ html[style*="--pagein-skip"] body { animation: none; }
 .dd-list button:hover, .dd-list button:focus-visible { background: var(--ink); color: #fff; outline: none; }
 .dd-list button + button { border-top: 1px solid var(--hair); }
 .dd-list button:hover + button { border-top-color: var(--ink); }
+
+
+/* ---------- editorial copy components ---------- */
+.bio { max-width: 820px; margin: 40px 0 6px; }
+.bio .ink-p { margin-top: 0; font-size: clamp(12px, 1.3vw, 17px); }
+.bio-more { max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .7s var(--ease), opacity .5s ease; }
+.bio-more.open { max-height: 3000px; opacity: 1; }
+.bio-more p { font-size: 11.5px; letter-spacing: .04em; line-height: 2.2; color: var(--ink);
+  margin-top: 20px; }
+.bio-toggle { border: 0; background: none; font-family: inherit; text-transform: uppercase;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em; color: var(--ink); cursor: pointer;
+  border-bottom: 1px solid var(--ink); padding: 0 0 3px; margin-top: 22px; }
+.bio-toggle:hover { color: var(--mute); border-color: var(--mute); }
+
+.exnow { max-width: 820px; }
+.exnow-t { display: block; font-size: 13px; font-weight: 600; letter-spacing: .05em; }
+.exnow .ink-p { font-size: clamp(12px, 1.3vw, 17px); margin: 18px 0 24px; }
+
+.exlist { max-width: 980px; margin-bottom: 40px; }
+.exrow { border-bottom: 1px solid var(--hair); }
+.exrow:first-child { border-top: 1px solid var(--hair); }
+.exrow-head { width: 100%; display: flex; align-items: baseline; gap: 26px; border: 0;
+  background: none; font-family: inherit; text-transform: uppercase; text-align: left;
+  padding: 19px 0; cursor: pointer; transition: padding .25s ease; }
+.exrow-head:hover { padding-left: 10px; }
+.exrow-head .y { font-size: 10px; letter-spacing: .05em; color: var(--mute); flex: none; width: 44px; }
+.exrow-head .n { font-size: 12px; font-weight: 600; letter-spacing: .05em; flex: 1; line-height: 1.7; }
+.exrow-head .x { font-size: 14px; font-weight: 400; color: var(--mute);
+  transition: transform .35s var(--ease); }
+.exrow.open .exrow-head .x { transform: rotate(45deg); }
+.exrow-body { max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .6s var(--ease), opacity .45s ease; }
+.exrow.open .exrow-body { max-height: 700px; opacity: 1; }
+.exrow-body p { font-size: 11.5px; letter-spacing: .04em; line-height: 2.2; color: var(--ink);
+  max-width: 720px; padding: 2px 0 24px 70px; }
+@media (max-width: 720px) { .exrow-body p { padding-left: 0; } }
+
+.press-list { list-style: none; max-width: 980px; margin-bottom: 40px; }
+.press-list li { display: flex; align-items: baseline; gap: 30px; padding: 19px 0;
+  border-bottom: 1px solid var(--hair); transition: padding .25s ease; }
+.press-list li:first-child { border-top: 1px solid var(--hair); }
+.press-list li:hover { padding-left: 10px; }
+.press-list .o { font-size: 12px; font-weight: 600; letter-spacing: .05em; flex: none; width: 170px; }
+.press-list .h { font-size: 11px; letter-spacing: .04em; color: var(--mute); line-height: 1.9; }
+@media (max-width: 720px) { .press-list li { flex-direction: column; gap: 6px; } .press-list .o { width: auto; } }
+
+.props { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 60px; max-width: 980px;
+  margin-top: calc(var(--sp) * .7); }
+@media (max-width: 720px) { .props { grid-template-columns: 1fr; } }
+.prop .ph { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+.prop .pb { font-size: 11px; letter-spacing: .04em; line-height: 2.1; color: var(--mute); margin-top: 10px; }

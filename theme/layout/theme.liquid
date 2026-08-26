@@ -18,7 +18,7 @@
     <img src="{{ 'chase-logo-stacked.png' | asset_url }}" alt="Chase Contemporary" height="46"></a>
   <nav>
     <a href="{{ routes.collections_url }}" {% if template contains 'list-collections' %}class="on"{% endif %}>ARTISTS</a>
-    <a href="{{ routes.collections_url }}/pele" {% if collection.handle == 'pele' %}class="on"{% endif %}>EXHIBITIONS</a>
+    <a href="/pages/exhibitions" {% if page.handle == 'exhibitions' %}class="on"{% endif %}>EXHIBITIONS</a>
     <a href="{{ pages.about.url | default: '/pages/about' }}" {% if page.handle == 'about' %}class="on"{% endif %}>ABOUT</a>
     <a href="{{ pages.contact.url | default: '/pages/contact' }}" {% if page.handle == 'contact' %}class="on"{% endif %}>CONTACT</a>
   </nav>
@@ -26,6 +26,7 @@
 <main id="main">{{ content_for_layout }}</main>
 <footer><div class="wrap">
   <div class="col"><b>CONTACT</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>{{ shop.email | default: 'INFO@CHASECONTEMPORARY.COM' }}</div>
+  <div class="col"><b>SERVICES</b><br><a href="/pages/press">PRESS</a><br><a href="/pages/delivery-returns">DELIVERY &amp; RETURNS</a><br><a href="/pages/payment-finance">PAYMENT &amp; FINANCE</a></div>
   <div class="col news"><b>NEWSLETTER</b>
     {% form 'customer', class: 'nlform' %}
       <input type="hidden" name="contact[tags]" value="newsletter">
