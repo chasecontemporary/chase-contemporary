@@ -59,7 +59,7 @@
 <div class="drawer" id="drawer" role="dialog" aria-label="Inquiry">
   <button class="dx" onclick="closeInq()">CLOSE</button>
   {% form 'contact', id: 'inq', class: 'inq' %}
-    <div class="fhead">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %} · {{ product.title }}</div>
+    <div class="fhead">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}<br>{{ product.title }}</div>
     {%- if form.posted_successfully? -%}
       <div class="inq-done show">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     {%- else -%}
