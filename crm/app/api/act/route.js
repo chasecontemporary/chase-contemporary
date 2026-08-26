@@ -17,6 +17,27 @@ export async function POST(req) {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
     await db.from('commission_rules').update({ active: form.get('active') === '1' }).eq('id', id);
+  } else if (action === 'invoice_add') {
+    const cents = Math.round(Number(form.get('amount') || 0) * 100);
+    await db.from('invoices').insert({
+      collector_id: form.get('collector_id') || null,
+      title: form.get('title'), artist: form.get('artist') || null,
+      amount_cents: cents, due_at: form.get('due') || null, notes: form.get('notes') || null });
+  } else if (action === 'invoice_paid') {
+    const { data: inv } = await db.from('invoices')
+      .update({ status: 'paid', paid_at: new Date().toISOString(), method: form.get('method') || null })
+      .eq('id', id).select().single();
+    if (inv) {
+      const { data: pay } = await db.from('payments')
+        .insert({ amount_cents: inv.amount_cents, method: inv.method, status: 'pending' })
+        .select().single();
+      if (pay) await db.from('payments').update({ status: 'settled', settled_at: new Date().toISOString() }).eq('id', pay.id);
+      if (inv.collector_id) await db.from('purchases').insert({
+        collector_id: inv.collector_id, title: inv.title, artist: inv.artist,
+        amount_cents: inv.amount_cents, source: 'engine' });
+    }
+  } else if (action === 'invoice_void') {
+    await db.from('invoices').update({ status: 'void' }).eq('id', id);
   } else if (action === 'purchase_add') {
     await db.from('purchases').insert({
       collector_id: id, title: form.get('title'), artist: form.get('artist'),

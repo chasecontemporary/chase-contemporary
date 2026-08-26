@@ -1,6 +1,6 @@
 export default function Shell({ active, children, counts = {} }) {
   const items = [['today','Today'],['pipeline','Pipeline'],['collectors','Collectors'],
-                 ['inventory','Inventory'],['commissions','Commissions'],['board','Board']];
+                 ['inventory','Inventory'],['finance','Finance'],['commissions','Commissions'],['board','Board']];
   return <div className="shell">
     <aside className="side">
       <div className="brand">Chase Engine<small>Chase Contemporary</small></div>

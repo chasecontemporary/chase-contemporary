@@ -1,0 +1,91 @@
+import Shell from '../../components/Shell';
+import { db } from '../../lib/db';
+export const dynamic = 'force-dynamic';
+const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
+
+export default async function Finance() {
+  const [{ data: invs }, { data: collectors }] = await Promise.all([
+    db.from('invoices').select('*, collectors(first_name, last_name)').order('issued_at', { ascending: false }).limit(200),
+    db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
+  ]);
+  const all = invs || [];
+  const open = all.filter(i => i.status === 'open');
+  const paid = all.filter(i => i.status === 'paid');
+  const ar = open.reduce((s, i) => s + i.amount_cents, 0);
+  const now = Date.now();
+  const bucket = (i) => {
+    const d = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
+    return d <= 30 ? '0-30' : d <= 60 ? '31-60' : d <= 90 ? '61-90' : '90+';
+  };
+  const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+  open.forEach(i => { buckets[bucket(i)] += i.amount_cents; });
+  const yr = new Date().getFullYear();
+  const collectedYtd = paid.filter(i => i.paid_at && new Date(i.paid_at).getFullYear() === yr)
+    .reduce((s, i) => s + i.amount_cents, 0);
+  const avgDays = paid.filter(i => i.paid_at).length
+    ? Math.round(paid.filter(i => i.paid_at).reduce((s, i) =>
+        s + (new Date(i.paid_at) - new Date(i.issued_at)) / 86400000, 0) / paid.filter(i => i.paid_at).length)
+    : null;
+  return <Shell active="finance">
+    <div className="h1">Finance</div>
+    <div className="sub">Open AR, invoice pipeline, and collections — live</div>
+    <div className="stats">
+      <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Outstanding AR ({open.length} open)</div></div>
+      <div className="stat"><div className="n">{usd(collectedYtd)}</div><div className="l">Collected this year</div></div>
+      <div className="stat"><div className="n">{avgDays === null ? '—' : avgDays + 'd'}</div><div className="l">Avg days to pay</div></div>
+      <div className="stat"><div className="n">{usd(buckets['90+'] + buckets['61-90'])}</div><div className="l">AR over 60 days</div></div>
+    </div>
+    <div className="stats">
+      {Object.entries(buckets).map(([k, v]) => <div className="stat" key={k}>
+        <div className="n" style={{fontSize:20}}>{usd(v)}</div><div className="l">Aging {k} days</div></div>)}
+    </div>
+
+    <form method="POST" action="/api/act" className="inline-form" style={{marginTop:24, flexWrap:'wrap'}}>
+      <input type="hidden" name="action" value="invoice_add"/>
+      <input type="hidden" name="back" value="/finance"/>
+      <select name="collector_id" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10,
+        fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+        <option value="">No collector</option>
+        {(collectors||[]).map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
+      </select>
+      <input name="title" placeholder="Work / description" required style={{flex:1, minWidth:180}}/>
+      <input name="artist" placeholder="Artist" style={{width:140}}/>
+      <input name="amount" placeholder="Amount $" type="number" step="0.01" required style={{width:120}}/>
+      <input name="due" type="date" style={{width:150}}/>
+      <button className="btn mini">Create invoice</button>
+    </form>
+
+    <div className="tblcard"><table className="tbl"><thead><tr>
+      <th>#</th><th>Collector</th><th>Work</th><th>Amount</th><th>Issued</th><th>Age</th><th>Status</th><th></th>
+    </tr></thead><tbody>
+      {all.map(i => {
+        const age = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
+        return <tr key={i.id}>
+        <td style={{fontVariantNumeric:'tabular-nums'}}>{String(i.invoice_number).padStart(4,'0')}</td>
+        <td style={{fontWeight:600}}>{i.collectors ? i.collectors.first_name + ' ' + i.collectors.last_name : '—'}</td>
+        <td>{i.title}{i.artist ? <span style={{color:'#86868b'}}> · {i.artist}</span> : null}</td>
+        <td style={{fontVariantNumeric:'tabular-nums', fontWeight:600}}>{usd(i.amount_cents)}</td>
+        <td>{new Date(i.issued_at).toLocaleDateString()}</td>
+        <td style={{color: i.status === 'open' && age > 30 ? '#ff3b30' : '#86868b'}}>{age}d</td>
+        <td>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
+          : i.status === 'void' ? <span className="pill">Void</span>
+          : <span className="pill blue">Open</span>}</td>
+        <td>{i.status === 'open' && <div style={{display:'flex', gap:6}}>
+          <form method="POST" action="/api/act">
+            <input type="hidden" name="action" value="invoice_paid"/>
+            <input type="hidden" name="id" value={i.id}/>
+            <input type="hidden" name="back" value="/finance"/>
+            <button className="btn mini">Mark paid</button></form>
+          <form method="POST" action="/api/act">
+            <input type="hidden" name="action" value="invoice_void"/>
+            <input type="hidden" name="id" value={i.id}/>
+            <input type="hidden" name="back" value="/finance"/>
+            <button className="btn ghost mini">Void</button></form>
+        </div>}</td>
+      </tr>; })}
+    </tbody></table>
+    {!all.length && <div style={{padding:'16px 18px', fontSize:13, color:'#86868b'}}>No invoices yet. Create the first above — marking one paid auto-computes commissions and logs the collector purchase.</div>}
+    </div>
+    <div className="empty">Stripe payment links + PDF invoices (Vercel Blob) arrive in the next phase — this ledger is their foundation.</div>
+  </Shell>;
+}
