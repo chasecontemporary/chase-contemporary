@@ -87,6 +87,9 @@ export default function Kanban({ initial }) {
             <div className="t">{l.collectors?.first_name} {l.collectors?.last_name}</div>
             <div className="s" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{l.artwork_title || l.purpose}</div>
           </div>
+          {l.competition?.others > 0 && <div style={{fontSize:11, fontWeight:700, marginTop:6,
+            color: l.competition.committed ? '#ff3b30' : '#b8860b'}}>
+            {l.competition.committed ? '⛔ Committed elsewhere' : '⚡ ' + l.competition.others + ' other interested'}</div>}
           <div className="s" style={{display:'flex', justifyContent:'space-between', marginTop:6}}>
             <span style={{fontWeight:600, color:'#1d1d1f'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
             {s === 'hold'
@@ -129,6 +132,20 @@ export default function Kanban({ initial }) {
           </div>
         </div>
         <div className="ld-body">
+        {openLead.competition?.committed && <div style={{background:'rgba(255,59,48,.1)', color:'#c0271d',
+          borderRadius:12, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
+          This work is {openLead.competition.committed.stage === 'hold' ? 'on hold' :
+            openLead.competition.committed.stage === 'invoice' ? 'invoiced' : 'sold'} for {openLead.competition.committed.name}.
+          Offer alternatives, or wait for the hold to lapse.</div>}
+        {!openLead.competition?.committed && openLead.competition?.others > 0 &&
+          <div style={{background:'rgba(255,149,0,.12)', color:'#8a5300',
+          borderRadius:12, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
+          ⚡ {openLead.competition.others} other active {openLead.competition.others === 1 ? 'inquiry' : 'inquiries'} on this work.
+          Genuine scarcity — use it honestly. First hold deposit wins.</div>}
+        {a && !a.available && !openLead.competition?.committed && ['new','contacted','in_conversation'].includes(openLead.status) &&
+          <div style={{background:'rgba(255,59,48,.1)', color:'#c0271d', borderRadius:12,
+            padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
+          This work is marked sold in inventory. Offer alternatives.</div>}
         {a && <a className="ld-artwork" href={'/inventory/' + a.id}>
           {a.image_url && <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=800'} alt="" />}
           <div className="cap">

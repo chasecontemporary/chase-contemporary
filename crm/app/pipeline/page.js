@@ -24,6 +24,23 @@ export default async function Pipeline() {
   }
   const counts = {};
   (rows || []).forEach(r => { counts[r.collector_id] = (counts[r.collector_id] || 0) + 1; });
+  // competition: other active leads on the same work; and whether the work is committed (hold/invoice/paid)
+  const byWork = {};
+  (rows || []).forEach(r => {
+    const k = r.artwork_handle || r.artwork_title;
+    if (!k) return;
+    (byWork[k] = byWork[k] || []).push(r);
+  });
+  const competition = {};
+  Object.entries(byWork).forEach(([k, ls]) => {
+    ls.forEach(r => {
+      const others = ls.filter(o => o.id !== r.id && o.collector_id !== r.collector_id);
+      const committed = ls.find(o => o.collector_id !== r.collector_id && ['hold','invoice','paid'].includes(o.status));
+      competition[r.id] = { others: others.length,
+        committed: committed ? { name: (committed.collectors?.first_name || '') + ' ' + (committed.collectors?.last_name || ''),
+          stage: committed.status } : null };
+    });
+  });
   const missingTitles = [...new Set((rows || [])
     .filter(r => !artMap[r.artwork_handle] && r.artwork_title)
     .map(r => r.artwork_title))];
@@ -36,7 +53,8 @@ export default async function Pipeline() {
   }
   const leads = (rows || []).map(r => ({ ...r,
     artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
-    openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1 }));
+    openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1,
+    competition: competition[r.id] || { others: 0, committed: null } }));
   return <Shell active="pipeline">
     <div className="h1">Pipeline</div>
     <div className="sub">{leads.length} open · drag between stages · click a lead for the full picture</div>
