@@ -295,6 +295,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  /* branded dropdowns */
+  document.querySelectorAll('.dd').forEach(function (dd) {
+    var btn = dd.querySelector('.dd-btn'), hid = dd.querySelector('input[type=hidden]');
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      document.querySelectorAll('.dd.open').forEach(function (o) { if (o !== dd) o.classList.remove('open'); });
+      dd.classList.toggle('open');
+      btn.setAttribute('aria-expanded', dd.classList.contains('open') ? 'true' : 'false');
+    });
+    dd.querySelectorAll('.dd-list button').forEach(function (op) {
+      op.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (hid) hid.value = op.getAttribute('data-v') || '';
+        btn.textContent = op.textContent;
+        dd.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  });
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.dd.open').forEach(function (o) { o.classList.remove('open'); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.querySelectorAll('.dd.open').forEach(function (o) { o.classList.remove('open'); });
+  });
+
+  /* frictionless auto-enrichment */
+  try {
+    var setv = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
+    setv('cc-tz', (Intl.DateTimeFormat().resolvedOptions().timeZone) || '');
+    setv('cc-loc', navigator.language || '');
+    setv('cc-dev', window.matchMedia('(pointer: coarse)').matches ? 'mobile' : 'desktop');
+  } catch (e) {}
+
   var wi = document.querySelector('.work-img img'), lb = document.getElementById('lb');
   if (wi && lb) {
     wi.addEventListener('click', function(){

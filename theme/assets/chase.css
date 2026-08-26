@@ -444,3 +444,22 @@ html[style*="--pagein-skip"] body { animation: none; }
 .fc-row .card .im { min-height: 0; }
 .fc-row .card img { height: 42vh; width: auto; max-width: 68vw; max-height: none; }
 @media (max-width: 720px) { .fc-row .card img { height: 32vh; } }
+
+
+/* branded dropdown */
+.dd { position: relative; }
+.dd-btn { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--ink);
+  background: none; font-family: inherit; font-size: 10.5px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink); padding: 7px 0; cursor: pointer; }
+.dd-btn::after { content: '\2193'; float: right; color: var(--mute); font-size: 10px;
+  transition: transform .25s var(--ease); }
+.dd.open .dd-btn::after { transform: rotate(180deg); }
+.dd-list { position: absolute; left: 0; right: 0; top: calc(100% + 1px); z-index: 20;
+  background: #fff; border: 1px solid var(--ink); display: none; }
+.dd.open .dd-list { display: block; }
+.dd-list button { display: block; width: 100%; text-align: left; border: 0; background: #fff;
+  font-family: inherit; font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink); padding: 11px 14px; cursor: pointer; transition: none; }
+.dd-list button:hover, .dd-list button:focus-visible { background: var(--ink); color: #fff; outline: none; }
+.dd-list button + button { border-top: 1px solid var(--hair); }
+.dd-list button:hover + button { border-top-color: var(--ink); }
