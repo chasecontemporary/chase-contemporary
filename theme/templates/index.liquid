@@ -37,21 +37,20 @@
   </section>
   <div class="section-label r">SELECTED WORKS</div>
   </div><!-- /wrap: corridor runs full-bleed -->
-  <div class="corr r in" id="corr">
-    <div class="corr-track" id="corr-track">
+  <div class="fcanvas r in" id="fcanvas">
+    <div class="fc-track" id="fc-track">
       {%- assign shown = 0 -%}
-      {%- for product in collections.all.products limit: 60 -%}
+      {%- for product in collections.all.products limit: 90 -%}
         {%- assign img = product.featured_image -%}
-        {%- if img and img.width >= 1600 and img.height >= 1200 and product.type != 'Print' and shown < 14 -%}
-        {%- assign vhandle = product.vendor | handleize -%}
-        <div class="corr-item">
+        {%- if img and img.width >= 1600 and img.height >= 1200 and product.type != 'Print' and shown < 24 -%}
+        <div class="fc-item">
           <a href="{{ product.url }}" draggable="false">
             <img src="{{ img | image_url: width: 1100 }}"
               srcset="{{ img | image_url: width: 1100 }} 1x, {{ img | image_url: width: 2048 }} 2x"
-              sizes="40vw" width="{{ img.width }}" height="{{ img.height }}"
+              sizes="44vw" width="{{ img.width }}" height="{{ img.height }}"
               alt="{{ product.title | escape }}" loading="lazy" decoding="async" draggable="false"
               onload="this.classList.add('ld')">
-            <div class="corr-cap"><span class="a">{{ product.vendor }}</span><span class="t">{{ product.title }}</span></div>
+            <div class="fc-cap"><span class="a">{{ product.vendor }}</span><span class="t">{{ product.title }}</span></div>
           </a>
         </div>
         {%- assign shown = shown | plus: 1 -%}

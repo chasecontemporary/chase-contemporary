@@ -56,64 +56,61 @@ document.addEventListener('DOMContentLoaded', function () {
     vr.querySelectorAll('.vroom-slide').forEach(function (s) { s.classList.add('on'); });
   }
 
-  /* infinite corridor: shuffle, loop, drift, drag */
-  var corr = document.getElementById('corr'), ct = document.getElementById('corr-track');
-  if (corr && ct) {
-    var items = Array.prototype.slice.call(ct.children);
-    for (var ci = items.length - 1; ci > 0; ci--) {
-      var cj = Math.floor(Math.random() * (ci + 1));
-      ct.appendChild(items[cj]); items.splice(cj, 1);
-      ci = items.length; if (ci === 0) break; ci--;
-    }
-    // simpler reliable shuffle
-    var kids = Array.prototype.slice.call(ct.children);
-    kids.sort(function(){ return Math.random() - 0.5; }).forEach(function (k) { ct.appendChild(k); });
-    // duplicate the set for seamless wrap
-    var setEnd = function(){ return ct.scrollWidth; };
-    var baseW = 0;
-    var clone = function () {
-      baseW = ct.scrollWidth;
-      Array.prototype.slice.call(ct.children).forEach(function (k) {
-        var c = k.cloneNode(true); c.setAttribute('aria-hidden', 'true'); ct.appendChild(c);
+  /* staggered infinite canvas */
+  var fca = document.getElementById('fcanvas'), fct = document.getElementById('fc-track');
+  if (fca && fct) {
+    var fitems = Array.prototype.slice.call(fct.children);
+    fitems.sort(function(){ return Math.random() - 0.5; });
+    fct.innerHTML = '';
+    var FCLS = ['f-a','f-b','f-c','f-d','f-e','f-f'];
+    for (var pi = 0; pi < fitems.length; pi += 6) {
+      var panel = document.createElement('div'); panel.className = 'fc-panel';
+      var grid = document.createElement('div'); grid.className = 'fc-grid';
+      fitems.slice(pi, pi + 6).forEach(function (it, k) {
+        var wrap = document.createElement('div'); wrap.className = FCLS[k] || 'f-c';
+        wrap.appendChild(it); grid.appendChild(wrap);
       });
+      panel.appendChild(grid); fct.appendChild(panel);
+    }
+    var fBase = 0;
+    Array.prototype.slice.call(fct.children).forEach(function (p) {
+      var c = p.cloneNode(true); c.setAttribute('aria-hidden', 'true'); fct.appendChild(c);
+    });
+    var fx = 0, fvx = 0, fdrag = false, flx = 0, fmoved = false;
+    var fwrap = function () {
+      if (!fBase) fBase = fct.scrollWidth / 2;
+      if (fx >= fBase) fx -= fBase;
+      if (fx < 0) fx += fBase;
     };
-    clone();
-    var x = 0, vx = 0, drift = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 0.35;
-    var dragging = false, lastX = 0, movedC = false, paused = false;
-    var wrap = function () {
-      if (baseW < 10) baseW = ct.scrollWidth / 2;
-      if (x >= baseW) x -= baseW;
-      if (x < 0) x += baseW;
+    var floop = function () {
+      if (!fdrag && fvx) { fx += fvx; fvx *= 0.93; if (Math.abs(fvx) < .02) fvx = 0; }
+      fwrap();
+      fct.style.transform = 'translateX(' + (-fx) + 'px)';
+      requestAnimationFrame(floop);
     };
-    var loop = function () {
-      if (!dragging) { x += drift + vx; vx *= 0.94; if (Math.abs(vx) < .01) vx = 0; }
-      wrap();
-      ct.style.transform = 'translateX(' + (-x) + 'px)';
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-    corr.addEventListener('mouseenter', function(){ drift = 0; });
-    corr.addEventListener('mouseleave', function(){ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) drift = 0.35; });
-    corr.addEventListener('pointerdown', function (e) {
-      dragging = true; movedC = false; lastX = e.clientX; corr.classList.add('dragging');
+    requestAnimationFrame(floop);
+    fca.addEventListener('pointerdown', function (e) {
+      fdrag = true; fmoved = false; flx = e.clientX; fca.classList.add('dragging');
     });
     window.addEventListener('pointermove', function (e) {
-      if (!dragging) return;
-      var d = e.clientX - lastX; lastX = e.clientX;
-      if (Math.abs(d) > 2) movedC = true;
-      x -= d; vx = -d * 0.6; wrap();
-      ct.style.transform = 'translateX(' + (-x) + 'px)';
+      if (!fdrag) return;
+      var d = e.clientX - flx; flx = e.clientX;
+      if (Math.abs(d) > 2) fmoved = true;
+      fx -= d; fvx = -d * 0.55; fwrap();
+      fct.style.transform = 'translateX(' + (-fx) + 'px)';
     });
-    window.addEventListener('pointerup', function(){ dragging = false; corr.classList.remove('dragging'); });
-    corr.addEventListener('click', function (e) {
-      if (movedC) { e.preventDefault(); e.stopPropagation(); movedC = false; }
+    window.addEventListener('pointerup', function(){ fdrag = false; fca.classList.remove('dragging'); });
+    fca.addEventListener('click', function (e) {
+      if (fmoved) { e.preventDefault(); e.stopPropagation(); fmoved = false; }
     }, true);
-    corr.addEventListener('wheel', function (e) {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { e.preventDefault(); x += e.deltaX; wrap(); }
+    fca.addEventListener('wheel', function (e) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { e.preventDefault(); fx += e.deltaX; fwrap();
+        fct.style.transform = 'translateX(' + (-fx) + 'px)'; }
     }, { passive: false });
-    ct.querySelectorAll('img').forEach(function (im) {
+    fct.querySelectorAll('img').forEach(function (im) {
+      im.setAttribute('loading', 'eager');
       if (im.complete && im.naturalWidth) im.classList.add('ld');
-      im.addEventListener('load', function(){ im.classList.add('ld'); baseW = ct.scrollWidth / 2; });
+      im.addEventListener('load', function(){ im.classList.add('ld'); fBase = fct.scrollWidth / 2; });
     });
   }
 
