@@ -65,3 +65,30 @@ no images locally).
 - Nicole Donaldson sold 2,389 of 2,661 historical lines — who is she? (Not in the roster we
   were given.)
 - Marketplace: keep or sunset?
+
+---
+
+## DECISIONS (Devyn, 2026-08-26)
+
+Past data is context, not gospel: the engine is a NEW operating system for a NEW sales funnel.
+Consignment history does NOT reshape the commissions design (pool model stands). Implement
+what makes sense forward, keep what we love. Final change list:
+
+**Changing / adding**
+1. Inventory locations: `artworks.location`, import from CSV, location filter + value-by-location
+   rollup on Inventory. (Works physically live in 5+ storages; ops needs this daily.)
+2. Invoice completeness: sales-tax line, optional shipping line, payment-method note on mark-paid.
+3. Taste backfill: Sara's artist tags -> pinned interests; VIP list -> VIP segment chip on Collectors.
+4. Audiences: saved named segments over collectors (foundation for phase-2 email module).
+5. On-approval flow: minimal — a work out with a client/partner (who + due date + convert/return),
+   built on the holds table. LOW priority, after 1–4.
+
+**Keeping as-is (already stronger than Artcloud)**
+Pipeline/Kanban + drawer, deal-ticket discounts, team attribution + leaderboard, Today page,
+taste engine, LTV command center, one-invoice-per-sale bundles, commissions pool on settlement.
+
+**Explicitly dropped**
+Consignment cost/ownership modeling (historical artifact), historical rep leaderboard,
+To-Do's, Artcloud Website module, per-contact UTM fields, layaway (unless Bernie asks).
+
+**Still open for Bernie:** artcloud.market keep-or-sunset (1,136 listed works, real inquiries).
