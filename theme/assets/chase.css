@@ -466,7 +466,7 @@ html[style*="--pagein-skip"] body { animation: none; }
 
 
 /* ---------- editorial copy components ---------- */
-.bio { margin: 40px 0 6px; }
+.bio { max-width: 860px; margin: 40px 0 6px; }
 .bio .ink-p { margin-top: 0; font-size: clamp(12px, 1.3vw, 17px); }
 .bio-more { max-height: 0; overflow: hidden; opacity: 0;
   transition: max-height .7s var(--ease), opacity .5s ease; }
@@ -478,7 +478,7 @@ html[style*="--pagein-skip"] body { animation: none; }
   border-bottom: 1px solid var(--ink); padding: 0 0 3px; margin-top: 22px; }
 .bio-toggle:hover { color: var(--mute); border-color: var(--mute); }
 
-.exnow { }
+.exnow { max-width: 860px; }
 .exnow-t { display: block; font-size: 13px; font-weight: 600; letter-spacing: .05em; }
 .exnow .ink-p { font-size: clamp(12px, 1.3vw, 17px); margin: 18px 0 24px; }
 
