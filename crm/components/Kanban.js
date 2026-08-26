@@ -2,8 +2,10 @@
 import { useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
-const LABEL = { new:'New', contacted:'Contacted', in_conversation:'In conversation',
-  hold:'Hold', invoice:'Invoice', paid:'Paid', nurture:'Nurture' };
+const LABEL = { new:'Inbound', contacted:'Contacted', in_conversation:'In conversation',
+  hold:'Hold', invoice:'Invoiced', paid:'Closed', nurture:'Nurture' };
+const COLOR = { new:'#0071e3', contacted:'#5e5ce6', in_conversation:'#af52de',
+  hold:'#ff9500', invoice:'#ff9f0a', paid:'#34c759', nurture:'#8e8e93' };
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const BUDGET_MID = { 'Under $10,000': 500000, '$10,000-25,000': 1750000, '$25,000-50,000': 3750000,
   '$50,000-100,000': 7500000, '$100,000+': 10000000 };
@@ -21,24 +23,27 @@ export default function Kanban({ initial }) {
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
   const [openLead, setOpenLead] = useState(null);
+  const [agreed, setAgreed] = useState('');
+  const [note, setNote] = useState('');
 
   const move = async (id, status) => {
-    setLeads(ls => ls.map(l => l.id === id ? { ...l, status } : l));
+    setLeads(ls => ls.map(l => l.id === id ? { ...l, status, stage_changed_at: new Date().toISOString() } : l));
+    if (openLead?.id === id) setOpenLead(o => ({ ...o, status }));
     const fd = new FormData();
-    fd.set('action', 'status'); fd.set('id', id); fd.set('status', status); fd.set('back', '/pipeline');
+    fd.set('action', 'status'); fd.set('id', id); fd.set('status', status);
     fetch('/api/act', { method: 'POST', body: fd }).catch(() => {});
   };
-  const markAnswered = async (id) => {
-    setLeads(ls => ls.map(l => l.id === id ? { ...l, status: 'contacted', contacted_at: new Date().toISOString() } : l));
-    if (openLead?.id === id) setOpenLead(o => ({ ...o, status: 'contacted', contacted_at: new Date().toISOString() }));
+  const saveNote = async () => {
+    if (!note.trim()) return;
     const fd = new FormData();
-    fd.set('action', 'contacted'); fd.set('id', id);
+    fd.set('action', 'note'); fd.set('id', openLead.collector_id);
+    fd.set('entity_type', 'collector'); fd.set('body', note);
     fetch('/api/act', { method: 'POST', body: fd }).catch(() => {});
+    setNote('');
   };
 
   const c = openLead?.collectors || {};
   const a = openLead?.artwork;
-  const [agreed, setAgreed] = useState('');
   const sale = openLead?.openSale;
   const saleTotal = sale ? sale.sale_items.reduce((s, i) => s + i.agreed_cents, 0) : 0;
   const inSale = sale && sale.sale_items.some(i => i.inquiry_id === openLead?.id);
@@ -65,7 +70,7 @@ export default function Kanban({ initial }) {
         onDragOver={e => { e.preventDefault(); setOverCol(s); }}
         onDragLeave={() => setOverCol(null)}
         onDrop={e => { e.preventDefault(); setOverCol(null); if (dragId) move(dragId, s); setDragId(null); }}>
-        <h3>{LABEL[s]} · {leads.filter(l => l.status === s).length}
+        <h3><span style={{color: COLOR[s]}}>●</span> {LABEL[s]} · {leads.filter(l => l.status === s).length}
           <span style={{float:'right', fontVariantNumeric:'tabular-nums'}}>
             {(() => { const v = leads.filter(l => l.status === s).reduce((t, l) => t + leadValue(l), 0);
               return v ? usd(v) : ''; })()}</span></h3>
@@ -86,7 +91,7 @@ export default function Kanban({ initial }) {
           <div className="s" style={{display:'flex', justifyContent:'space-between', marginTop:6}}>
             <span style={{fontWeight:600, color:'#1d1d1f'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
             {s === 'hold'
-              ? <span style={{color: holdLeft(l).includes('expired') || holdLeft(l).startsWith('1h') ? '#ff3b30' : '#b8860b', fontWeight:600}}>{holdLeft(l)}</span>
+              ? <span style={{color: holdLeft(l).includes('expired') ? '#ff3b30' : '#b8860b', fontWeight:600}}>{holdLeft(l)}</span>
               : <span style={{color: ageDays(l.stage_changed_at || l.created_at) >= 5 ? '#b8860b' : '#86868b'}}>
                   {ageDays(l.stage_changed_at || l.created_at)}d in stage</span>}
           </div>
@@ -98,17 +103,35 @@ export default function Kanban({ initial }) {
     <div className={'ldscrim' + (openLead ? ' open' : '')} onClick={() => setOpenLead(null)} />
     <div className={'ldrawer' + (openLead ? ' open' : '')}>
       {openLead && <>
-        <button className="close" onClick={() => setOpenLead(null)}>✕</button>
-        {a?.image_url && <img className="art" src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=760'} alt="" />}
-        <h2>{c.first_name} {c.last_name}{c.trade ? ' · Trade' : ''}</h2>
-        <div className="sub">{[c.email, c.phone].filter(Boolean).join(' · ')}</div>
+        <div className="ld-head">
+          <button className="close" onClick={() => setOpenLead(null)}>✕</button>
+          <h2><a className="namelink" href={'/collectors/' + openLead.collector_id}>
+            {c.first_name} {c.last_name}</a>
+            {openLead.inquiryCount > 1 && <span className="badge">{openLead.inquiryCount} open inquiries</span>}
+            {c.trade ? <span className="badge">Trade</span> : null}</h2>
+          <div className="sub">{[c.email, c.phone].filter(Boolean).join(' · ')}</div>
+          <div style={{marginTop:12, display:'flex', gap:10, alignItems:'center'}}>
+            <select className="stagesel" style={{background: COLOR[openLead.status]}}
+              value={openLead.status} onChange={e => move(openLead.id, e.target.value)}>
+              {STAGES.map(s => <option key={s} value={s}>{LABEL[s]}</option>)}
+            </select>
+            {!openLead.contacted_at && <span style={{fontSize:12, color:'#ff3b30', fontWeight:600}}>
+              Awaiting first response</span>}
+          </div>
+        </div>
+        <div className="ld-body">
+        {a && <a className="ld-artwork" href={'/inventory/' + a.id}>
+          {a.image_url && <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=800'} alt="" />}
+          <div className="cap">
+            <div><div className="t">{a.title}</div><div className="a">{a.artist}{a.medium ? ' · ' + a.medium : ''}</div></div>
+            <div style={{textAlign:'right'}}>
+              <div className="p">{(a.price_cents || 0) > 0 ? usd(a.price_cents) : 'POR'}</div>
+              <div className="open">Open in inventory →</div>
+            </div>
+          </div>
+        </a>}
         <dl className="kv">
-          <dt>Inquiring about</dt><dd>{openLead.artwork_title || openLead.purpose}</dd>
-          {a && <><dt>Artist</dt><dd>{a.artist}</dd>
-            <dt>Price</dt><dd>{(a.price_cents || 0) > 0 ? usd(a.price_cents) : 'Price on request'}</dd>
-            {a.medium ? <><dt>Medium</dt><dd>{a.medium}</dd></> : null}
-            {a.dims_h_in ? <><dt>Size</dt><dd>{a.dims_h_in} × {a.dims_w_in} in</dd></> : null}
-            <dt>Availability</dt><dd>{a.available ? 'Available' : 'Sold'}</dd></>}
+          {!a && <><dt>Inquiring about</dt><dd>{openLead.artwork_title || openLead.purpose}</dd></>}
           <dt>Budget</dt><dd>{openLead.budget_range || c.budget_range || 'Not stated'}</dd>
           <dt>Timeframe</dt><dd>{openLead.timeframe || '—'}</dd>
           <dt>City</dt><dd>{[c.city, c.timezone].filter(Boolean).join(' · ') || '—'}</dd>
@@ -116,11 +139,11 @@ export default function Kanban({ initial }) {
           <dt>Device</dt><dd>{openLead.device || '—'}</dd>
           <dt>Time on page</dt><dd>{openLead.seconds_on_page ? openLead.seconds_on_page + 's' : '—'}</dd>
           <dt>Owner</dt><dd>{openLead.owner || 'Unclaimed'}</dd>
-          <dt>Stage</dt><dd style={{textTransform:'capitalize'}}>{(openLead.status || '').replace('_',' ')}</dd>
         </dl>
         {openLead.page_journey && <div className="msg"><b style={{fontSize:12}}>Path through the site</b><br/>
           {openLead.page_journey}</div>}
         {openLead.message && <div className="msg">{openLead.message}</div>}
+
         {!['invoice','paid'].includes(openLead.status) && <div style={{marginTop:18, padding:'14px 16px',
           background:'#f5f5f7', borderRadius:12}}>
           <div style={{fontSize:12, fontWeight:600, marginBottom:8}}>
@@ -140,12 +163,15 @@ export default function Kanban({ initial }) {
           {sale && sale.sale_items.length > 0 && <button className="btn" style={{width:'100%', marginTop:10}}
             onClick={invoiceSale}>Generate invoice · {usd(saleTotal)}</button>}
         </div>}
-        <div className="acts">
-          {!openLead.contacted_at && <button className="btn ghost" onClick={() => markAnswered(openLead.id)}>Mark answered</button>}
-          <a className="btn ghost" href={'/collectors/' + openLead.collector_id}>Full collector card</a>
-          {STAGES.filter(s => s !== openLead.status).slice(0, 3).map(s =>
-            <button key={s} className="btn ghost" onClick={() => { move(openLead.id, s); setOpenLead(o => ({...o, status: s})); }}>
-              → {LABEL[s]}</button>)}
+
+        <div style={{display:'flex', gap:8, marginTop:16}}>
+          <input placeholder="Quick note — saves to the collector" value={note}
+            onChange={e => setNote(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveNote(); }}
+            style={{flex:1, border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit',
+              fontSize:13.5, padding:'8px 12px', outline:'none'}}/>
+          <button className="btn ghost mini" onClick={saveNote}>Save</button>
+        </div>
         </div>
       </>}
     </div>

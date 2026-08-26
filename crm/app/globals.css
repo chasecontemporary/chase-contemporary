@@ -105,3 +105,37 @@ table.tbl { width:100%; border-collapse:collapse; }
 .ldrawer .msg { background: #f5f5f7; border-radius: 10px; padding: 12px 14px; font-size: 13px;
   line-height: 1.55; margin-top: 16px; }
 .ldrawer .acts { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+
+/* depth pass */
+body { background: linear-gradient(180deg, #f7f7f9 0%, #f2f2f5 100%); background-attachment: fixed; }
+.card, .stat, .tblcard, .kcard { border: 1px solid rgba(0,0,0,.045); }
+.kcard { transition: transform .18s ease, box-shadow .18s ease; }
+.kcard:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.07), 0 10px 30px rgba(0,0,0,.06); }
+.card { transition: box-shadow .18s ease; }
+.card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.05), 0 10px 30px rgba(0,0,0,.06); }
+.col h3 { position: sticky; top: 0; background: transparent; z-index: 2; padding-top: 4px; }
+
+/* stage select, color-coded */
+.stagesel { appearance: none; -webkit-appearance: none; border: 0; border-radius: 980px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 26px 6px 12px;
+  cursor: pointer; color: #fff; background-repeat: no-repeat; background-position: right 10px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); }
+
+/* lead drawer v2 */
+.ldrawer { padding: 0; }
+.ld-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--hair); position: sticky; top: 0;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(12px); z-index: 3; border-radius: 16px 16px 0 0; }
+.ld-body { padding: 18px 24px 28px; }
+.ld-artwork { display: block; border: 1px solid var(--hair); border-radius: 14px; overflow: hidden;
+  transition: box-shadow .18s ease, transform .18s ease; }
+.ld-artwork:hover { box-shadow: 0 6px 22px rgba(0,0,0,.1); transform: translateY(-1px); }
+.ld-artwork img { width: 100%; max-height: 230px; object-fit: cover; display: block; }
+.ld-artwork .cap { padding: 12px 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ld-artwork .cap .t { font-size: 14px; font-weight: 650; }
+.ld-artwork .cap .a { font-size: 12px; color: var(--mute); margin-top: 2px; }
+.ld-artwork .cap .p { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ld-artwork .cap .open { font-size: 11.5px; color: var(--blue); font-weight: 600; white-space: nowrap; }
+.namelink { color: inherit; }
+.namelink:hover { color: var(--blue); }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; background: rgba(0,113,227,.12);
+  color: var(--blue); border-radius: 980px; padding: 2px 9px; vertical-align: 2px; margin-left: 8px; }

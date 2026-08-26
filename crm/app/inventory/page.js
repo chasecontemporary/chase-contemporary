@@ -27,7 +27,7 @@ export default async function Inventory({ searchParams }) {
     </tr></thead><tbody>
       {all.map(a => <tr key={a.id}>
         <td style={{width:56}}>{a.image_url ? <img className="thumb" src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=88'} alt=""/> : <span className="thumb"/>}</td>
-        <td style={{fontWeight:600}}>{a.title}</td>
+        <td style={{fontWeight:600}}><a href={'/inventory/' + a.id}>{a.title}</a></td>
         <td>{a.artist}</td>
         <td>{a.product_type || '—'}</td>
         <td style={{color:'#86868b'}}>{a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : '—'}</td>
