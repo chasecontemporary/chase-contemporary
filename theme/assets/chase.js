@@ -31,6 +31,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  /* ink-in statement */
+  var inkp = document.getElementById('inkp');
+  if (inkp) {
+    var words = inkp.textContent.trim().split(/\s+/);
+    inkp.innerHTML = words.map(function (w) { return '<span class="w">' + w + '</span>'; }).join(' ');
+    var spans = inkp.querySelectorAll('.w');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      spans.forEach(function (s) { s.classList.add('on'); });
+    } else {
+      var inkTick = function () {
+        var r = inkp.getBoundingClientRect();
+        var vh = window.innerHeight;
+        var p = (vh * 0.82 - r.top) / (r.height + vh * 0.25);
+        p = Math.max(0, Math.min(1, p));
+        var n = Math.round(p * spans.length);
+        spans.forEach(function (s, i) { s.classList.toggle('on', i < n); });
+      };
+      window.addEventListener('scroll', function(){ requestAnimationFrame(inkTick); }, { passive: true });
+      inkTick();
+    }
+  }
+
   /* landing carousel */
   var hc = document.getElementById('hcar-track');
   if (hc) {

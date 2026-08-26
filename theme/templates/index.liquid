@@ -29,7 +29,11 @@
     <span class="s"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }} &nbsp;·&nbsp; <a class="hcar-link" href="{{ pele.url }}">VIEW THE COLLECTION</a></span>
   </div>
 {%- endif -%}
-  <div class="statement r">HAND-SIGNED ORIGINALS · LIMITED EDITION WORKS · AUTHENTICATED ART</div>
+  <section class="ink" id="ink">
+    <div class="ink-k">CHASE CONTEMPORARY</div>
+    <h2 class="ink-h">A CONSIDERED COLLECTION</h2>
+    <p class="ink-p" id="inkp">We bring together extraordinary works from some of the most compelling artists of our time, photography, painting, and mixed media selected for their artistic integrity, cultural resonance, and the stories they carry. Every piece in the collection is chosen because it endures.</p>
+  </section>
   <div class="section-label r">SELECTED WORKS</div>
   <div class="feat">
     {%- assign shown = 0 -%}
