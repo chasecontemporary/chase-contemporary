@@ -56,40 +56,57 @@ document.addEventListener('DOMContentLoaded', function () {
     vr.querySelectorAll('.vroom-slide').forEach(function (s) { s.classList.add('on'); });
   }
 
-  /* staggered infinite canvas */
+  /* gallery view: A = structured auto-carousel, B = staggered swipe canvas */
   var fca = document.getElementById('fcanvas'), fct = document.getElementById('fc-track');
   if (fca && fct) {
+    var gmode = 'b';
+    try {
+      var qp = new URLSearchParams(location.search).get('gallery');
+      if (qp === 'a' || qp === 'b') { gmode = qp; sessionStorage.setItem('ccgal', qp); }
+      else gmode = sessionStorage.getItem('ccgal') || 'b';
+    } catch (e) {}
     var fitems = Array.prototype.slice.call(fct.children);
     fitems.sort(function(){ return Math.random() - 0.5; });
     fct.innerHTML = '';
-    var FCLS = ['f-a','f-b','f-c','f-d','f-e','f-f'];
-    for (var pi = 0; pi < fitems.length; pi += 6) {
-      var panel = document.createElement('div'); panel.className = 'fc-panel';
-      var grid = document.createElement('div'); grid.className = 'fc-grid';
-      fitems.slice(pi, pi + 6).forEach(function (it, k) {
-        var wrap = document.createElement('div'); wrap.className = FCLS[k] || 'f-c';
-        wrap.appendChild(it); grid.appendChild(wrap);
-      });
-      panel.appendChild(grid); fct.appendChild(panel);
+    if (gmode === 'a') {
+      fct.classList.add('fc-row');
+      fitems.forEach(function (it) { fct.appendChild(it); });
+    } else {
+      var FCLS = ['f-a','f-b','f-c','f-d','f-e','f-f'];
+      for (var pi = 0; pi < fitems.length; pi += 6) {
+        var panel = document.createElement('div'); panel.className = 'fc-panel';
+        var grid = document.createElement('div'); grid.className = 'fc-grid';
+        fitems.slice(pi, pi + 6).forEach(function (it, k) {
+          var wrap = document.createElement('div'); wrap.className = FCLS[k] || 'f-c';
+          wrap.appendChild(it); grid.appendChild(wrap);
+        });
+        panel.appendChild(grid); fct.appendChild(panel);
+      }
     }
     var fBase = 0;
     Array.prototype.slice.call(fct.children).forEach(function (p) {
       var c = p.cloneNode(true); c.setAttribute('aria-hidden', 'true'); fct.appendChild(c);
     });
     fct.querySelectorAll('.card, .r').forEach(function (c) { c.classList.add('in'); });
-    var fx = 0, fvx = 0, fdrag = false, flx = 0, fmoved = false;
+    var rmq = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fx = 0, fvx = 0, fdrift = (gmode === 'a' && !rmq) ? 0.4 : 0;
+    var fdrag = false, flx = 0, fmoved = false;
     var fwrap = function () {
       if (!fBase) fBase = fct.scrollWidth / 2;
       if (fx >= fBase) fx -= fBase;
       if (fx < 0) fx += fBase;
     };
     var floop = function () {
-      if (!fdrag && fvx) { fx += fvx; fvx *= 0.93; if (Math.abs(fvx) < .02) fvx = 0; }
+      if (!fdrag) { fx += fdrift + fvx; fvx *= 0.93; if (Math.abs(fvx) < .02) fvx = 0; }
       fwrap();
       fct.style.transform = 'translateX(' + (-fx) + 'px)';
       requestAnimationFrame(floop);
     };
     requestAnimationFrame(floop);
+    if (gmode === 'a') {
+      fca.addEventListener('mouseenter', function(){ fdrift = 0; });
+      fca.addEventListener('mouseleave', function(){ if (!rmq) fdrift = 0.4; });
+    }
     fca.addEventListener('pointerdown', function (e) {
       fdrag = true; fmoved = false; flx = e.clientX; fca.classList.add('dragging');
     });

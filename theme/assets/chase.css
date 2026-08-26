@@ -436,3 +436,11 @@ html[style*="--pagein-skip"] body { animation: none; }
 .fc-item .card .im { min-height: 0; }
 .fc-item .card img { max-height: 54vh; }
 @media (max-width: 720px) { .fc-item .card img { max-height: 40vh; } }
+
+
+/* gallery view mode A: structured auto-carousel */
+.fc-track.fc-row { align-items: flex-end; gap: 6vw; padding: 12px var(--pad) 0; }
+.fc-row .fc-item { flex: none; }
+.fc-row .card .im { min-height: 0; }
+.fc-row .card img { height: 42vh; width: auto; max-width: 68vw; max-height: none; }
+@media (max-width: 720px) { .fc-row .card img { height: 32vh; } }

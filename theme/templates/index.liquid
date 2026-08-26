@@ -38,10 +38,10 @@
   </div><!-- /wrap: corridor runs full-bleed -->
   <div class="fcanvas r in" id="fcanvas">
     <div class="fc-track" id="fc-track">
+      {%- assign gallery_ok = "raphael-mazzucco-vietnam-water-wheel-2015,raphael-mazzucco-new-mexico-2015,tunney-grattitude-2021-2,raphael-mazzucco-ballerina-ronnie-wood-studio-2014,subject-and-object-2015,mazzucco-louisiana-2018,mazzucco-ballerina-bruton-street-rm_p006,ole-aakjaer-universal-soldier-2018,mazzucco-standing-still-rm_234,shuishi-searching-2022,texas-oglalas-et-hunkpapas,raphael-mazzucco-agave-2015,color-of-sunshine-2022,mazzucco-africa-kenya-2015,ole-aakjaer-invitation-to-an-unpredictable-party-2019,tunney-grattitude-2021,raphael-mazzucco-vietnam-eyes-2015,slough-2011,texas-sunday-smile,mazzucco-galapagos-rm_2171,tunney-wish-you-were-here-2021,hambleton-jumping-shadowman-rh231001145,ole-aakjaer-queen-on-a-throne-2019,texas-babylon-babelsberg,texas-proto-retiarius,texas-back-to-nature,risk-peaceful-warrior-risk055,the-greatest-save-pele-banks,connor-brothers-those-who-say-it-cannot-be-done-orange-2023,bath-2009,risk-peaceful-buddha-blue-48-risk056,texas-untitled-8,ole-aakjaer-strong-woman-eating-a-man-2018,connor-brothers-i-tried-to-drown-my-sorrows-red-2023,connor-brothers-why-fit-in-when-you-were-born-to-stand-out-lilac-2023,ole-aakjaer-never-alone-on-the-dance-floor-2018,connor-brothers-why-fit-in-when-you-were-born-to-stand-out-green-2023,connor-brothers-those-who-say-it-cannot-be-done-dark-green-2023,texas-chicken-rider,mazzucco-market,texas-marat-garden,connor-brothers-tell-him-i-was-too-fucking-busy-dark-blue-2023,connor-brothers-why-fit-in-when-you-were-born-to-stand-out-blue-2023,ole-aakjaer-different-perspective-2018,mazzucco-waterfall,texas-3-punch-hodgens,ole-aakjaer-the-crowd-is-cruel-2018,connor-brothers-i-tried-to-drown-my-sorrows-2022,mazzucco-music-rm_102018_017,texas-northway-greedy,shuishi-untitled,connor-brothers-i-tried-to-drown-my-sorrows-green-2023,untitled-figure-2023,connor-brothers-tell-him-i-was-too-fucking-busy-green-2023,mazzucco-vietnam-2018,connor-brothers-impossible-is-nothing-red-2023,stevie-wonder-whitney-houston-1986" | split: "," -%}
       {%- assign shown = 0 -%}
-      {%- for product in collections.all.products limit: 90 -%}
-        {%- assign img = product.featured_image -%}
-        {%- if img and img.width >= 1600 and img.height >= 1200 and product.type != 'Print' and shown < 24 -%}
+      {%- for product in collections.all.products limit: 250 -%}
+        {%- if shown < 24 and product.featured_image and gallery_ok contains product.handle -%}
         <div class="fc-item">{% render 'card', card_product: product %}</div>
         {%- assign shown = shown | plus: 1 -%}
         {%- endif -%}
