@@ -547,3 +547,11 @@ html[style*="--pagein-skip"] body { animation: none; }
 .bernie-list li:hover .ar { transform: translate(3px, -3px); color: var(--ink); }
 .bernie-list .h { color: var(--ink); }
 @media (max-width: 720px) { .bernie-list li a { flex-direction: column; gap: 6px; } .bernie-list .ar { display: none; } }
+
+
+/* ---------- multi-purpose contact form ---------- */
+.cform { max-width: 660px; }
+.cform .inq { display: block; }
+.cf-acq, .cf-press { max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .6s var(--ease), opacity .45s ease; }
+.cf-acq.show, .cf-press.show { max-height: 600px; opacity: 1; overflow: visible; }

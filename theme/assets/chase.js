@@ -318,31 +318,77 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* branded dropdowns */
-  document.querySelectorAll('.dd').forEach(function (dd) {
-    var btn = dd.querySelector('.dd-btn'), hid = dd.querySelector('input[type=hidden]');
-    btn.addEventListener('click', function (e) {
+  /* branded dropdowns (delegated; supports dynamic lists) */
+  document.addEventListener('click', function (e) {
+    var opt = e.target.closest ? e.target.closest('.dd-list button') : null;
+    if (opt) {
       e.stopPropagation();
-      document.querySelectorAll('.dd.open').forEach(function (o) { if (o !== dd) o.classList.remove('open'); });
-      dd.classList.toggle('open');
-      btn.setAttribute('aria-expanded', dd.classList.contains('open') ? 'true' : 'false');
-    });
-    dd.querySelectorAll('.dd-list button').forEach(function (op) {
-      op.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (hid) hid.value = op.getAttribute('data-v') || '';
-        btn.textContent = op.textContent;
-        dd.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
-      });
-    });
-  });
-  document.addEventListener('click', function () {
+      var dd = opt.closest('.dd');
+      var hid = dd.querySelector('input[type=hidden]');
+      var btn = dd.querySelector('.dd-btn');
+      if (hid) hid.value = opt.getAttribute('data-v') || '';
+      btn.textContent = opt.textContent;
+      dd.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      if (hid) hid.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    var b = e.target.closest ? e.target.closest('.dd-btn') : null;
+    if (b) {
+      e.stopPropagation();
+      var d = b.closest('.dd');
+      document.querySelectorAll('.dd.open').forEach(function (o) { if (o !== d) o.classList.remove('open'); });
+      d.classList.toggle('open');
+      b.setAttribute('aria-expanded', d.classList.contains('open') ? 'true' : 'false');
+      return;
+    }
     document.querySelectorAll('.dd.open').forEach(function (o) { o.classList.remove('open'); });
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') document.querySelectorAll('.dd.open').forEach(function (o) { o.classList.remove('open'); });
   });
+
+  /* multi-purpose contact routing */
+  var cfp = document.getElementById('cf-purpose');
+  if (cfp) {
+    var worksData = {};
+    try { worksData = JSON.parse(document.getElementById('cf-works').textContent); } catch (e) {}
+    var acq = document.getElementById('cf-acq'), prs = document.getElementById('cf-press');
+    var msg = document.getElementById('cf-m');
+    var artistHid = document.getElementById('cf-artist'), workHid = document.getElementById('cf-work');
+    var setMsg = function () {
+      var p = cfp.value, a = artistHid.value, w = workHid.value;
+      if (p === 'Acquiring a work') {
+        msg.value = 'I am interested in ' + (w ? w : (a ? 'works by ' + a : 'acquiring a work')) +
+          (w && a ? ' by ' + a : '') + '. Please send availability and payment options.';
+      } else if (p === 'Press and media') {
+        msg.value = 'Press inquiry: ';
+      } else if (p === 'Trade partnership') {
+        msg.value = 'I am purchasing on behalf of a client. ';
+      } else if (p) { msg.value = ''; }
+    };
+    cfp.addEventListener('change', function () {
+      var v = cfp.value;
+      acq.classList.toggle('show', v === 'Acquiring a work');
+      prs.classList.toggle('show', v === 'Press and media');
+      var tr = document.getElementById('cf-trade');
+      if (tr && v === 'Trade partnership') tr.checked = true;
+      setMsg();
+    });
+    artistHid.addEventListener('change', function () {
+      var list = document.querySelector('#dd-work .dd-list');
+      var works = worksData[artistHid.value] || [];
+      var htmls = ['<button type="button" data-v="">ANY WORK</button>'];
+      works.forEach(function (w) {
+        htmls.push('<button type="button" data-v="' + w.t.replace(/"/g, '&quot;') + '">' + w.t.toUpperCase() + '</button>');
+      });
+      list.innerHTML = htmls.join('');
+      workHid.value = '';
+      document.querySelector('#dd-work .dd-btn').textContent = 'ANY WORK';
+      setMsg();
+    });
+    workHid.addEventListener('change', setMsg);
+  }
 
   /* frictionless auto-enrichment */
   try {
