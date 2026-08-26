@@ -20,6 +20,21 @@ export async function POST(req) {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
     await db.from('commission_rules').update({ active: form.get('active') === '1' }).eq('id', id);
+  } else if (action === 'invoice_from_lead') {
+    const { data: lead } = await db.from('inquiries')
+      .select('*, collectors(id)').eq('id', id).single();
+    if (lead) {
+      const cents = Math.round(Number(form.get('amount') || 0) * 100);
+      const { data: inv } = await db.from('invoices').insert({
+        collector_id: lead.collector_id, inquiry_id: lead.id,
+        title: lead.artwork_title || lead.purpose, artist: lead.artist,
+        amount_cents: cents, notes: 'generated from lead' }).select().single();
+      await db.from('inquiries').update({ status: 'invoice', stage_changed_at: new Date().toISOString() }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id,
+        kind: 'invoice_generated', body: `#${String(inv?.invoice_number).padStart(4,'0')} · $${(cents/100).toLocaleString()}`, actor: rep });
+      return new Response(JSON.stringify({ ok: true, invoice_number: inv?.invoice_number }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
   } else if (action === 'invoice_add') {
     const cents = Math.round(Number(form.get('amount') || 0) * 100);
     await db.from('invoices').insert({
@@ -38,6 +53,8 @@ export async function POST(req) {
       if (inv.collector_id) await db.from('purchases').insert({
         collector_id: inv.collector_id, title: inv.title, artist: inv.artist,
         amount_cents: inv.amount_cents, source: 'engine' });
+      if (inv.inquiry_id) await db.from('inquiries')
+        .update({ status: 'paid', stage_changed_at: new Date().toISOString() }).eq('id', inv.inquiry_id);
     }
   } else if (action === 'invoice_void') {
     await db.from('invoices').update({ status: 'void' }).eq('id', id);

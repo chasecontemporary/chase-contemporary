@@ -40,7 +40,8 @@ export default async function Finance() {
         <div className="n" style={{fontSize:20}}>{usd(v)}</div><div className="l">Aging {k} days</div></div>)}
     </div>
 
-    <form method="POST" action="/api/act" className="inline-form" style={{marginTop:24, flexWrap:'wrap'}}>
+    <div className="sub" style={{marginTop:24}}>Invoices are generated from leads in the pipeline drawer. Manual entry below is for walk-in / off-pipeline sales only.</div>
+    <form method="POST" action="/api/act" className="inline-form" style={{marginTop:10, flexWrap:'wrap'}}>
       <input type="hidden" name="action" value="invoice_add"/>
       <input type="hidden" name="back" value="/finance"/>
       <select name="collector_id" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10,

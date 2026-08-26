@@ -38,6 +38,18 @@ export default function Kanban({ initial }) {
 
   const c = openLead?.collectors || {};
   const a = openLead?.artwork;
+  const [agreed, setAgreed] = useState('');
+  const genInvoice = async () => {
+    const amount = agreed || (a?.price_cents ? a.price_cents / 100 : '');
+    if (!amount) { alert('Enter the agreed price first.'); return; }
+    const fd = new FormData();
+    fd.set('action', 'invoice_from_lead'); fd.set('id', openLead.id); fd.set('amount', amount);
+    const res = await fetch('/api/act', { method: 'POST', body: fd });
+    const j = await res.json().catch(() => ({}));
+    setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, status: 'invoice' } : l));
+    setOpenLead(o => ({ ...o, status: 'invoice' }));
+    if (j.invoice_number) window.location.href = '/finance';
+  };
 
   return <>
     <div className="cols">
@@ -102,8 +114,19 @@ export default function Kanban({ initial }) {
         {openLead.page_journey && <div className="msg"><b style={{fontSize:12}}>Path through the site</b><br/>
           {openLead.page_journey}</div>}
         {openLead.message && <div className="msg">{openLead.message}</div>}
+        {!['invoice','paid'].includes(openLead.status) && <div style={{marginTop:18, padding:'14px 16px',
+          background:'#f5f5f7', borderRadius:12}}>
+          <div style={{fontSize:12, fontWeight:600, marginBottom:8}}>Close the sale</div>
+          <div style={{display:'flex', gap:8}}>
+            <input type="number" step="0.01" placeholder={a?.price_cents ? 'Agreed $ (' + Math.round(a.price_cents/100).toLocaleString() + ')' : 'Agreed price $'}
+              value={agreed} onChange={e => setAgreed(e.target.value)}
+              style={{flex:1, border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit',
+                fontSize:13.5, padding:'8px 12px', outline:'none'}}/>
+            <button className="btn" onClick={genInvoice}>Generate invoice</button>
+          </div>
+        </div>}
         <div className="acts">
-          {!openLead.contacted_at && <button className="btn" onClick={() => markAnswered(openLead.id)}>Mark answered</button>}
+          {!openLead.contacted_at && <button className="btn ghost" onClick={() => markAnswered(openLead.id)}>Mark answered</button>}
           <a className="btn ghost" href={'/collectors/' + openLead.collector_id}>Full collector card</a>
           {STAGES.filter(s => s !== openLead.status).slice(0, 3).map(s =>
             <button key={s} className="btn ghost" onClick={() => { move(openLead.id, s); setOpenLead(o => ({...o, status: s})); }}>
