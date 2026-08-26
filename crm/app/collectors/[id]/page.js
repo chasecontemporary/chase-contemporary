@@ -1,5 +1,6 @@
 import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
+import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
@@ -7,11 +8,13 @@ export default async function Card({ params }) {
   const { id } = await params;
   const { data: c } = await db.from('collectors').select('*').eq('id', id).single();
   if (!c) return <Shell active="collectors"><div className="empty">Not found</div></Shell>;
-  const [{ data: inqs }, { data: acts }, { data: buys }] = await Promise.all([
+  const [{ data: inqs }, { data: acts }, { data: buys }, { data: pins }] = await Promise.all([
     db.from('inquiries').select('*').eq('collector_id', id).order('created_at', { ascending: false }),
     db.from('activities').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(30),
-    db.from('purchases').select('*, artworks(image_url, handle)').eq('collector_id', id).order('purchased_at', { ascending: false }),
+    db.from('purchases').select('*, artworks(image_url, handle, medium, product_type)').eq('collector_id', id).order('purchased_at', { ascending: false }),
+    db.from('collector_interests').select('*').eq('collector_id', id).order('created_at'),
   ]);
+  const taste = computeTaste(buys || [], inqs || [], pins || []);
   const purchases = buys || [];
   const lifetime = purchases.reduce((s, p) => s + (p.amount_cents || 0), 0);
   const yr = new Date().getFullYear();
@@ -45,6 +48,56 @@ export default async function Card({ params }) {
       <div className="stat"><div className="n" style={{fontSize:17,paddingTop:6}}>{perYear ? usd(perYear) + '/yr' : '—'}</div><div className="l">Run rate</div></div>
       <div className="stat"><div className="n" style={{fontSize:17,paddingTop:6}}>{favArtist ? favArtist[0] : '—'}</div><div className="l">Top artist{favArtist ? ' · ' + usd(favArtist[1]) : ''}</div></div>
       <div className="stat"><div className="n" style={{fontSize:17,paddingTop:6}}>{openInqs.length}</div><div className="l">Open inquiries</div></div>
+    </div>
+
+
+    <div className="h1" style={{fontSize:18, marginTop:34}}>Taste profile</div>
+    <div className="sub">Computed live from every purchase and inquiry · pin what you learn on calls</div>
+    <div style={{display:'grid', gridTemplateColumns:'1.35fr 1fr', gap:14, alignItems:'start'}}>
+      <div className="tblcard" style={{margin:0}}><table className="tbl"><thead><tr>
+        <th>Artist affinity</th><th>Owns</th><th>Inquired</th><th style={{width:'30%'}}></th>
+      </tr></thead><tbody>
+        {taste.affinity.slice(0, 8).map(t => <tr key={t.name}>
+          <td style={{fontWeight:600}}>{t.name}{t.pinned ? <span className="pill blue" style={{marginLeft:8}}>Pinned</span> : null}</td>
+          <td style={{fontVariantNumeric:'tabular-nums'}}>{t.owned ? t.owned + ' · ' + usd(t.spend) : '—'}</td>
+          <td>{t.inquired || '—'}</td>
+          <td><div className="meter"><i style={{width: Math.max(8, Math.round(100 * t.score / taste.affinity[0].score)) + '%'}}/></div></td>
+        </tr>)}
+        {!taste.affinity.length && <tr><td colSpan={4} style={{color:'#86868b'}}>No signals yet — the first inquiry or purchase starts the profile.</td></tr>}
+      </tbody></table></div>
+      <div className="tblcard" style={{margin:0}}><table className="tbl"><thead><tr>
+        <th colSpan="2">Buying habits</th></tr></thead><tbody>
+        <tr><td style={{width:110, color:'#86868b'}}>Sweet spot</td><td>{taste.bandList.length
+          ? taste.bandList.map(([b, n], i) => <span key={b} className="pill" style={i === 0 ? {background:'#1d1d1f', color:'#fff', marginRight:6} : {marginRight:6}}>{b} · {n}</span>)
+          : c.budget_range ? 'Stated: ' + c.budget_range : '—'}</td></tr>
+        <tr><td style={{color:'#86868b'}}>Mediums</td><td>{taste.mediumList.map(([m, n]) => `${m} (${n})`).join(' · ') || '—'}</td></tr>
+        <tr><td style={{color:'#86868b'}}>Cadence</td><td>{taste.cadence
+          ? <>{taste.cadence.avgGap ? 'Buys about every ' + Math.round(taste.cadence.avgGap / 30) + ' months · ' : ''}last {Math.round(taste.cadence.daysSince)} days ago
+            {taste.cadence.due ? <span className="pill" style={{background:'#ff9500', color:'#fff', marginLeft:8}}>Due for outreach</span> : null}</>
+          : '—'}</td></tr>
+        <tr><td style={{color:'#86868b'}}>Buys via</td><td>{taste.channelList.map(([s, n]) => `${s} (${n})`).join(' · ') || '—'}</td></tr>
+        <tr><td style={{color:'#86868b'}}>Season</td><td>{taste.monthList.slice(0, 2).map(([m]) => m).join(' · ') || '—'}</td></tr>
+      </tbody></table></div>
+    </div>
+    <div style={{display:'flex', gap:8, marginTop:12, alignItems:'center', flexWrap:'wrap'}}>
+      {(pins || []).map(pin => <form key={pin.id} method="POST" action="/api/act" style={{display:'inline'}}>
+        <input type="hidden" name="action" value="interest_del"/>
+        <input type="hidden" name="iid" value={pin.id}/>
+        <input type="hidden" name="back" value={'/collectors/' + c.id}/>
+        <button className="pill" style={{border:'1px solid #e8e8ed', background:'#fff', cursor:'pointer', fontFamily:'inherit'}}
+          title="Remove">{pin.label}<span style={{marginLeft:6, color:'#86868b'}}>×</span></button>
+      </form>)}
+      <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
+        <input type="hidden" name="action" value="interest_add"/>
+        <input type="hidden" name="id" value={c.id}/>
+        <input type="hidden" name="back" value={'/collectors/' + c.id}/>
+        <input name="label" placeholder="Pin an interest (artist, style, subject…)" style={{width:250}}/>
+        <select name="kind" style={{fontFamily:'inherit', fontSize:13, border:'1px solid #e8e8ed', borderRadius:8, padding:'6px 8px', background:'#fff'}}>
+          <option value="custom">Interest</option><option value="artist">Artist</option>
+          <option value="medium">Medium</option><option value="style">Style</option><option value="subject">Subject</option>
+        </select>
+        <button className="btn mini">Pin</button>
+      </form>
     </div>
 
     <div className="tblcard"><table className="tbl"><thead><tr>

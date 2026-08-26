@@ -14,6 +14,13 @@ export async function POST(req) {
     if (req.headers.get('accept')?.includes('application/json') || form.get('back') === 'json') {
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+  } else if (action === 'interest_add') {
+    const label = (form.get('label') || '').trim();
+    if (label) await db.from('collector_interests').upsert(
+      { collector_id: form.get('id'), label, kind: form.get('kind') || 'custom', added_by: rep },
+      { onConflict: 'collector_id,label' });
+  } else if (action === 'interest_del') {
+    await db.from('collector_interests').delete().eq('id', form.get('iid'));
   } else if (action === 'collector_add') {
     const email = (form.get('email') || '').trim().toLowerCase() ||
       ('manual+' + Date.now() + '@import.chasecontemporary.com');
