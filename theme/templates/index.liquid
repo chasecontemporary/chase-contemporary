@@ -3,31 +3,30 @@
 <div class="wrap">
   {%- if pele and pele.products_count > 0 -%}
   <div class="hcar r in" id="hcar">
-    <div class="hstage" id="hstage">
+    <div class="hcar-track" id="hcar-track">
       {%- for product in pele.products limit: 10 -%}
       {%- assign img = product.featured_image -%}
       {%- if img -%}
-      <div class="hslide{% if forloop.first %} on{% endif %}"
+      <div class="hcar-slide">
+        <a class="hcar-work" href="{{ product.url | within: pele }}"
            data-artist="{{ product.vendor | escape }}" data-title="{{ product.title | escape }}">
-        <a class="hcar-work" href="{{ product.url | within: pele }}" draggable="false">
           <img src="{{ img | image_url: width: 1800 }}"
             srcset="{{ img | image_url: width: 1800 }} 1x, {{ img | image_url: width: 2800 }} 2x"
             sizes="92vw" width="{{ img.width }}" height="{{ img.height }}"
-            alt="{{ product.title | escape }}" loading="eager" draggable="false"
+            alt="{{ product.title | escape }}" loading="eager"
             {% if forloop.first %}fetchpriority="high"{% endif %}
             decoding="async" onload="this.classList.add('ld')">
         </a>
       </div>
       {%- endif -%}
       {%- endfor -%}
-      <button class="hcar-zone l" aria-label="Previous work"></button>
-      <button class="hcar-zone r" aria-label="Next work"></button>
     </div>
-    <div class="hline"><span id="hline-fill"></span></div>
-    <div class="hero-cap" id="hcar-cap">
-      <span class="t"><span id="hc-artist">{{ pele.products.first.vendor }}</span> · <span id="hc-title">{{ pele.products.first.title }}</span></span>
-      <span class="s"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }} &nbsp;·&nbsp; <a class="hcar-link" href="{{ pele.url }}">VIEW THE COLLECTION</a></span>
-    </div>
+    <button class="hcar-zone l" aria-label="Previous work"></button>
+    <button class="hcar-zone r" aria-label="Next work"></button>
+  </div>
+  <div class="hero-cap" id="hcar-cap">
+    <span class="t"><span id="hc-artist">{{ pele.products.first.vendor }}</span> · <span id="hc-title">{{ pele.products.first.title }}</span></span>
+    <span class="s"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }} &nbsp;·&nbsp; <a class="hcar-link" href="{{ pele.url }}">VIEW THE COLLECTION</a></span>
   </div>
 {%- endif -%}
   <section class="ink" id="ink">

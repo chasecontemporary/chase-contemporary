@@ -330,35 +330,28 @@ body.exhpage footer { display: none; }
 body.exhpage main { min-height: 0; }
 
 
-/* ---------- landing viewing-room dissolve ---------- */
+/* ---------- landing carousel ---------- */
 .hcar { position: relative; margin-top: 26px; }
-.hstage { position: relative; height: 70vh; cursor: grab; overflow: hidden; }
-.hstage.dragging { cursor: grabbing; }
-.hslide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  opacity: 0; transform: scale(.985); pointer-events: none;
-  transition: opacity .6s var(--ease), transform .95s var(--ease); }
-.hslide.on { opacity: 1; transform: scale(1); pointer-events: auto; }
-.hslide.out { opacity: 0; transform: scale(1.018); transition: opacity .5s var(--ease), transform .8s var(--ease); }
-.hslide img { height: 100%; max-height: 70vh; width: auto; max-width: 92%; object-fit: contain;
-  opacity: 0; transition: opacity .5s ease; user-select: none; -webkit-user-drag: none; }
-.hslide img.ld { opacity: 1; }
-.hcar-zone { position: absolute; top: 0; bottom: 0; width: 22%; z-index: 4; border: 0;
+.hcar-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  scrollbar-width: none; overscroll-behavior-x: contain; }
+.hcar-track::-webkit-scrollbar { display: none; }
+.hcar-slide { flex: 0 0 100%; scroll-snap-align: center; }
+.hcar-work { display: block; line-height: 0; }
+.hcar-slide img { display: block; margin: 0 auto; height: 70vh; max-width: 92%;
+  width: auto; object-fit: contain; opacity: 0; transition: opacity .5s ease; }
+.hcar-slide img.ld { opacity: 1; }
+.hcar-zone { position: absolute; top: 0; bottom: 0; width: 24%; z-index: 4; border: 0;
   background: none; padding: 0; }
 .hcar-zone.l { left: 0; cursor: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cpath d='M19 5 L9 15 L19 25' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") 15 15, w-resize; }
 .hcar-zone.r { right: 0; cursor: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cpath d='M11 5 L21 15 L11 25' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") 15 15, e-resize; }
-.hline { position: relative; height: 1px; background: var(--hair); margin: 30px auto 0; max-width: 520px; }
-.hline span { position: absolute; left: 0; top: 0; height: 1px; background: var(--ink);
-  transition: width .7s var(--ease); }
 .hcar-link { font-weight: 600; border-bottom: 1px solid var(--ink); padding-bottom: 2px; color: var(--ink); }
 .hcar-link:hover { color: var(--mute); border-color: var(--mute); }
-#hcar-cap { margin-top: 20px; }
 #hcar-cap .t #hc-artist { font-weight: 600; }
-#hcar-cap .t { transition: opacity .3s ease, transform .3s ease; }
-#hcar-cap.swap .t { opacity: 0; transform: translateY(5px); }
-@media (max-width: 720px) { .hstage { height: 50vh; } .hslide img { max-height: 50vh; } .hcar-zone { width: 28%; } }
-@media (prefers-reduced-motion: reduce) {
-  .hslide, .hslide.out { transition: opacity .3s ease; transform: none; }
+@media (max-width: 720px) {
+  .hcar-slide img { height: 50vh; }
+  .hcar-zone { width: 30%; }
 }
+
 
 /* footer mark */
 .foot-mark { padding: 26px var(--pad) 54px; }
