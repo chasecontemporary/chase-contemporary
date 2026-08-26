@@ -31,9 +31,9 @@ header { position: sticky; top: 0; z-index: 40; background: #fff; height: 64px;
          padding: 0 var(--pad); border-bottom: 1px solid transparent; transition: border-color .3s ease; }
 header.sc { border-bottom-color: var(--hair); }
 .mark { display: block; line-height: 0; }
-.mark img { height: 12px; width: auto; display: block; }
+.mark img { height: 21px; width: auto; display: block; }
 nav { display: flex; align-items: center; gap: 34px; }
-@media (max-width: 720px) { header { height: 56px; } nav { gap: 18px; } .mark img { height: 10px; } }
+@media (max-width: 720px) { header { height: 58px; } nav { gap: 18px; } .mark img { height: 15px; } }
 nav .sep { font-size: 8.5px; color: var(--mute); letter-spacing: .26em; white-space: pre; }
 main { padding-top: 0; }
 nav a { font-size: 11px; font-weight: 500; letter-spacing: .04em; color: var(--ink); transition: color .18s ease; }
