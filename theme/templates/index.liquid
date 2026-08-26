@@ -1,14 +1,37 @@
 {%- assign pele = collections['pele'] -%}
 {%- assign hero = pele.products.first -%}
 <div class="wrap">
-  {%- if hero and hero.featured_image -%}
-  <a class="hero r in" href="{{ pele.url }}">
-    <img class="fx" src="{{ hero.featured_image | image_url: width: 2400 }}" alt="{{ pele.title | escape }}"
-      width="{{ hero.featured_image.width }}" height="{{ hero.featured_image.height }}"
-      decoding="async" fetchpriority="high" onload="this.classList.add('ld')">
-  </a>
-  <div class="hero-cap"><span class="t">{{ pele.title }} · A COLLECTION</span><span class="s">CURRENT EXHIBITION</span></div>
-  {%- endif -%}
+  {%- if pele and pele.products_count > 0 -%}
+  <div class="hcar r in" id="hcar">
+    <div class="hcar-track" id="hcar-track">
+      {%- for product in pele.products limit: 10 -%}
+      {%- assign img = product.featured_image -%}
+      {%- if img -%}
+      <div class="hcar-slide">
+        <a class="hcar-work" href="{{ product.url | within: pele }}">
+          <img src="{{ img | image_url: width: 1600 }}"
+            srcset="{{ img | image_url: width: 1600 }} 1x, {{ img | image_url: width: 2400 }} 2x"
+            sizes="86vw" width="{{ img.width }}" height="{{ img.height }}"
+            alt="{{ product.title | escape }}" loading="eager"
+            {% if forloop.first %}fetchpriority="high"{% endif %}
+            decoding="async" onload="this.classList.add('ld')">
+        </a>
+        <div class="hcar-cap">
+          <span class="a">{{ product.vendor }}</span>
+          <span class="t">{{ product.title }}</span>
+        </div>
+      </div>
+      {%- endif -%}
+      {%- endfor -%}
+    </div>
+    <button class="hcar-arrow l" aria-label="Previous">&#8249;</button>
+    <button class="hcar-arrow r" aria-label="Next">&#8250;</button>
+  </div>
+  <div class="hcar-cta r in">
+    <span class="hcar-idx"><span id="hcar-pos">01</span> / {{ pele.products_count | at_most: 10 | prepend: '00' | slice: -2, 2 }}</span>
+    <a class="hcar-link" href="{{ pele.url }}">{{ pele.title | upcase }} · VIEW THE COLLECTION</a>
+  </div>
+{%- endif -%}
   <div class="statement r">HAND-SIGNED ORIGINALS · LIMITED EDITION WORKS · AUTHENTICATED ART</div>
   <div class="section-label r">SELECTED WORKS</div>
   <div class="feat">

@@ -31,6 +31,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  /* landing carousel */
+  var hc = document.getElementById('hcar-track');
+  if (hc) {
+    hc.querySelectorAll('img').forEach(function (im) {
+      var w = new Image(); w.src = im.currentSrc || im.src;
+      if (im.complete && im.naturalWidth) im.classList.add('ld');
+    });
+    var hpos = document.getElementById('hcar-pos');
+    var hupd = function () {
+      var i = Math.round(hc.scrollLeft / hc.clientWidth) + 1;
+      if (hpos) hpos.textContent = (i < 10 ? '0' : '') + i;
+    };
+    hc.addEventListener('scroll', function(){ requestAnimationFrame(hupd); }, { passive: true });
+    var hby = function (d) { hc.scrollBy({ left: d * hc.clientWidth, behavior: 'smooth' }); };
+    var hl = document.querySelector('.hcar-arrow.l'), hr = document.querySelector('.hcar-arrow.r');
+    if (hl) hl.addEventListener('click', function(){ hby(-1); });
+    if (hr) hr.addEventListener('click', function(){ hby(1); });
+    hupd();
+  }
+
   /* hero caption bound to artwork width */
   var hero = document.querySelector('.hero img'), hcap = document.querySelector('.hero-cap');
   if (hero && hcap) {
