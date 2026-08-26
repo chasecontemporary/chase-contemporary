@@ -1,0 +1,102 @@
+{%- assign is_edition = false -%}
+{%- if product.type == 'Print' and product.price > 0 -%}{%- assign is_edition = true -%}{%- endif -%}
+{%- assign vhandle = product.vendor | handleize -%}
+{%- assign acol = collection | default: collections[vhandle] -%}
+<div class="wrap">
+  {%- if acol and acol.handle != 'all' -%}
+  <a class="crumb" href="{{ acol.url }}" data-img="{{ acol.products.first.featured_image | image_url: width: 480 }}">&larr; {{ acol.title }}</a>
+  {%- endif -%}
+  <div class="work">
+    <div class="work-img r in">
+      {%- assign img = product.featured_image -%}
+      {%- if img -%}
+      <img class="fx" src="{{ img | image_url: width: 1400 }}"
+        srcset="{{ img | image_url: width: 1400 }} 1x, {{ img | image_url: width: 2400 }} 2x"
+        sizes="(max-width: 880px) 92vw, 60vw" width="{{ img.width }}" height="{{ img.height }}"
+        alt="{{ product.title | escape }}" decoding="async" onload="this.classList.add('ld')">
+      {%- endif -%}
+    </div>
+    <div class="work-info r in">
+      <div class="artist">
+        {%- if collections[vhandle] != blank -%}<a href="{{ collections[vhandle].url }}">{{ product.vendor }}</a>
+        {%- else -%}{{ product.vendor }}{%- endif -%}
+      </div>
+      <div class="title">{{ product.title }}</div>
+      <div class="meta">{{ product.description | strip_html | truncate: 200 | replace: '—', ',' | replace: '–', ',' }}</div>
+      <div class="price">{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}Price on request{% endif %}</div>
+      <div class="status">{% if product.available %}AVAILABLE{% else %}SOLD{% endif %}</div>
+      <button class="btn-inq" id="inqbtn" onclick="inq()">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</button>
+      {%- unless is_edition -%}
+      <div class="alt-acts" id="altacts"><button onclick="inqPre('hold')">PLACE A 72-HOUR HOLD</button></div>
+      {%- endunless -%}
+      <div class="assure">HAND-SIGNED ORIGINALS · AUTHENTICATED ART<br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
+      {%- if acol -%}
+      <div class="wnav">
+        {%- if collection.previous_product -%}<a href="{{ collection.previous_product }}">&larr; PREVIOUS</a>{%- else -%}<span></span>{%- endif -%}
+        {%- if collection.next_product -%}<a href="{{ collection.next_product }}">NEXT &rarr;</a>{%- else -%}<span></span>{%- endif -%}
+      </div>
+      {%- endif -%}
+    </div>
+  </div>
+  {%- if collections[vhandle] != blank and collections[vhandle].products_count > 1 -%}
+  <div class="rel">
+    <div class="section-label r">MORE FROM {{ product.vendor | upcase }}</div>
+    <div class="grid">
+      {%- assign shown = 0 -%}
+      {%- for p in collections[vhandle].products -%}
+        {%- if p.id != product.id and shown < 3 -%}
+          {% render 'card', card_product: p, card_collection: collections[vhandle] %}
+          {%- assign shown = shown | plus: 1 -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+  {%- endif -%}
+</div>
+<div class="mbar"><span class="p">{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}Price on request{% endif %}</span><button class="act" onclick="inq()">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</button></div>
+<div class="scrim" id="scrim" onclick="closeInq()"></div>
+<div class="drawer" id="drawer" role="dialog" aria-label="Inquiry">
+  <button class="dx" onclick="closeInq()">CLOSE</button>
+  {% form 'contact', id: 'inq', class: 'inq' %}
+    <div class="fhead">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %} · {{ product.title }}</div>
+    {%- if form.posted_successfully? -%}
+      <div class="inq-done show">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
+    {%- else -%}
+    <div class="row2">
+      <div><label for="f-fn">FIRST NAME *</label><input id="f-fn" name="contact[first_name]" required autocomplete="given-name"></div>
+      <div><label for="f-ln">LAST NAME *</label><input id="f-ln" name="contact[last_name]" required autocomplete="family-name"></div>
+    </div>
+    <div class="row2">
+      <div><label for="f-e">EMAIL *</label><input id="f-e" type="email" name="contact[email]" required autocomplete="email"></div>
+      <div><label for="f-p">PHONE</label><input id="f-p" type="tel" name="contact[phone]" autocomplete="tel"></div>
+    </div>
+    <div class="row2">
+      <div><label for="f-c">CITY</label><input id="f-c" name="contact[city]" autocomplete="address-level2"></div>
+      <div><label for="f-h">HOW DID YOU FIND US</label>
+        <select id="f-h" name="contact[source]"><option value="" selected>SELECT</option><option>INSTAGRAM</option>
+        <option>SEARCH</option><option>ART FAIR</option><option>PRESS</option><option>WORD OF MOUTH</option></select></div>
+    </div>
+    <label for="f-m">MESSAGE</label>
+    <textarea id="f-m" name="contact[body]">I am interested in {{ product.title }} by {{ product.vendor }}. Please send availability and payment options.</textarea>
+    <label class="ck"><input type="checkbox" name="contact[newsletter_opt_in]" value="yes" checked><span>KEEP ME INFORMED OF NEW WORKS BY {{ product.vendor | upcase }} AND GALLERY EXHIBITIONS</span></label>
+    <label class="ck"><input type="checkbox" name="contact[trade]" value="yes"><span>I AM AN ART ADVISOR OR INTERIOR DESIGNER (TRADE)</span></label>
+    <input type="hidden" name="contact[artwork]" value="{{ product.title | escape }} ({{ product.handle }})">
+    <input type="hidden" name="contact[artist]" value="{{ product.vendor | escape }}">
+    <input type="hidden" name="contact[price_band]" value="{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}POA{% endif %}">
+    <input type="hidden" name="contact[page_journey]" id="cc-journey">
+    <input type="hidden" name="contact[referrer]" id="cc-ref">
+    <input type="hidden" name="contact[utm]" id="cc-utm">
+    <input type="hidden" name="contact[seconds_on_page]" id="cc-secs">
+    <button class="btn-inq" type="submit" style="margin-top:26px">SEND INQUIRY</button>
+    <div class="note">A MEMBER OF THE GALLERY WILL RESPOND WITHIN MINUTES.<br>YOUR DETAILS STAY WITH THE GALLERY AND ARE NEVER SHARED.</div>
+    {%- endif -%}
+  {% endform %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.body.classList.add('workpage');
+  var l = document.getElementById('lb');
+  if (l) l.innerHTML = '<img src="{{ product.featured_image | image_url: width: 2400 }}" alt="{{ product.title | escape }}">';
+  {% if form.posted_successfully? %}inq();{% endif %}
+});
+</script>

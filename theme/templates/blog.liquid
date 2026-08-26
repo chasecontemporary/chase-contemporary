@@ -1,0 +1,1 @@
+<div class="wrap"><div class="page-title r in">{{ blog.title | upcase }}</div><div class="section-label"></div><div class="prose r in">{% for article in blog.articles %}<p><a href="{{ article.url }}">{{ article.title }}</a></p>{% endfor %}</div></div>

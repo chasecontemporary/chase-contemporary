@@ -1,0 +1,12 @@
+<div class="wrap">
+  <div class="page-title r in">{{ collection.title }}</div>
+  <div class="page-sub r in">{{ collection.products_count }} WORKS{% if collection.handle == 'pele' %} · CURRENT EXHIBITION{% endif %}</div>
+  <div class="section-label"></div>
+  <div class="grid">
+    {%- paginate collection.products by 50 -%}
+      {%- for product in collection.products -%}
+        {% render 'card', card_product: product, card_collection: collection, card_num: forloop.index %}
+      {%- endfor -%}
+    {%- endpaginate -%}
+  </div>
+</div>

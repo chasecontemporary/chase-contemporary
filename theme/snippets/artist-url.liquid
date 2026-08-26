@@ -1,0 +1,3 @@
+{%- comment -%}Maps a product vendor to its artist collection URL via handleized vendor.{%- endcomment -%}
+{%- assign vhandle = product.vendor | handleize -%}
+{%- assign artist_col = collections[vhandle] -%}

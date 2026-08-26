@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }}{% unless page_title contains shop.name %} · {{ shop.name }}{% endunless %}</title>
+  {% if page_description %}<meta name="description" content="{{ page_description | escape }}">{% endif %}
+  <link rel="preconnect" href="https://cdn.shopify.com">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {{ 'chase.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'chase.js' | asset_url }}" defer></script>
+  {{ content_for_header }}
+</head>
+<body>
+<header>
+  <a class="mark" href="{{ routes.root_url }}">CHASE CONTEMPORARY</a>
+  <nav>
+    <a href="{{ routes.collections_url }}" {% if template contains 'list-collections' %}class="on"{% endif %}>ARTISTS</a>
+    <a href="{{ routes.collections_url }}/pele" {% if collection.handle == 'pele' %}class="on"{% endif %}>EXHIBITIONS</a>
+    <a href="{{ pages.about.url | default: '/pages/about' }}" {% if page.handle == 'about' %}class="on"{% endif %}>ABOUT</a>
+    <a href="{{ pages.contact.url | default: '/pages/contact' }}" {% if page.handle == 'contact' %}class="on"{% endif %}>CONTACT</a>
+  </nav>
+</header>
+<main>{{ content_for_layout }}</main>
+<footer><div class="wrap">
+  <div class="col"><b>CHASE CONTEMPORARY</b><br>CERTIFICATE OF AUTHENTICITY WITH EVERY WORK</div>
+  <div class="col"><b>CONTACT</b><br><a href="https://www.instagram.com/chasecontemporary/">INSTAGRAM</a><br>{{ shop.email | default: 'INFO@CHASECONTEMPORARY.COM' }}</div>
+  <div class="col news"><b>NEWSLETTER</b>
+    {% form 'customer', class: 'nlform' %}
+      <input type="hidden" name="contact[tags]" value="newsletter">
+      <input type="email" name="contact[email]" placeholder="Email address" aria-label="Email address" required>
+      <button aria-label="Subscribe">&rarr;</button>
+    {% endform %}
+  </div>
+</div></footer>
+<div class="lb" id="lb"></div>
+</body>
+</html>

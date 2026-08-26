@@ -1,0 +1,12 @@
+<div class="wrap">
+  <div class="page-title r in">ARTISTS</div>
+  <div class="section-label r"></div>
+  <ul class="index-list r in">
+    {%- for c in collections -%}
+      {%- unless c.handle == 'pele' or c.handle == 'summer-sale' or c.handle == 'all' or c.handle == 'frontpage' -%}
+      <li><a href="{{ c.url }}" data-img="{{ c.products.first.featured_image | image_url: width: 640 }}">
+        <span class="n">{{ c.title }}</span><span class="c">{{ c.products_count }} WORKS</span></a></li>
+      {%- endunless -%}
+    {%- endfor -%}
+  </ul>
+</div>

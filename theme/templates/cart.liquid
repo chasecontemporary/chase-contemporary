@@ -1,0 +1,1 @@
+<div class="wrap"><div class="page-title r in">CART</div><div class="section-label"></div><div class="prose r in"><p>{% for item in cart.items %}{{ item.title }} · {{ item.final_line_price | money }}<br>{% endfor %}{% if cart.item_count > 0 %}<a href="/checkout">CHECKOUT</a>{% else %}YOUR CART IS EMPTY{% endif %}</p></div></div>

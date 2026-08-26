@@ -1,0 +1,36 @@
+{%- comment -%}params: card_product, card_collection (optional), card_num (optional){%- endcomment -%}
+{%- assign img = card_product.featured_image -%}
+{%- assign is_edition = false -%}
+{%- if card_product.type == 'Print' and card_product.price > 0 -%}{%- assign is_edition = true -%}{%- endif -%}
+{%- if card_collection -%}
+  {%- assign work_url = card_product.url | within: card_collection -%}
+{%- else -%}
+  {%- assign work_url = card_product.url -%}
+{%- endif -%}
+<div class="card r">
+  <a class="cim" href="{{ work_url }}">
+    <div class="im">
+      {%- if img -%}
+      <img class="fx" src="{{ img | image_url: width: 900 }}"
+        srcset="{{ img | image_url: width: 900 }} 1x, {{ img | image_url: width: 1800 }} 2x"
+        sizes="(max-width: 720px) 92vw, 46vw" width="{{ img.width }}" height="{{ img.height }}"
+        alt="{{ card_product.title | escape }}, {{ card_product.vendor | escape }}"
+        loading="lazy" decoding="async" onload="this.classList.add('ld')">
+      {%- endif -%}
+    </div>
+    {%- if card_num -%}<div class="num">{{ card_num | prepend: '0' | slice: -2, 2 }}</div>{%- endif -%}
+  </a>
+  <div class="cap">
+    {%- assign vhandle = card_product.vendor | handleize -%}
+    {%- if collections[vhandle] != blank and collections[vhandle].handle != blank -%}
+      <a class="artist" href="{{ collections[vhandle].url }}">{{ card_product.vendor }}</a>
+    {%- else -%}
+      <span class="artist">{{ card_product.vendor }}</span>
+    {%- endif -%}
+    <a class="wl" href="{{ work_url }}">
+      <div class="title">{{ card_product.title }}</div>
+      <div class="price">{% if is_edition %}{{ card_product.price | money_without_trailing_zeros }}{% else %}Price on request{% endif %}</div>
+    </a>
+    <a class="cta" href="{{ work_url }}#inquire">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</a>
+  </div>
+</div>
