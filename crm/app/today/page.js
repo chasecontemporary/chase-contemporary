@@ -24,9 +24,12 @@ export default async function Today() {
           <div className="meta">{[r.budget_range, r.timeframe, r.source].filter(Boolean).join(' · ')}<br/>
             {r.owner ? 'Owner: ' + r.owner : 'Unclaimed'}</div>
           <div style={{display:'flex', gap:8}}>
+            {!r.first_called_at && <form method="POST" action="/api/act">
+              <input type="hidden" name="action" value="called"/><input type="hidden" name="id" value={r.id}/>
+              <button className="btn mini">Log call</button></form>}
             {!r.contacted_at && <form method="POST" action="/api/act">
               <input type="hidden" name="action" value="contacted"/><input type="hidden" name="id" value={r.id}/>
-              <button className="btn mini">Mark answered</button></form>}
+              <button className="btn ghost mini">Answered</button></form>}
             <a className="btn ghost mini" href={'/collectors/' + r.collector_id}>Open card</a>
           </div>
         </div>;

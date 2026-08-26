@@ -1,0 +1,1 @@
+alter table inquiries add column if not exists first_called_at timestamptz;

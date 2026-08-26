@@ -13,6 +13,17 @@ export async function POST(req) {
     await db.from('inquiries').update({ status: 'contacted', contacted_at: new Date().toISOString(),
       owner: cur?.owner || rep }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'contacted', actor: rep });
+  } else if (action === 'called') {
+    const { data: cur } = await db.from('inquiries').select('first_called_at, status, owner, contacted_at').eq('id', id).single();
+    const patch = { first_called_at: cur?.first_called_at || new Date().toISOString(), owner: cur?.owner || rep };
+    if (!cur?.contacted_at) patch.contacted_at = new Date().toISOString();
+    if (cur?.status === 'new') { patch.status = 'contacted'; patch.stage_changed_at = new Date().toISOString(); }
+    await db.from('inquiries').update(patch).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'call', actor: rep });
+    if (form.get('back') !== 'json' && !req.headers.get('accept')?.includes('application/json')) {
+      return new Response(null, { status: 302, headers: { Location: form.get('back') || '/today' } });
+    }
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } else if (action === 'status') {
     await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: rep });

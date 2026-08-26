@@ -115,6 +115,16 @@ export default function Kanban({ initial }) {
               value={openLead.status} onChange={e => move(openLead.id, e.target.value)}>
               {STAGES.map(s => <option key={s} value={s}>{LABEL[s]}</option>)}
             </select>
+            <button className="btn ghost mini" onClick={async () => {
+              const fd = new FormData(); fd.set('action','called'); fd.set('id', openLead.id);
+              await fetch('/api/act', { method:'POST', body: fd });
+              setOpenLead(o => ({ ...o, first_called_at: o.first_called_at || new Date().toISOString(),
+                contacted_at: o.contacted_at || new Date().toISOString(),
+                status: o.status === 'new' ? 'contacted' : o.status }));
+              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l,
+                first_called_at: l.first_called_at || new Date().toISOString(),
+                status: l.status === 'new' ? 'contacted' : l.status } : l));
+            }}>{openLead.first_called_at ? '✓ Called' : 'Log call'}</button>
             {!openLead.contacted_at && <span style={{fontSize:12, color:'#ff3b30', fontWeight:600}}>
               Awaiting first response</span>}
           </div>

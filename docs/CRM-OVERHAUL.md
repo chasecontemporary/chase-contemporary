@@ -51,3 +51,5 @@ Artcloud CSVs (Contacts, Inventory, Invoices via Actions>Export + QBO sales expo
 
 ## Structural thesis (8/26, Devyn)
 Engine mirrors MoaOS structurally: the Sale = the project container; the deliverable is built in (the painting/s); leads attach to sales; ONE invoice per sale with line items (industry standard); money/commissions hang off the sale. Bundling: multiple inquiries from one collector merge into one open sale.
+
+- Backlog: business-hours-adjusted inquiry->call metric (needs defined working calendar); per-rep call speed on leaderboard
