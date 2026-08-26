@@ -13,6 +13,10 @@ export async function POST(req) {
   } else if (action === 'status') {
     await db.from('inquiries').update({ status: form.get('status') }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: 'rep' });
+  } else if (action === 'rule_add') {
+    await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
+  } else if (action === 'rule_toggle') {
+    await db.from('commission_rules').update({ active: form.get('active') === '1' }).eq('id', id);
   } else if (action === 'note') {
     await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: 'rep' });
   }

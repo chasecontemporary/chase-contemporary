@@ -9,30 +9,29 @@ export default async function Today() {
     .in('status', ['new', 'contacted'])
     .order('created_at', { ascending: false }).limit(60);
   const open = (rows || []).filter(r => r.status === 'new');
-  const working = (rows || []).filter(r => r.status === 'contacted');
-  return <Shell active="today">
-    <div className="h1">TODAY</div>
-    <div className="sub">{open.length} AWAITING FIRST RESPONSE · {working.length} IN PROGRESS</div>
-    <div className="grid-cards">
+  return <Shell active="today" counts={{ today: open.length }}>
+    <div className="h1">Today</div>
+    <div className="sub">{open.length} awaiting first response · {(rows||[]).length - open.length} in progress</div>
+    <div className="stack">
       {(rows || []).map(r => {
         const c = r.collectors || {};
-        return <div className="qcard" key={r.id}>
+        return <div className="card row" key={r.id}>
           <Sla createdAt={r.created_at} contactedAt={r.contacted_at} />
-          <div className="who">{c.first_name} {c.last_name}{c.trade ? ' · TRADE' : ''}
-            <small>{c.email}{c.phone ? ' · ' + c.phone : ''}{c.city ? ' · ' + c.city : ''}</small></div>
+          <div className="who">{c.first_name} {c.last_name}{c.trade ? ' · Trade' : ''}
+            <small>{[c.email, c.phone, c.city].filter(Boolean).join(' · ')}</small></div>
           <div className="what">{r.artwork_title || r.purpose}
             <small>{[r.artist, r.price_band].filter(Boolean).join(' · ')}</small></div>
           <div className="meta">{[r.budget_range, r.timeframe, r.source].filter(Boolean).join(' · ')}<br/>
-            {r.owner ? 'OWNER: ' + r.owner : 'UNCLAIMED'}</div>
-          <div style={{display:'flex', gap:10}}>
+            {r.owner ? 'Owner: ' + r.owner : 'Unclaimed'}</div>
+          <div style={{display:'flex', gap:8}}>
             {!r.contacted_at && <form method="POST" action="/api/act">
               <input type="hidden" name="action" value="contacted"/><input type="hidden" name="id" value={r.id}/>
-              <button className="btn">MARK ANSWERED</button></form>}
-            <a className="btn ghost" href={'/collectors/' + r.collector_id}>CARD</a>
+              <button className="btn mini">Mark answered</button></form>}
+            <a className="btn ghost mini" href={'/collectors/' + r.collector_id}>Open card</a>
           </div>
         </div>;
       })}
     </div>
-    {!rows?.length && <div className="empty">NO OPEN INQUIRIES. THE FLOOR IS CLEAR.</div>}
+    {!rows?.length && <div className="empty">No open inquiries. The floor is clear.</div>}
   </Shell>;
 }
