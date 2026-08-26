@@ -432,13 +432,7 @@ html[style*="--pagein-skip"] body { animation: none; }
 .fc-panel { width: 100vw; flex: none; padding: 12px var(--pad) 0; }
 .fc-grid { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--colgap);
   row-gap: calc(var(--rowgap) * 0.55); align-items: end; }
-.fc-item a { display: block; }
-.fc-item img { width: 100%; height: auto; max-height: 54vh; object-fit: contain;
-  object-position: center bottom; opacity: 0; transition: opacity .6s ease;
-  user-select: none; -webkit-user-drag: none; }
-.fc-item img.ld { opacity: 1; }
-.fc-item a:hover img.ld { opacity: .95; }
-.fc-cap { margin-top: 12px; text-align: center; }
-.fc-cap .a { font-size: 10.5px; font-weight: 600; letter-spacing: .04em; }
-.fc-cap .t { font-size: 10px; letter-spacing: .03em; color: var(--mute); margin-left: 9px; }
-@media (max-width: 720px) { .fc-item img { max-height: 40vh; } }
+.fc-item .card img { user-select: none; -webkit-user-drag: none; }
+.fc-item .card .im { min-height: 0; }
+.fc-item .card img { max-height: 54vh; }
+@media (max-width: 720px) { .fc-item .card img { max-height: 40vh; } }
