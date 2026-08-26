@@ -80,13 +80,12 @@ export default function Kanban({ initial }) {
           onDragStart={() => setDragId(l.id)}
           onDragEnd={() => setDragId(null)}
           onClick={() => setOpenLead(l)}>
-          <div style={{display:'flex', gap:10}}>
-            {l.artwork?.image_url && <img src={l.artwork.image_url + (l.artwork.image_url.includes('?') ? '&' : '?') + 'width=88'}
-              alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:8, flexShrink:0}}/>}
-            <div style={{minWidth:0}}>
-              <div className="t">{l.collectors?.first_name} {l.collectors?.last_name}</div>
-              <div className="s" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{l.artwork_title || l.purpose}</div>
-            </div>
+          {l.artwork?.image_url && <img src={l.artwork.image_url + (l.artwork.image_url.includes('?') ? '&' : '?') + 'width=560'}
+            alt="" style={{width:'calc(100% + 28px)', margin:'-12px -14px 10px', height:120,
+              objectFit:'cover', borderRadius:'10px 10px 0 0', display:'block'}}/>}
+          <div style={{minWidth:0}}>
+            <div className="t">{l.collectors?.first_name} {l.collectors?.last_name}</div>
+            <div className="s" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{l.artwork_title || l.purpose}</div>
           </div>
           <div className="s" style={{display:'flex', justifyContent:'space-between', marginTop:6}}>
             <span style={{fontWeight:600, color:'#1d1d1f'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
