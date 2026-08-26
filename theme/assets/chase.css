@@ -96,12 +96,12 @@ main { min-height: 62vh; }
 .card .cim { display: flex; flex-direction: column; flex: 1; }
 .card .im { display: flex; align-items: flex-end; flex: 1; min-height: 34vh; }
 @media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
-.card img { width: 100%; height: auto; max-height: 72vh; object-fit: contain; object-position: left bottom;
+.card img { width: auto; max-width: 100%; height: auto; max-height: 72vh; object-fit: contain; object-position: left bottom;
             transition: opacity .7s ease; }
 .card .cim img { transition: opacity .7s ease, transform .45s cubic-bezier(.2,.6,.2,1); }
 .card .cim:hover img.ld { opacity: .95; transform: translateY(-5px); }
 @media (prefers-reduced-motion: reduce) { .card .cim:hover img.ld { transform: none; } }
-.card .cap { margin-top: 16px; }
+.card .cap { margin-top: 16px; max-width: 100%; }
 .cap .artist { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 a.artist::after { content: ''; display: block; height: 1px; margin-top: 3px; background: currentColor;
                   transform: scaleX(0); transform-origin: left; transition: transform .28s cubic-bezier(.2,.6,.2,1); }

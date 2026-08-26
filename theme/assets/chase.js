@@ -31,6 +31,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  /* caption width = rendered artwork width (wall-label rule) */
+  var sizeCaps = function () {
+    document.querySelectorAll('.card').forEach(function (c) {
+      var im = c.querySelector('.cim img'), cap = c.querySelector('.cap');
+      if (im && cap && im.clientWidth) cap.style.width = im.clientWidth + 'px';
+    });
+  };
+  sizeCaps();
+  document.querySelectorAll('.card .cim img').forEach(function (im) {
+    im.addEventListener('load', sizeCaps);
+  });
+  var szT = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(szT); szT = setTimeout(sizeCaps, 120);
+  }, { passive: true });
+
   if (location.hash === '#inquire' && document.getElementById('drawer')) inq();
   if (document.getElementById('drawer')) {
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeInq(); });
