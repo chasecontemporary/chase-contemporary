@@ -510,9 +510,9 @@ html[style*="--pagein-skip"] body { animation: none; }
 .press-list .h { font-size: 11px; letter-spacing: .04em; color: var(--mute); line-height: 1.9; }
 @media (max-width: 720px) { .press-list li { flex-direction: column; gap: 6px; } .press-list .o { width: auto; } }
 
-.props { display: grid; grid-template-columns: minmax(300px, 430px) minmax(0, 780px);
-  gap: 44px clamp(48px, 7vw, 140px); margin-top: calc(var(--sp) * .7); }
-.prop .pb { max-width: 480px; }
+.props { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--colgap);
+  row-gap: 44px; margin-top: calc(var(--sp) * .7); }
+.prop .pb { max-width: 560px; }
 @media (max-width: 720px) { .props { grid-template-columns: 1fr; } }
 .prop .ph { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
 .prop .pb { font-size: 11px; letter-spacing: .04em; line-height: 2.1; color: var(--mute); margin-top: 10px; }
@@ -580,8 +580,9 @@ html[style*="--pagein-skip"] body { animation: none; }
 }
 
 /* ---------- contact split ---------- */
-.csplit { display: grid; grid-template-columns: minmax(300px, 430px) minmax(0, 780px);
-  gap: clamp(48px, 7vw, 140px); align-items: start; }
+.csplit { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--colgap);
+  align-items: start; }
+.cform { max-width: 780px; }
 .cleft .big { margin-top: 0; }
 .cform .inq > label:first-of-type { margin-top: 0; }
 .cleft { position: sticky; top: 40px; }
