@@ -116,6 +116,8 @@
     <label class="ck"><input type="checkbox" name="contact[newsletter_opt_in]" value="yes" checked><span>KEEP ME INFORMED OF NEW WORKS BY {{ product.vendor | upcase }} AND GALLERY EXHIBITIONS</span></label>
     <label class="ck"><input type="checkbox" name="contact[trade]" value="yes"><span>I AM PURCHASING ON BEHALF OF A CLIENT (TRADE)</span></label>
     <input type="hidden" name="contact[artwork]" value="{{ product.title | escape }} ({{ product.handle }})">
+    <input type="hidden" name="contact[artwork_handle]" value="{{ product.handle }}">
+    <input type="hidden" name="contact[artwork_title]" value="{{ product.title | escape }}">
     <input type="hidden" name="contact[artist]" value="{{ product.vendor | escape }}">
     <input type="hidden" name="contact[price_band]" value="{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}POA{% endif %}">
     <input type="hidden" name="contact[page_journey]" id="cc-journey">

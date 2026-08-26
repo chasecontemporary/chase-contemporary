@@ -24,7 +24,18 @@ export default async function Pipeline() {
   }
   const counts = {};
   (rows || []).forEach(r => { counts[r.collector_id] = (counts[r.collector_id] || 0) + 1; });
-  const leads = (rows || []).map(r => ({ ...r, artwork: artMap[r.artwork_handle] || null,
+  const missingTitles = [...new Set((rows || [])
+    .filter(r => !artMap[r.artwork_handle] && r.artwork_title)
+    .map(r => r.artwork_title))];
+  let titleMap = {};
+  if (missingTitles.length) {
+    const { data: byTitle } = await db.from('artworks')
+      .select('id, handle, title, artist, price_cents, image_url, medium, dims_h_in, dims_w_in, available')
+      .in('title', missingTitles);
+    (byTitle || []).forEach(a => { titleMap[a.title] = a; });
+  }
+  const leads = (rows || []).map(r => ({ ...r,
+    artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
     openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1 }));
   return <Shell active="pipeline">
     <div className="h1">Pipeline</div>
