@@ -11,17 +11,18 @@ export default async function Finance() {
   const all = invs || [];
   const open = all.filter(i => i.status === 'open');
   const paid = all.filter(i => i.status === 'paid');
-  const ar = open.reduce((s, i) => s + i.amount_cents, 0);
+  const tot = (i) => i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0);
+  const ar = open.reduce((s, i) => s + tot(i), 0);
   const now = Date.now();
   const bucket = (i) => {
     const d = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
     return d <= 30 ? '0-30' : d <= 60 ? '31-60' : d <= 90 ? '61-90' : '90+';
   };
   const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
-  open.forEach(i => { buckets[bucket(i)] += i.amount_cents; });
+  open.forEach(i => { buckets[bucket(i)] += tot(i); });
   const yr = new Date().getFullYear();
   const collectedYtd = paid.filter(i => i.paid_at && new Date(i.paid_at).getFullYear() === yr)
-    .reduce((s, i) => s + i.amount_cents, 0);
+    .reduce((s, i) => s + tot(i), 0);
   const avgDays = paid.filter(i => i.paid_at).length
     ? Math.round(paid.filter(i => i.paid_at).reduce((s, i) =>
         s + (new Date(i.paid_at) - new Date(i.issued_at)) / 86400000, 0) / paid.filter(i => i.paid_at).length)
@@ -51,7 +52,9 @@ export default async function Finance() {
       </select>
       <input name="title" placeholder="Work / description" required style={{flex:1, minWidth:180}}/>
       <input name="artist" placeholder="Artist" style={{width:140}}/>
-      <input name="amount" placeholder="Amount $" type="number" step="0.01" required style={{width:120}}/>
+      <input name="amount" placeholder="Amount $" type="number" step="0.01" required style={{width:110}}/>
+      <input name="tax" placeholder="Tax $" type="number" step="0.01" style={{width:90}}/>
+      <input name="shipping" placeholder="Ship $" type="number" step="0.01" style={{width:90}}/>
       <input name="due" type="date" style={{width:150}}/>
       <button className="btn mini">Create invoice</button>
     </form>
@@ -65,17 +68,20 @@ export default async function Finance() {
         <td style={{fontVariantNumeric:'tabular-nums'}}>{String(i.invoice_number).padStart(4,'0')}</td>
         <td style={{fontWeight:600}}>{i.collectors ? i.collectors.first_name + ' ' + i.collectors.last_name : '—'}</td>
         <td>{i.title}{i.artist ? <span style={{color:'#86868b'}}> · {i.artist}</span> : null}</td>
-        <td style={{fontVariantNumeric:'tabular-nums', fontWeight:600}}>{usd(i.amount_cents)}</td>
+        <td style={{fontVariantNumeric:'tabular-nums', fontWeight:600}}>{usd(i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0))}
+          {(i.tax_cents || i.shipping_cents) ? <div style={{fontSize:11, color:'#86868b', fontWeight:400}}>
+            {usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''}</div> : null}</td>
         <td>{new Date(i.issued_at).toLocaleDateString()}</td>
         <td style={{color: i.status === 'open' && age > 30 ? '#ff3b30' : '#86868b'}}>{age}d</td>
         <td>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
           : i.status === 'void' ? <span className="pill">Void</span>
           : <span className="pill blue">Open</span>}</td>
         <td>{i.status === 'open' && <div style={{display:'flex', gap:6}}>
-          <form method="POST" action="/api/act">
+          <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
             <input type="hidden" name="action" value="invoice_paid"/>
             <input type="hidden" name="id" value={i.id}/>
             <input type="hidden" name="back" value="/finance"/>
+            <input name="method" placeholder="wire / card…" style={{width:86, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
             <button className="btn mini">Mark paid</button></form>
           <form method="POST" action="/api/act">
             <input type="hidden" name="action" value="invoice_void"/>

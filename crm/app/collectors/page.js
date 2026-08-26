@@ -16,6 +16,7 @@ export default async function Collectors({ searchParams }) {
   if (seg === 'buyers') query = query.gt('spend_cents', 0);
   if (seg === 'trade') query = query.eq('trade', true);
   if (seg === 'news') query = query.eq('newsletter', true);
+  if (seg === 'vip') query = query.contains('tags', ['VIP list']);
   if (seg === 'active') query = query.gt('open_inq', 0);
   const [{ data: rows }, { count: totalCollectors }, { count: totalBuyers }, { data: ltvAgg }] = await Promise.all([
     query,
@@ -40,7 +41,7 @@ export default async function Collectors({ searchParams }) {
       (interests[i.collector_id] = interests[i.collector_id] || new Set()).add(i.artist); });
     (pinRows || []).forEach(p => (pins[p.collector_id] = pins[p.collector_id] || []).push(p.label));
   }
-  const segs = [['all','All'],['buyers','Buyers'],['active','Active pipeline'],['trade','Trade'],['news','Newsletter']];
+  const segs = [['all','All'],['buyers','Buyers'],['active','Active pipeline'],['vip','VIP'],['trade','Trade'],['news','Newsletter']];
   return <Shell active="collectors">
     <div className="h1">Collectors</div>
     <div className="sub">{totalCollectors?.toLocaleString()} in the book · showing top {list.length}{q ? ` for "${q}"` : ''} by lifetime value</div>

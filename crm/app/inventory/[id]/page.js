@@ -7,11 +7,13 @@ export default async function Unit({ params }) {
   const { id } = await params;
   const { data: a } = await db.from('artworks').select('*').eq('id', id).single();
   if (!a) return <Shell active="inventory"><div className="empty">Not found</div></Shell>;
-  const [{ data: inqs }, { data: buys }] = await Promise.all([
+  const [{ data: inqs }, { data: buys }, { data: appr }] = await Promise.all([
     a.handle ? db.from('inquiries').select('*, collectors(id, first_name, last_name, budget_range)')
       .eq('artwork_handle', a.handle).order('created_at', { ascending: false }) : { data: [] },
     db.from('purchases').select('*, collectors(id, first_name, last_name)').eq('artwork_id', a.id),
+    db.from('holds').select('*').eq('artwork_id', a.id).eq('kind', 'approval').eq('status', 'active'),
   ]);
+  const out = (appr || [])[0];
   return <Shell active="inventory">
     <div style={{display:'grid', gridTemplateColumns:'minmax(0,480px) 1fr', gap:28, alignItems:'start'}}>
       <div className="card" style={{padding:12}}>
@@ -31,9 +33,31 @@ export default async function Unit({ params }) {
             {a.medium && <><dt>Medium</dt><dd>{a.medium}</dd></>}
             {a.dims_h_in && <><dt>Size</dt><dd>{a.dims_h_in} × {a.dims_w_in} in</dd></>}
             <dt>Type</dt><dd>{a.product_type || '—'}</dd>
+            <dt>Location</dt><dd>{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : '—'))}</dd>
             {a.handle && <><dt>On site</dt><dd><a style={{color:'#0071e3'}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">View product page ↗</a></dd></>}
           </dl>
         </div>
+        {a.available && <div className="card" style={{marginTop:14}}>
+          <div style={{fontSize:13, fontWeight:650, marginBottom:8}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
+          {out ? <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
+            <span>With <b>{out.out_to}</b>{out.expires_at ? ` · due back ${new Date(out.expires_at).toLocaleDateString()}` : ''}</span>
+            {['returned','converted'].map(o => <form key={o} method="POST" action="/api/act">
+              <input type="hidden" name="action" value="approval_close"/>
+              <input type="hidden" name="id" value={a.id}/>
+              <input type="hidden" name="hold_id" value={out.id}/>
+              <input type="hidden" name="outcome" value={o}/>
+              <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+              <button className="btn mini">{o === 'returned' ? 'Mark returned' : 'Converted to sale'}</button>
+            </form>)}
+          </div> : <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
+            <input type="hidden" name="action" value="approval_out"/>
+            <input type="hidden" name="id" value={a.id}/>
+            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+            <input name="out_to" placeholder="With whom (client, designer, partner)" required style={{flex:1, minWidth:200}}/>
+            <input name="due" type="date" style={{width:150}}/>
+            <button className="btn mini">Send out</button>
+          </form>}
+        </div>}
         {(buys||[]).length > 0 && <div className="card" style={{marginTop:14}}>
           <div style={{fontSize:13, fontWeight:650, marginBottom:6}}>Sold to</div>
           {(buys||[]).map(b => <div key={b.id} style={{fontSize:13.5}}>

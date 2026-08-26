@@ -14,6 +14,31 @@ export async function POST(req) {
     if (req.headers.get('accept')?.includes('application/json') || form.get('back') === 'json') {
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+  } else if (action === 'audience_add') {
+    await db.from('audiences').insert({ name: form.get('name'), created_by: rep,
+      definition: { seg: form.get('seg') || 'all', artist: form.get('artist') || null,
+        min_spend: form.get('min_spend') || null, consented: form.get('consented') === 'true' } });
+  } else if (action === 'audience_del') {
+    await db.from('audiences').delete().eq('id', id);
+  } else if (action === 'campaign_add') {
+    await db.from('campaigns').insert({ name: form.get('name'), kind: form.get('kind') || 'drop',
+      subject: form.get('subject'), preheader: form.get('preheader') || null,
+      body: form.get('body') || null, audience_id: form.get('audience_id') || null,
+      artwork_ids: form.getAll('artwork_ids'), created_by: rep });
+  } else if (action === 'campaign_approve') {
+    await db.from('campaigns').update({ status: 'approved', approved_by: rep }).eq('id', id);
+  } else if (action === 'campaign_del') {
+    await db.from('campaigns').delete().eq('id', id);
+  } else if (action === 'approval_out') {
+    await db.from('holds').insert({ artwork_id: id, kind: 'approval',
+      out_to: form.get('out_to'), expires_at: form.get('due') || null });
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+      kind: 'on_approval_out', body: 'to ' + form.get('out_to'), actor: rep });
+  } else if (action === 'approval_close') {
+    const outcome = form.get('outcome');   // returned | converted
+    await db.from('holds').update({ status: outcome }).eq('id', form.get('hold_id'));
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+      kind: 'on_approval_' + outcome, actor: rep });
   } else if (action === 'interest_add') {
     const label = (form.get('label') || '').trim();
     if (label) await db.from('collector_interests').upsert(
@@ -118,14 +143,17 @@ export async function POST(req) {
     await db.from('invoices').insert({
       collector_id: form.get('collector_id') || null,
       title: form.get('title'), artist: form.get('artist') || null,
-      amount_cents: cents, due_at: form.get('due') || null, notes: form.get('notes') || null });
+      amount_cents: cents,
+      tax_cents: Math.round(Number(form.get('tax') || 0) * 100),
+      shipping_cents: Math.round(Number(form.get('shipping') || 0) * 100),
+      due_at: form.get('due') || null, notes: form.get('notes') || null });
   } else if (action === 'invoice_paid') {
     const { data: inv } = await db.from('invoices')
       .update({ status: 'paid', paid_at: new Date().toISOString(), method: form.get('method') || null })
       .eq('id', id).select().single();
     if (inv) {
       const { data: pay } = await db.from('payments')
-        .insert({ amount_cents: inv.amount_cents, method: inv.method, status: 'pending' })
+        .insert({ amount_cents: inv.amount_cents + (inv.tax_cents || 0) + (inv.shipping_cents || 0), method: inv.method, status: 'pending' })
         .select().single();
       if (pay) await db.from('payments').update({ status: 'settled', settled_at: new Date().toISOString() }).eq('id', pay.id);
       if (inv.sale_id) {
