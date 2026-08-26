@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var sizeCaps = function () {
     document.querySelectorAll('.card').forEach(function (c) {
       var im = c.querySelector('.cim img'), cap = c.querySelector('.cap');
-      if (im && cap && im.clientWidth) cap.style.width = im.clientWidth + 'px';
+      if (im && cap && im.clientWidth) cap.style.width = Math.max(im.clientWidth, 210) + 'px';
     });
   };
   sizeCaps();

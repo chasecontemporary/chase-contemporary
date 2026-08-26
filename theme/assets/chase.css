@@ -94,8 +94,8 @@ main { min-height: 62vh; }
 .card { display: flex; flex-direction: column; }
 .card .cim { display: flex; flex-direction: column; flex: 1; }
 .card .im { display: flex; align-items: flex-end; flex: 1; min-height: 34vh; }
-@media (max-width: 720px) { .card .im { flex: none; min-height: 0; } }
-.card img { width: auto; max-width: 100%; height: auto; max-height: 72vh; object-fit: contain; object-position: left bottom;
+@media (max-width: 720px) { .card .im { flex: none; min-height: 0; } .card img { height: 38vh; } }
+.card img { height: 56vh; width: auto; max-width: 100%; object-fit: contain; object-position: center bottom;
             transition: opacity .7s ease; }
 .card .cim img { transition: opacity .7s ease, transform .45s cubic-bezier(.2,.6,.2,1); }
 .card .cim:hover img.ld { opacity: .95; transform: translateY(-5px); }
