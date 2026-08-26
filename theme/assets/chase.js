@@ -31,6 +31,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('img.fx').forEach(function (im) { if (im.complete && im.naturalWidth) im.classList.add('ld'); });
 
+  /* pinned viewing room */
+  var vr = document.getElementById('vroom');
+  if (vr && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var vs = vr.querySelectorAll('.vroom-slide');
+    var vidx = vr.querySelectorAll('.vroom-idx span');
+    var vcur = -1;
+    var vtick = function () {
+      var r = vr.getBoundingClientRect();
+      var span = r.height - window.innerHeight;
+      var p = Math.max(0, Math.min(0.9999, -r.top / span));
+      var i = Math.floor(p * vs.length);
+      if (i !== vcur) {
+        vcur = i;
+        vs.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+        vidx.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+      }
+    };
+    window.addEventListener('scroll', function(){ requestAnimationFrame(vtick); }, { passive: true });
+    vs.forEach(function (s) { var im = s.querySelector('img'); if (im) { var w = new Image(); w.src = im.currentSrc || im.src; } });
+    vtick();
+  } else if (vr) {
+    vr.querySelectorAll('.vroom-slide').forEach(function (s) { s.classList.add('on'); });
+  }
+
   /* ink-in statement */
   var inkp = document.getElementById('inkp');
   if (inkp) {

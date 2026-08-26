@@ -34,17 +34,36 @@
     <h2 class="ink-h">A CONSIDERED COLLECTION</h2>
     <p class="ink-p" id="inkp">We bring together extraordinary works from some of the most compelling artists of our time, photography, painting, and mixed media selected for their artistic integrity, cultural resonance, and the stories they carry. Every piece in the collection is chosen because it endures.</p>
   </section>
-  <div class="section-label r">SELECTED WORKS</div>
-  <div class="feat">
-    {%- assign shown = 0 -%}
-    {%- assign classes = 'f-a,f-b,f-c,f-d,f-e,f-f' | split: ',' -%}
-    {%- for product in collections.all.products limit: 24 -%}
-      {%- if product.featured_image and product.type != 'Print' and shown < 6 -%}
-        <div class="{{ classes[shown] }}">{% render 'card', card_product: product %}</div>
+  <section class="vroom" id="vroom">
+    <div class="vroom-pin">
+      <div class="section-label vroom-label">SELECTED WORKS</div>
+      {%- assign shown = 0 -%}
+      {%- for product in collections.all.products limit: 30 -%}
+        {%- if product.featured_image and product.type != 'Print' and shown < 6 -%}
+        {%- assign img = product.featured_image -%}
+        {%- assign vhandle = product.vendor | handleize -%}
+        <div class="vroom-slide" data-i="{{ shown }}">
+          <a class="vroom-work" href="{{ product.url }}">
+            <img src="{{ img | image_url: width: 1400 }}"
+              srcset="{{ img | image_url: width: 1400 }} 1x, {{ img | image_url: width: 2400 }} 2x"
+              sizes="70vw" width="{{ img.width }}" height="{{ img.height }}"
+              alt="{{ product.title | escape }}" loading="lazy" decoding="async"
+              onload="this.classList.add('ld')">
+          </a>
+          <div class="vroom-cap">
+            <span class="a">{{ product.vendor }}</span>
+            <span class="t">{{ product.title }}</span>
+            <a class="q" href="{{ product.url }}#inquire">INQUIRE</a>
+          </div>
+        </div>
         {%- assign shown = shown | plus: 1 -%}
-      {%- endif -%}
-    {%- endfor -%}
-  </div>
+        {%- endif -%}
+      {%- endfor -%}
+      <div class="vroom-idx" id="vroom-idx">
+        {%- for n in (1..6) -%}<span>{{ n | prepend: '0' }}</span>{%- endfor -%}
+      </div>
+    </div>
+  </section>
   <div class="section-label r">ARTISTS</div>
   <ul class="index-list r">
     {%- for c in collections -%}
