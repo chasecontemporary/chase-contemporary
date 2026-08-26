@@ -162,13 +162,29 @@ export default function Kanban({ initial }) {
             display:'flex', justifyContent:'space-between', padding:'3px 0'}}>
             <span>{i.title}</span><span style={{fontVariantNumeric:'tabular-nums'}}>{usd(i.agreed_cents)}</span>
           </div>)}
-          {!inSale && <div style={{display:'flex', gap:8, marginTop:8}}>
-            <input type="number" step="0.01" placeholder={a?.price_cents ? 'Agreed $ (' + Math.round(a.price_cents/100).toLocaleString() + ')' : 'Agreed price $'}
+          {!inSale && <>
+          {a?.price_cents > 0 && <div style={{display:'flex', gap:6, marginTop:8, flexWrap:'wrap'}}>
+            {[[0, 'List ' + usd(a.price_cents)], [5, '−5%'], [10, '−10%'], [15, '−15%']].map(([pct, label]) =>
+              <button key={pct} onClick={() => setAgreed(String(Math.round(a.price_cents * (100 - pct) / 100) / 100))}
+                style={{border:'1px solid #e8e8ed', background: '#fff', borderRadius:980, fontFamily:'inherit',
+                  fontSize:12, fontWeight:600, padding:'5px 12px', cursor:'pointer'}}>{label}</button>)}
+          </div>}
+          <div style={{display:'flex', gap:8, marginTop:8}}>
+            <input type="number" step="0.01" placeholder="Agreed price $"
               value={agreed} onChange={e => setAgreed(e.target.value)}
               style={{flex:1, border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit',
                 fontSize:13.5, padding:'8px 12px', outline:'none'}}/>
             <button className="btn" onClick={addToSale}>{sale ? 'Add to sale' : 'Start sale'}</button>
-          </div>}
+          </div>
+          {agreed > 0 && (() => {
+            const cents = Math.round(Number(agreed) * 100);
+            const disc = a?.price_cents > 0 ? Math.round((1 - cents / a.price_cents) * 1000) / 10 : null;
+            const col = disc === null ? '#86868b' : disc <= 0 ? '#34c759' : disc <= 10 ? '#86868b' : disc <= 20 ? '#b8860b' : '#ff3b30';
+            return <div style={{fontSize:12, marginTop:8, fontWeight:600, color: col}}>
+              {usd(cents)}{disc !== null && disc > 0 ? ` · ${disc}% below list` : disc !== null && disc < 0 ? ' · above list' : disc === 0 ? ' · at list' : ''}
+              {disc !== null && disc > 20 ? ' — deep discount, visible on the board' : ''}
+            </div>; })()}
+          </>}
           {sale && sale.sale_items.length > 0 && <button className="btn" style={{width:'100%', marginTop:10}}
             onClick={invoiceSale}>Generate invoice · {usd(saleTotal)}</button>}
         </div>}
