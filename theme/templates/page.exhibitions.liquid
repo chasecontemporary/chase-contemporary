@@ -3,9 +3,10 @@
   <div class="page-sub r in">PAST AND PRESENT EXHIBITIONS PRESENTED BY CHASE CONTEMPORARY</div>
   <div class="section-label r">NOW SHOWING</div>
   <div class="exnow r">
-    <a class="exnow-t" href="/collections/pele">PELÉ, THE PELÉ COLLECTION</a>
+    {%- assign pele_img = collections['pele'].products.first.featured_image -%}
+    <a class="exnow-t" href="/collections/pele" data-img="{{ pele_img | image_url: width: 640 }}">PELÉ, THE PELÉ COLLECTION</a>
     <p class="ink-p inkfx">A landmark collection of rare silver gelatin prints documenting the life and legacy of Pelé, FIFA&#x27;s Player of the Century. Each work is hand-signed by Pelé himself and produced in strictly limited editions.</p>
-    <a class="hcar-link" href="/collections/pele">VIEW THE COLLECTION</a>
+    <a class="hcar-link" href="/collections/pele" data-img="{{ pele_img | image_url: width: 640 }}">VIEW THE COLLECTION</a>
   </div>
   <div class="section-label r">ARCHIVE</div>
   <div class="exlist"><div class="exrow r">
