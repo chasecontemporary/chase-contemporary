@@ -17,6 +17,13 @@ export async function POST(req) {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
     await db.from('commission_rules').update({ active: form.get('active') === '1' }).eq('id', id);
+  } else if (action === 'purchase_add') {
+    await db.from('purchases').insert({
+      collector_id: id, title: form.get('title'), artist: form.get('artist'),
+      amount_cents: Math.round(Number(form.get('amount') || 0) * 100),
+      purchased_at: form.get('date') || new Date().toISOString().slice(0, 10), source: 'manual' });
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
+      kind: 'purchase_logged', body: `${form.get('title')} · $${form.get('amount')}`, actor: 'rep' });
   } else if (action === 'note') {
     await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: 'rep' });
   }
