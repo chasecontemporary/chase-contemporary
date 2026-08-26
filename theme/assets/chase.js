@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
     Array.prototype.slice.call(fct.children).forEach(function (p) {
       var c = p.cloneNode(true); c.setAttribute('aria-hidden', 'true'); fct.appendChild(c);
     });
+    fct.querySelectorAll('.card, .r').forEach(function (c) { c.classList.add('in'); });
     var fx = 0, fvx = 0, fdrag = false, flx = 0, fmoved = false;
     var fwrap = function () {
       if (!fBase) fBase = fct.scrollWidth / 2;
