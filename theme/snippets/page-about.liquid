@@ -9,8 +9,8 @@
 
   <div class="arow">
     <div class="acol-t r">
-      <p>As the art world shifted, so did Chase Contemporary. The gallery has evolved into a digital-first platform, making gallery-quality art accessible to collectors everywhere, without the limitations of a fixed address. What hasn't changed is the standard: every work offered is authenticated, thoughtfully presented, and chosen with the same rigour applied to every physical exhibition.</p>
-      <p>The gallery continues to operate in the physical world through carefully curated pop-up exhibitions and art fair presentations globally, including Art Miami, Art Palm Beach, Art New York, and the Dallas Art Fair.</p>
+      <p class="ink-p inkfx" style="margin-top:0">As the art world shifted, so did Chase Contemporary. The gallery has evolved into a digital-first platform, making gallery-quality art accessible to collectors everywhere, without the limitations of a fixed address.</p>
+      <p class="ink-p inkfx">The gallery continues to operate in the physical world through carefully curated pop-up exhibitions and art fair presentations globally, including Art Miami, Art Palm Beach, Art New York, and the Dallas Art Fair.</p>
     </div>
     <div class="acol-i r"><img src="https://cdn.shopify.com/s/files/1/0709/4324/4439/files/11-forbes-hambleton.png?v=1785018594&width=1400" alt="Richard Hambleton retrospective, Chase Contemporary" loading="lazy" decoding="async" onload="this.classList.add('ld')"></div>
   </div>
@@ -19,16 +19,22 @@
     <div class="acol-i r"><img src="https://cdn.shopify.com/s/files/1/0709/4324/4439/files/08-abcnews.png?v=1785018593&width=1400" alt="Artist at work, Chase Contemporary" loading="lazy" decoding="async" onload="this.classList.add('ld')"></div>
     <div class="acol-t r">
       <div class="ink-k">02 · THE PROGRAM</div>
-      <p style="margin-top:20px">The gallery's program spans painting, photography, sculpture, and works on paper, with particular depth in contemporary photography and street art. Past exhibitions have featured Richard Hambleton, RETNA, Banksy, Ole Aakjaer, Logan Sylve, Angel Ortiz, Raphael Mazzucco, Ron Galella, and more.</p>
+      <p class="ink-p inkfx" style="margin-top:20px">The gallery's program spans painting, photography, sculpture, and works on paper, with particular depth in contemporary photography and street art. Past exhibitions have featured Richard Hambleton, RETNA, Banksy, Ole Aakjaer, Logan Sylve, Angel Ortiz, Raphael Mazzucco, Ron Galella, and more.</p>
     </div>
   </div>
 
-  <section class="ink">
-    <div class="ink-k">03 · NOW SHOWING</div>
-    <p class="ink-p inkfx" style="margin-top:22px">An exclusive collection of silver gelatin prints, each hand-signed by Pelé, documenting the life and legend of the world's greatest footballer across four decades.</p>
-    {%- assign pele_img = collections['pele'].products.first.featured_image -%}
-    <a class="hcar-link" style="margin-top:8px;display:inline-block" href="/collections/pele" data-img="{{ pele_img | image_url: width: 640 }}">VIEW THE COLLECTION</a>
-  </section>
+  {%- assign pele_first = collections['pele'].products.first -%}
+  {%- assign pele_img = pele_first.featured_image -%}
+  <div class="arow">
+    <div class="acol-t r">
+      <div class="ink-k">03 · NOW SHOWING · PELÉ</div>
+      <p class="ink-p inkfx" style="margin-top:20px">An exclusive collection of silver gelatin prints, each hand-signed by Pelé, documenting the life and legend of the world's greatest footballer across four decades.</p>
+      <a class="hcar-link" style="margin-top:24px;display:inline-block" href="/collections/pele" data-img="{{ pele_img | image_url: width: 640 }}">VIEW THE COLLECTION</a>
+    </div>
+    <div class="acol-i r"><a href="/collections/pele">
+      <img src="{{ pele_img | image_url: width: 1400 }}" alt="{{ pele_first.title | escape }}" loading="lazy" decoding="async" onload="this.classList.add('ld')">
+    </a></div>
+  </div>
 
   <div class="section-label r">04 · THE FOUNDER</div>
   <div class="bio r" style="margin-top:0">
