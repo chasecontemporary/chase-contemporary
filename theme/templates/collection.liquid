@@ -1,6 +1,10 @@
 <div class="wrap">
   <div class="page-title r in">{{ collection.title }}</div>
   <div class="page-sub r in">{{ collection.products_count }} WORKS{% if collection.handle == 'pele' %} · CURRENT EXHIBITION{% endif %}</div>
+  {% render 'artist-bio' %}
+  {%- if collection.handle == 'pele' and collection.description != blank -%}
+  <div class="bio r"><p class="ink-p inkfx">{{ collection.description | strip_html | replace: '—', ',' | replace: '–', ',' }}</p></div>
+  {%- endif -%}
   <div class="section-label"></div>
   <div class="grid">
     {%- paginate collection.products by 50 -%}
