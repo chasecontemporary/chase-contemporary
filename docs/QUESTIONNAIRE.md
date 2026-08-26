@@ -87,3 +87,26 @@ Every question that needs an answer before/while building. Organized by category
 58. Email list: was the existing list opt-in? CAN-SPAM physical address to use?
 59. Artist agreements: do consignment contracts permit automated statements/data use, or do any need addenda?
 60. Recorded calls for the "winning script" (plan says "where consent allows") — which states are involved (CA/FL = two-party consent) and is anyone actually recording?
+
+
+---
+
+## INTAKE ANSWERS — received from Kristine Hughes via Devyn, 2026-08-26
+
+- **Entity (Q1):** **Zenzeba Group Inc** owns Chase Contemporary; receives wires/ACH at **JPMorgan Chase** (managed by Bernie Chase & Kristine Hughes).
+- **Shopify (Q9):** **Grow plan**, account owner Bernie Chase. Collaborator invite sent to devyn@magnumopus.agency 8/25 9:32 PM (in inbox, pending Devyn's accept). NOTE: Shopify has NEVER processed a sale.
+- **Domain (Q10):** GoDaddy; Kristine Hughes has the login.
+- **Email (Q11):** Kristine manages Google Workspace; **Sara Skeat** uses/manages info@chasecontemporary.com. Delegate access for Devyn requested.
+- **Marketing + CRM today (Q12/19/20):** **ARTCLOUD** is the system of record: inventory, collector/client list (~27,000 contacts), and email campaigns all live there. Sara maintains it (adds from website, Art Miami, her network). → PRIMARY MIGRATION SOURCE. Credentials received (stored locally, not in repo; rotate after access established).
+- **Payments (Q14):** Stripe (used for Artsy sales), Shopify Payments configured but unused, **Square** handhelds at Art Miami + Square invoices drafted by Kristine when clients pay by card instead of wire.
+- **Accounting (Q15):** QuickBooks Online under Zenzeba Group Inc; Kristine does the books.
+- **Platforms (Q13):** Artsy, Artnet, MutualArt all active; Sara manages subscriptions/content.
+- **Locations (Q4):** NO physical galleries. Inventory stored in Palm Beach, Miami, New York, Los Angeles, Solana Beach. No gallery phone line (only Bernie's and Sara's cells).
+- **Team (Q5/52):** Sales team = **Sara Skeat** (603.309.0643, info@ primary, sara@chasecontemporary.com) + Bernie. Sara answers inquiries.
+- **Artist agreements (Q22):** being researched; possibly in old Google Drive from the Isabel Sullivan / Marla era. (Moot for splits: Bernie owns inventory.)
+- **Brand (Q7):** Logo PNGs received (repo `brand/logos/`): stacked 3-line, 2-line, 1-line lockups, geometric sans.
+- **Old site (Q43):** **Old Squarespace account is STILL ACTIVE with all historical content/assets** — Bernie kept it. Archive restore from source, not Wayback.
+- **Fairs (Q55):** none committed next 6 months.
+- **Shipping (Q41):** YSDS Art, Hangman, SBA Global Logistics, FedEx.
+- **Analytics (Q17):** unknown/likely none; Kristine never had access.
+- **People directory:** Kristine Hughes (ops/books/domain/workspace), Sara Skeat (sales/content/info@), Bernie Chase (owner).

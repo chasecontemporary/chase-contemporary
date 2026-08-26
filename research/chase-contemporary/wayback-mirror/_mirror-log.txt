@@ -90,3 +90,98 @@ OK /artistpage/hybycozo/octagon 20221208193726 694826
 OK /artistpage/imani-bilal 20221129014946 728016
 OK /artistpage/imani-bilal/a-piece-of-infinity 20221202065055 695075
 OK /artistpage/imani-bilal/all-that-is-left-are-things-we-cannot-explain-with-words 20221208204221 695914
+FAIL /artistpage/imani-bilal/and-who-are-you-after-the-mask-is-peeled 20221202061624 <urlopen error timed out>
+FAIL /artistpage/imani-bilal/assume-victory 20221129020339 <urlopen error timed out>
+FAIL /artistpage/imani-bilal/beauty-in-the-dark 20221202061815 <urlopen error timed out>
+OK /artistpage/imani-bilal/because%2C-blue. 20221208195308 688653
+OK /artistpage/imani-bilal/beyond-the-enigma 20221129012436 686210
+OK /artistpage/imani-bilal/complicated 20221202052101 694959
+FAIL /artistpage/imani-bilal/divine-destination 20221202064802 <urlopen error timed out>
+OK /artistpage/imani-bilal/expansion 20221202061202 694885
+OK /artistpage/imani-bilal/feeling-all-of-everything 20221202070815 688696
+OK /artistpage/imani-bilal/forgiveness 20221208202921 696071
+OK /artistpage/imani-bilal/gratitude 20221129010828 685927
+OK /artistpage/imani-bilal/if-it-is-not-brave-it-is-not-art 20221208193038 696634
+OK /artistpage/imani-bilal/in-my-sky-you-are-a-black-sun 20221208192341 696517
+FAIL /artistpage/imani-bilal/keep-your-joy 20221208195856 <urlopen error timed out>
+OK /artistpage/imani-bilal/love-as-water 20221202055910 688628
+FAIL /artistpage/imani-bilal/love-is-the-answer 20221129005634 <urlopen error timed out>
+OK /artistpage/imani-bilal/mystery-vs.-wonder-i 20221129004435 686241
+OK /artistpage/imani-bilal/now 20221129015954 685836
+OK /artistpage/imani-bilal/sacred-secrets 20221202060944 694930
+OK /artistpage/imani-bilal/sing-bluebird%2C-sing! 20221129015845 686179
+OK /artistpage/imani-bilal/the-death-of-ego 20221202064532 694970
+OK /artistpage/imani-bilal/the-hearts-dichotomy 20221202054039 695119
+OK /artistpage/imani-bilal/the-language-of-liberation 20221129000235 686264
+OK /artistpage/imani-bilal/the-longing 20221129020812 685997
+FAIL /artistpage/imani-bilal/the-pain-%26-beauty-of-being-yourself 20221129022029 The read operation timed out
+OK /artistpage/imani-bilal/the-voice-within 20221208195011 694996
+FAIL /artistpage/imani-bilal/to-wonder-of-wonder 20221129021938 <urlopen error timed out>
+OK /artistpage/imani-bilal/true-magic 20221129002940 686034
+OK /artistpage/imani-bilal/unraveling-ii 20221202070925 694950
+OK /artistpage/kenny-scharf 20221202060432 786589
+FAIL /artistpage/kenny-scharf/big-flores-blue 20221202053453 The read operation timed out
+OK /artistpage/kenny-scharf/big-flores-green 20221202071906 695012
+FAIL /artistpage/kenny-scharf/big-flores-yellow 20221129011519 <urlopen error timed out>
+OK /artistpage/kenny-scharf/controlopuss 20221129012314 686137
+OK /artistpage/kenny-scharf/felix-on-a-pedestal 20230203205042 773096
+FAIL /artistpage/kenny-scharf/judy-on-the-beach 20230203200135 <urlopen error timed out>
+OK /artistpage/kenny-scharf/places-please 20230203185834 773012
+FAIL /artistpage/kinki-texas 20221129012541 <urlopen error timed out>
+OK /artistpage/kinki-texas/3-punch-hodgens 20221208184917 696102
+FAIL /artistpage/kinki-texas/a-badly-crewed-ship 20221208204109 <urlopen error timed out>
+FAIL /artistpage/kinki-texas/babylon-babelsberg 20221129010602 <urlopen error timed out>
+OK /artistpage/kinki-texas/back-to-naturr 20221208203720 696094
+FAIL /artistpage/kinki-texas/buffalo-kill 20221129011840 <urlopen error timed out>
+OK /artistpage/kinki-texas/chicken-rider 20221202054258 694866
+OK /artistpage/kinki-texas/control-book 20221202064353 694869
+OK /artistpage/kinki-texas/grid-of-12-drawings 20221129021314 685802
+OK /artistpage/kinki-texas/helios-minor 20221202065610 694672
+OK /artistpage/kinki-texas/kopfgeld-los-werden 20221129002858 679632
+OK /artistpage/kinki-texas/lex-lutor-secret 20221129001357 685976
+OK /artistpage/kinki-texas/marat-garden 20221208184446 696037
+FAIL /artistpage/kinki-texas/mini-taurus 20221202052157 <urlopen error timed out>
+OK /artistpage/kinki-texas/namenloser-lohengrin 20221208201530 695004
+OK /artistpage/kinki-texas/northway-greedy 20221202072013 694910
+OK /artistpage/kinki-texas/oglalas-et-hunkpapas 20221202072353 694964
+OK /artistpage/kinki-texas/pretty-boy-floyd 20221208184648 696121
+OK /artistpage/kinki-texas/proto-retiarius 20221208183822 696020
+FAIL /artistpage/kinki-texas/translator-imperii 20221129015757 The read operation timed out
+OK /artistpage/liu-shuishi 20221202073233 891865
+OK /artistpage/liu-shuishi/abjectly-initiative 20221208200132 689813
+OK /artistpage/liu-shuishi/alienated-disposition 20221129013525 686112
+FAIL /artistpage/liu-shuishi/come! 20221208201412 <urlopen error timed out>
+FAIL /artistpage/liu-shuishi/definitely-not-one 20221129010428 <urlopen error timed out>
+OK /artistpage/liu-shuishi/demonstrative-observation 20221202072427 695122
+OK /artistpage/liu-shuishi/ghost 20221129014336 685796
+FAIL /artistpage/liu-shuishi/here! 20221202071951 The read operation timed out
+OK /artistpage/liu-shuishi/horse 20221202053053 688265
+OK /artistpage/liu-shuishi/kafka 20221129005912 685932
+OK /artistpage/liu-shuishi/me-as-viewer 20221129000518 679521
+OK /artistpage/liu-shuishi/reversion-of-thinking 20221202064549 695043
+OK /artistpage/liu-shuishi/slough 20221202073520 694721
+OK /artistpage/liu-shuishi/socrates'-judgement 20221208190109 695035
+OK /artistpage/liu-shuishi/subject-and-object 20221129021818 686032
+OK /artistpage/liu-shuishi/sunlight 20221129014038 685819
+OK /artistpage/liu-shuishi/the-power-of-solitude 20221129011013 679710
+OK /artistpage/liu-shuishi/the-woman-with-hairpin 20221208191618 695129
+OK /artistpage/liu-shuishi/thinking-about-the-self 20221202054555 695050
+FAIL /artistpage/liu-shuishi/untitled 20221202052918 <urlopen error timed out>
+OK /artistpage/liu-shuishi/viewer 20221129000626 685796
+OK /artistpage/liu-shuishi/wait 20221129001629 679311
+OK /artistpage/liu-shuishi/who-is-the-corresponding-one%3F 20221208190155 696432
+OK /artistpage/logan-sylve 20221129002647 731951
+OK /artistpage/logan-sylve/after-hours 20221129014907 679486
+OK /artistpage/logan-sylve/blue-cat 20221202051804 694779
+OK /artistpage/logan-sylve/bonsai-businessman-1 20221129010948 686097
+OK /artistpage/logan-sylve/bonsai-businessman-2 20221202062404 695021
+FAIL /artistpage/logan-sylve/carmine 20221202061839 <urlopen error timed out>
+OK /artistpage/logan-sylve/crouching-angel 20221129015228 686012
+OK /artistpage/logan-sylve/dog-on-fire 20221129013013 685919
+OK /artistpage/logan-sylve/dog-on-red-slate 20221129012323 686049
+OK /artistpage/logan-sylve/double-lariat 20230203194430 776163
+OK /artistpage/logan-sylve/emeralds 20221208201641 691107
+FAIL /artistpage/logan-sylve/eye-and-barrel 20221129003717 <urlopen error timed out>
+OK /artistpage/logan-sylve/lady-bug-on-tuesday 20221129013919 686340
+OK /artistpage/logan-sylve/meat-vs.-meet 20221202054508 694914
+OK /artistpage/logan-sylve/meditations 20221208201338 694819
