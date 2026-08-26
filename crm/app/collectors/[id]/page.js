@@ -72,7 +72,7 @@ export default async function Card({ params }) {
           : c.budget_range ? 'Stated: ' + c.budget_range : '—'}</td></tr>
         <tr><td style={{color:'#86868b'}}>Mediums</td><td>{taste.mediumList.map(([m, n]) => `${m} (${n})`).join(' · ') || '—'}</td></tr>
         <tr><td style={{color:'#86868b'}}>Cadence</td><td>{taste.cadence
-          ? <>{taste.cadence.avgGap ? 'Buys about every ' + Math.round(taste.cadence.avgGap / 30) + ' months · ' : ''}last {Math.round(taste.cadence.daysSince)} days ago
+          ? <>{taste.cadence.avgGap ? (Math.round(taste.cadence.avgGap / 30) <= 1 ? 'Buys about monthly · ' : 'Buys about every ' + Math.round(taste.cadence.avgGap / 30) + ' months · ') : ''}last {Math.round(taste.cadence.daysSince)} days ago
             {taste.cadence.due ? <span className="pill" style={{background:'#ff9500', color:'#fff', marginLeft:8}}>Due for outreach</span> : null}</>
           : '—'}</td></tr>
         <tr><td style={{color:'#86868b'}}>Buys via</td><td>{taste.channelList.map(([s, n]) => `${s} (${n})`).join(' · ') || '—'}</td></tr>
