@@ -5,6 +5,16 @@ const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nur
 const LABEL = { new:'New', contacted:'Contacted', in_conversation:'In conversation',
   hold:'Hold', invoice:'Invoice', paid:'Paid', nurture:'Nurture' };
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
+const BUDGET_MID = { 'Under $10,000': 500000, '$10,000-25,000': 1750000, '$25,000-50,000': 3750000,
+  '$50,000-100,000': 7500000, '$100,000+': 10000000 };
+const leadValue = (l) => (l.artwork?.price_cents > 0 ? l.artwork.price_cents : (BUDGET_MID[l.budget_range] || 0));
+const ageDays = (t) => Math.floor((Date.now() - new Date(t).getTime()) / 86400000);
+const holdLeft = (l) => {
+  const ms = new Date(l.stage_changed_at || l.created_at).getTime() + 72 * 3600000 - Date.now();
+  if (ms <= 0) return 'Hold expired';
+  const h = Math.floor(ms / 3600000);
+  return h >= 24 ? Math.floor(h / 24) + 'd ' + (h % 24) + 'h left' : h + 'h left';
+};
 
 export default function Kanban({ initial }) {
   const [leads, setLeads] = useState(initial);
@@ -36,16 +46,32 @@ export default function Kanban({ initial }) {
         onDragOver={e => { e.preventDefault(); setOverCol(s); }}
         onDragLeave={() => setOverCol(null)}
         onDrop={e => { e.preventDefault(); setOverCol(null); if (dragId) move(dragId, s); setDragId(null); }}>
-        <h3>{LABEL[s]} · {leads.filter(l => l.status === s).length}</h3>
+        <h3>{LABEL[s]} · {leads.filter(l => l.status === s).length}
+          <span style={{float:'right', fontVariantNumeric:'tabular-nums'}}>
+            {(() => { const v = leads.filter(l => l.status === s).reduce((t, l) => t + leadValue(l), 0);
+              return v ? usd(v) : ''; })()}</span></h3>
         {leads.filter(l => l.status === s).map(l => <div key={l.id}
           className={'kcard' + (dragId === l.id ? ' dragging' : '')}
           draggable
           onDragStart={() => setDragId(l.id)}
           onDragEnd={() => setDragId(null)}
           onClick={() => setOpenLead(l)}>
-          <div className="t">{l.collectors?.first_name} {l.collectors?.last_name}</div>
-          <div className="s">{l.artwork_title || l.purpose}</div>
-          <div className="s">{[l.budget_range, l.owner].filter(Boolean).join(' · ')}</div>
+          <div style={{display:'flex', gap:10}}>
+            {l.artwork?.image_url && <img src={l.artwork.image_url + (l.artwork.image_url.includes('?') ? '&' : '?') + 'width=88'}
+              alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:8, flexShrink:0}}/>}
+            <div style={{minWidth:0}}>
+              <div className="t">{l.collectors?.first_name} {l.collectors?.last_name}</div>
+              <div className="s" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{l.artwork_title || l.purpose}</div>
+            </div>
+          </div>
+          <div className="s" style={{display:'flex', justifyContent:'space-between', marginTop:6}}>
+            <span style={{fontWeight:600, color:'#1d1d1f'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
+            {s === 'hold'
+              ? <span style={{color: holdLeft(l).includes('expired') || holdLeft(l).startsWith('1h') ? '#ff3b30' : '#b8860b', fontWeight:600}}>{holdLeft(l)}</span>
+              : <span style={{color: ageDays(l.stage_changed_at || l.created_at) >= 5 ? '#b8860b' : '#86868b'}}>
+                  {ageDays(l.stage_changed_at || l.created_at)}d in stage</span>}
+          </div>
+          {l.owner && <div className="s">{l.owner}</div>}
         </div>)}
       </div>)}
     </div>

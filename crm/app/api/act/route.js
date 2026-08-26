@@ -11,7 +11,7 @@ export async function POST(req) {
     await db.from('inquiries').update({ status: 'contacted', contacted_at: new Date().toISOString() }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'contacted', actor: form.get('owner') || 'rep' });
   } else if (action === 'status') {
-    await db.from('inquiries').update({ status: form.get('status') }).eq('id', id);
+    await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: 'rep' });
   } else if (action === 'rule_add') {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });

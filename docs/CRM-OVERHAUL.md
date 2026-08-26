@@ -43,3 +43,8 @@ Artcloud CSVs (Contacts, Inventory, Invoices via Actions>Export + QBO sales expo
 1. **Invoicing, fully automated** — invoice generated from a deal, rendered to PDF, stored on **Vercel Blob**, sent to collector; **automated Stripe payment links** attached (pay-by-link closes the loop; settlement webhook flips payment → settled → commission trigger fires).
 2. **COMMISSIONS section** (the "sales force" tab) — commission_rules management UI (who's in the pool, percentages), auto-calculated splits per settled payment (DB trigger already live), per-rep running totals, period statements. Zero manual calculation, zero reconciliation.
 3. **INVENTORY section** — the full inventory system in-app: every work with status/location, **live inventory value** (sum of active works at price, plus cost basis vs retail once Artcloud purchase prices import), filters by artist/type/location/availability, per-work detail with sales history. Becomes the system of record replacing Artcloud inventory (pending their CSV import: purchase prices, editions, consignment records, framing, insurance, storage locations across PB/Miami/NY/LA/Solana Beach).
+
+## Pipeline backlog (8/26)
+- Next-action date per card (0/2/7/21 cadence), overdue = red
+- Stage-appropriate drawer CTAs: send hold link / send invoice / mark paid (arrives w/ Stripe)
+- Loss reasons on closed-lost for learning
