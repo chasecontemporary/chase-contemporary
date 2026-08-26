@@ -533,8 +533,8 @@ html[style*="--pagein-skip"] body { animation: none; }
 .pcard:hover .po { color: var(--ink); }
 .pcard .ph2 { font-size: 11.5px; font-weight: 500; letter-spacing: .04em; line-height: 1.9; margin-top: 8px; }
 .pcard .ph2 span { background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat; background-size: 0% 1px; background-position: 0 92%;
-  transition: background-size .6s var(--ease); }
+  background-repeat: no-repeat; background-size: 0% 1px; background-position: 0 100%;
+  padding-bottom: 5px; transition: background-size .6s var(--ease); }
 .pcard:hover .ph2 span { background-size: 100% 1px; }
 .pcards .pcard:nth-child(3n+2) { transition-delay: .07s; }
 .pcards .pcard:nth-child(3n+3) { transition-delay: .14s; }
