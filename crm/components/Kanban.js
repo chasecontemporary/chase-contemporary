@@ -18,7 +18,7 @@ const holdLeft = (l) => {
   return h >= 24 ? Math.floor(h / 24) + 'd ' + (h % 24) + 'h left' : h + 'h left';
 };
 
-export default function Kanban({ initial }) {
+export default function Kanban({ initial, team = [] }) {
   const [leads, setLeads] = useState(initial);
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
@@ -164,7 +164,19 @@ export default function Kanban({ initial }) {
           <dt>Found us via</dt><dd>{openLead.source || c.source || '—'}</dd>
           <dt>Device</dt><dd>{openLead.device || '—'}</dd>
           <dt>Time on page</dt><dd>{openLead.seconds_on_page ? openLead.seconds_on_page + 's' : '—'}</dd>
-          <dt>Owner</dt><dd>{openLead.owner || 'Unclaimed'}</dd>
+          <dt>Owner</dt><dd>
+            <select value={openLead.owner || ''} onChange={async e => {
+              const owner = e.target.value;
+              const fd = new FormData();
+              fd.set('action','assign'); fd.set('id', openLead.id); fd.set('owner', owner); fd.set('back','json');
+              await fetch('/api/act', { method:'POST', body: fd });
+              setOpenLead(o => ({ ...o, owner }));
+              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
+            }} style={{border:'1px solid #e8e8ed', borderRadius:8, fontFamily:'inherit',
+              fontSize:13, padding:'4px 8px', background:'#fff'}}>
+            <option value="">Unassigned</option>
+            {team.map(t => <option key={t} value={t}>{t}</option>)}
+          </select></dd>
         </dl>
         {openLead.page_journey && <div className="msg"><b style={{fontSize:12}}>Path through the site</b><br/>
           {openLead.page_journey}</div>}

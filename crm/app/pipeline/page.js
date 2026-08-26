@@ -55,9 +55,10 @@ export default async function Pipeline() {
     artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
     openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1,
     competition: competition[r.id] || { others: 0, committed: null } }));
+  const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
   return <Shell active="pipeline">
     <div className="h1">Pipeline</div>
     <div className="sub">{leads.length} open · drag between stages · click a lead for the full picture</div>
-    <Kanban initial={leads} />
+    <Kanban initial={leads} team={(team || []).map(t => t.name)} />
   </Shell>;
 }

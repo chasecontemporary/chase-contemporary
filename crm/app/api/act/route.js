@@ -6,7 +6,28 @@ export async function POST(req) {
   const action = form.get('action');
   const id = form.get('id');
   const back = form.get('back') || '/today';
-  if (action === 'claim') {
+  if (action === 'assign') {
+    const owner = form.get('owner') || null;
+    await db.from('inquiries').update({ owner }).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id,
+      kind: 'assigned', body: owner ? `to ${owner}` : 'unassigned', actor: rep });
+    if (req.headers.get('accept')?.includes('application/json') || form.get('back') === 'json') {
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+  } else if (action === 'collector_add') {
+    const email = (form.get('email') || '').trim().toLowerCase() ||
+      ('manual+' + Date.now() + '@import.chasecontemporary.com');
+    await db.from('collectors').upsert({ email,
+      first_name: form.get('first_name'), last_name: form.get('last_name'),
+      phone: form.get('phone') || null, city: form.get('city') || null,
+      source: form.get('source') || 'Manual', notes: form.get('notes') || null },
+      { onConflict: 'email' });
+  } else if (action === 'team_add') {
+    await db.from('team_members').insert({ name: form.get('name'), email: form.get('email') || null,
+      role: form.get('role') || 'rep' });
+  } else if (action === 'team_toggle') {
+    await db.from('team_members').update({ active: form.get('active') === '1' }).eq('id', id);
+  } else if (action === 'claim') {
     await db.from('inquiries').update({ owner: rep }).eq('id', id);
   } else if (action === 'contacted') {
     const { data: cur } = await db.from('inquiries').select('owner').eq('id', id).single();
