@@ -12,8 +12,8 @@
     <div class="im">
       {%- if img -%}
       <img class="fx" src="{{ img | image_url: width: 900 }}"
-        srcset="{{ img | image_url: width: 900 }} 1x, {{ img | image_url: width: 1800 }} 2x"
-        sizes="(max-width: 720px) 92vw, 46vw" width="{{ img.width }}" height="{{ img.height }}"
+        srcset="{{ img | image_url: width: 1200 }} 1x, {{ img | image_url: width: 2048 }} 2x"
+        sizes="(max-width: 720px) 92vw, 44vw" width="{{ img.width }}" height="{{ img.height }}"
         alt="{{ card_product.title | escape }}, {{ card_product.vendor | escape }}"
         loading="lazy" decoding="async" onload="this.classList.add('ld')">
       {%- endif -%}

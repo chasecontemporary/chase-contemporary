@@ -11,9 +11,9 @@
       {%- assign img = product.featured_image -%}
       {%- if img -%}
       <img class="fx" src="{{ img | image_url: width: 1400 }}"
-        srcset="{{ img | image_url: width: 1400 }} 1x, {{ img | image_url: width: 2400 }} 2x"
+        srcset="{{ img | image_url: width: 1600 }} 1x, {{ img | image_url: width: 2800 }} 2x"
         sizes="(max-width: 880px) 92vw, 60vw" width="{{ img.width }}" height="{{ img.height }}"
-        data-zoom="{{ img | image_url: width: 2400 }}" fetchpriority="high"
+        data-zoom="{{ img | image_url: width: 3200 }}" fetchpriority="high"
         alt="{{ product.title | escape }}" decoding="async" onload="this.classList.add('ld')">
       {%- endif -%}
     </div>
