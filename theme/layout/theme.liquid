@@ -14,7 +14,8 @@
 <body>
 <a class="skip" href="#main">SKIP TO CONTENT</a>
 <header>
-  <a class="mark" href="{{ routes.root_url }}">CHASE CONTEMPORARY</a>
+  <a class="mark" href="{{ routes.root_url }}" aria-label="Chase Contemporary">
+    <img src="{{ 'chase-logo.png' | asset_url }}" alt="Chase Contemporary" height="12"></a>
   <nav>
     <a href="{{ routes.collections_url }}" {% if template contains 'list-collections' %}class="on"{% endif %}>ARTISTS</a>
     <a href="{{ routes.collections_url }}/pele" {% if collection.handle == 'pele' %}class="on"{% endif %}>EXHIBITIONS</a>

@@ -3,6 +3,10 @@ window.addEventListener('pageshow', function (e) {
   if (e.persisted) document.body.classList.remove('leaving');
 });
 document.addEventListener('DOMContentLoaded', function () {
+  /* header-hairline */
+  var hd = document.querySelector('header');
+  if (hd) { var hs = function(){ hd.classList.toggle('sc', window.scrollY > 4); };
+    hs(); window.addEventListener('scroll', hs, { passive: true }); }
   try {
     var j = JSON.parse(sessionStorage.getItem('cc_journey') || '[]');
     j.push(location.pathname); if (j.length > 40) j = j.slice(-40);
