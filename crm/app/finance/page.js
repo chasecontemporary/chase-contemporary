@@ -204,6 +204,10 @@ export default async function Finance({ searchParams }) {
                 {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
                 {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
               </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
+              {isOpen && <div style={{marginTop:14}}>
+                <div className="cardtitle" style={{marginBottom:8}}>Chase stage</div>
+                <ArStage id={i.id} value={i.ar_status}/>
+              </div>}
             </div>
             <div>
               <div className="cardtitle" style={{marginBottom:8}}>Money</div>
@@ -223,27 +227,28 @@ export default async function Finance({ searchParams }) {
             </div>
             <div>
               <div className="cardtitle" style={{marginBottom:8}}>Documents</div>
-              <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:14}}>
-                {i.pdf_url && <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>}
-                {(docsBySale[i.sale_id] || []).map((doc, ix) => <DocPreview key={ix} compact url={doc.url} label={doc.label}/>)}
-                <form method="POST" action="/api/act" style={{display:'inline-block'}}>
-                  <input type="hidden" name="action" value="invoice_pdf"/>
-                  <input type="hidden" name="id" value={i.id}/>
-                  <input type="hidden" name="back" value="/finance"/>
-                  <button className="btn mini quiet">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
-                </form>
-                {isOpen && payReady && <form method="POST" action="/api/act" style={{display:'inline-block'}}>
+              <div style={{display:'flex', gap:14, flexWrap:'wrap', alignItems:'flex-start'}}>
+                <div style={{display:'flex', flexDirection:'column', gap:8, alignItems:'center'}}>
+                  {i.pdf_url
+                    ? <DocPreview url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>
+                    : <div style={{width:110, height:143, borderRadius:10, border:'1px dashed #d2d2d7',
+                        display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#86868b'}}>No PDF yet</div>}
+                  <form method="POST" action="/api/act">
+                    <input type="hidden" name="action" value="invoice_pdf"/>
+                    <input type="hidden" name="id" value={i.id}/>
+                    <input type="hidden" name="back" value="/finance"/>
+                    <button className="btn mini quiet">{i.pdf_url ? 'Regenerate PDF' : 'Generate PDF'}</button>
+                  </form>
+                </div>
+                {(docsBySale[i.sale_id] || []).map((doc, ix) => <DocPreview key={ix} url={doc.url} label={doc.label}/>)}
+                {isOpen && payReady && <form method="POST" action="/api/act" style={{alignSelf:'flex-end'}}>
                   <input type="hidden" name="action" value="invoice_paylink"/>
                   <input type="hidden" name="id" value={i.id}/>
                   <input type="hidden" name="back" value="/finance"/>
                   <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
                 </form>}
-                {i.pay_url && <a className="pill blue" href={i.pay_url} target="_blank">Pay ↗</a>}
+                {i.pay_url && <a className="pill blue" style={{alignSelf:'flex-end'}} href={i.pay_url} target="_blank">Pay ↗</a>}
               </div>
-              {isOpen && <>
-                <div className="cardtitle" style={{marginBottom:8}}>Chase stage</div>
-                <ArStage id={i.id} value={i.ar_status}/>
-              </>}
             </div>
           </div>
           {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
