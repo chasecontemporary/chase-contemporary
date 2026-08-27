@@ -1,7 +1,7 @@
 import { db } from '../../../lib/db';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
-import { settleInvoice } from '../../../lib/settle';
+import { settleInvoice, recordPayment } from '../../../lib/settle';
 import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
@@ -257,6 +257,15 @@ export async function POST(req) {
     await db.from('invoices').update(patch).eq('id', id);
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
       kind: 'ar_' + st, body: form.get('promise_date') || null, actor: rep });
+  } else if (action === 'invoice_payment') {
+    const amt = Math.round(Number(String(form.get('amount') || '0').replace(/[$,\s]/g, '')) * 100);
+    if (amt > 0) {
+      const r = await recordPayment(id, amt, form.get('method') || null);
+      if (r) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
+        kind: r.closed ? 'paid' : 'payment_received',
+        body: '$' + (amt / 100).toLocaleString() + (r.closed ? ' · settled in full' : ' · balance $' + ((r.total - r.received) / 100).toLocaleString()),
+        actor: rep });
+    }
   } else if (action === 'invoice_paid') {
     const inv = await settleInvoice(id, form.get('method') || null);
     if (inv) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,

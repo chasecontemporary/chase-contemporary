@@ -1,20 +1,8 @@
 import { db } from './db';
 
-// The one settlement chain, used by manual mark-paid AND payment webhooks:
-// invoice -> settled payment -> commissions trigger -> purchases per item ->
-// works flip sold -> sale + leads close.
-export async function settleInvoice(invoiceId, method) {
-  const { data: cur } = await db.from('invoices').select('status').eq('id', invoiceId).single();
-  if (!cur || cur.status === 'paid') return null;   // idempotent: never settle twice
-  const { data: inv } = await db.from('invoices')
-    .update({ status: 'paid', paid_at: new Date().toISOString(), ...(method ? { method } : {}) })
-    .eq('id', invoiceId).select().single();
-  if (!inv) return null;
-  const total = inv.amount_cents + (inv.tax_cents || 0) + (inv.shipping_cents || 0);
-  const { data: pay } = await db.from('payments')
-    .insert({ amount_cents: total, method: method || inv.method, status: 'pending' }).select().single();
-  if (pay) await db.from('payments')
-    .update({ status: 'settled', settled_at: new Date().toISOString() }).eq('id', pay.id);
+// Close-out: what happens when an invoice is fully collected — works flip sold,
+// purchases land on the ledger, sale + leads close. Shared by every payment path.
+export async function closeOutInvoice(inv) {
   if (inv.sale_id) {
     const { data: items } = await db.from('sale_items').select('*').eq('sale_id', inv.sale_id);
     for (const it of (items || [])) {
@@ -31,5 +19,33 @@ export async function settleInvoice(invoiceId, method) {
     await db.from('inquiries')
       .update({ status: 'paid', stage_changed_at: new Date().toISOString() }).eq('id', inv.inquiry_id);
   }
-  return inv;
+}
+
+// Record money against an invoice. Partial amounts accumulate; commissions accrue per
+// settled payment via the DB trigger; the invoice closes out when the balance reaches zero.
+export async function recordPayment(invoiceId, amountCents, method) {
+  const { data: inv } = await db.from('invoices').select('*').eq('id', invoiceId).single();
+  if (!inv || inv.status !== 'open') return null;
+  const total = inv.amount_cents + (inv.tax_cents || 0) + (inv.shipping_cents || 0);
+  const { data: prior } = await db.from('payments').select('amount_cents').eq('invoice_id', invoiceId).eq('status', 'settled');
+  const received = (prior || []).reduce((s, p) => s + Number(p.amount_cents), 0);
+  const amount = amountCents ?? (total - received);          // no amount = settle the balance
+  const { data: pay } = await db.from('payments')
+    .insert({ invoice_id: invoiceId, amount_cents: amount, method: method || null, status: 'pending' })
+    .select().single();
+  if (pay) await db.from('payments')
+    .update({ status: 'settled', settled_at: new Date().toISOString() }).eq('id', pay.id);
+  const nowReceived = received + amount;
+  if (nowReceived >= total) {
+    await db.from('invoices').update({ status: 'paid', paid_at: new Date().toISOString(),
+      ...(method ? { method } : {}) }).eq('id', invoiceId);
+    await closeOutInvoice(inv);
+  }
+  return { inv, received: nowReceived, total, closed: nowReceived >= total };
+}
+
+// Full settle in one step (webhooks, mark-paid) — same path, balance-sized payment.
+export async function settleInvoice(invoiceId, method) {
+  const r = await recordPayment(invoiceId, null, method);
+  return r ? r.inv : null;
 }

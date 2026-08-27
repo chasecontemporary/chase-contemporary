@@ -14,26 +14,30 @@ export default async function Finance({ searchParams }) {
   const view = sp.view || 'open';
   const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
   const since = new Date(); since.setMonth(since.getMonth() - 36);
-  const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }] = await Promise.all([
+  const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }] = await Promise.all([
     db.from('invoices').select('*, collectors(first_name, last_name)').order('issued_at', { ascending: false }).limit(200),
     db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
     db.from('finance_monthly').select('*').gte('month', since.toISOString().slice(0, 10)).order('month'),
     db.from('commissions').select('amount_cents').eq('settled', false).limit(1000),
     db.from('sales').select('id, created_at, owner, collectors(id, first_name, last_name), sale_items(agreed_cents, title)')
       .eq('status', 'open').order('created_at').limit(50),
+    db.from('payments').select('invoice_id, amount_cents').eq('status', 'settled').not('invoice_id', 'is', null).limit(1000),
   ]);
   const all = invs || [];
   const open = all.filter(i => i.status === 'open');
   const paid = all.filter(i => i.status === 'paid');
   const tot = (i) => i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0);
-  const ar = open.reduce((s, i) => s + tot(i), 0);
+  const paidIn = {};
+  (payRows || []).forEach(p => { paidIn[p.invoice_id] = (paidIn[p.invoice_id] || 0) + Number(p.amount_cents); });
+  const balance = (i) => Math.max(0, tot(i) - (paidIn[i.id] || 0));
+  const ar = open.reduce((s, i) => s + balance(i), 0);
   const now = Date.now();
   const bucketOf = (i) => {
     const d = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
     return d <= 30 ? '0–30' : d <= 60 ? '31–60' : d <= 90 ? '61–90' : '90+';
   };
   const buckets = { '0–30': 0, '31–60': 0, '61–90': 0, '90+': 0 };
-  open.forEach(i => { buckets[bucketOf(i)] += tot(i); });
+  open.forEach(i => { buckets[bucketOf(i)] += balance(i); });
 
   const M = months || [];
   const yr = new Date().getFullYear();
@@ -76,7 +80,7 @@ export default async function Finance({ searchParams }) {
         <div style={{display:'flex', gap:6, marginTop:4}}>
           {ORDER.map(([k, label, color]) => {
             const rows = by[k] || [];
-            const amt = rows.reduce((s, i) => s + tot(i), 0);
+            const amt = rows.reduce((s, i) => s + balance(i), 0);
             const w = ar > 0 ? Math.max(rows.length ? 10 : 4, Math.round(100 * amt / ar)) : 25;
             return <div key={k} style={{flexGrow:w, minWidth:90}}>
               <div style={{height:7, borderRadius:4, background: rows.length ? color : '#e8e8ed'}}/>
@@ -85,7 +89,7 @@ export default async function Finance({ searchParams }) {
             </div>; })}
         </div>
         {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
-          {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + tot(i), 0))}) — over 30 days or past a promise date</div>}
+          {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + balance(i), 0))}) — over 30 days or past a promise date</div>}
         {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
           No open AR right now. Each invoice moves Issued → Sent → Nudged → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
@@ -167,22 +171,32 @@ export default async function Finance({ searchParams }) {
             : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700, marginRight:6}}>PAY LINK · AWAITING SHOPIFY</span>)}
           {i.pay_url && <a className="pill blue" style={{marginRight:6}} href={i.pay_url} target="_blank">Pay ↗</a>}
         </td>
-        <td>{i.status === 'open' && <div style={{display:'flex', gap:6}}>
+        <td>{i.status === 'open' && <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
+            <input type="hidden" name="action" value="invoice_payment"/>
+            <input type="hidden" name="id" value={i.id}/>
+            <input type="hidden" name="back" value="/finance"/>
+            <input name="amount" placeholder="$ received" style={{width:88, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
+            <input name="method" placeholder="wire…" style={{width:64, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
+            <button className="btn mini quiet">Record</button></form>
           <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
             <input type="hidden" name="action" value="invoice_paid"/>
             <input type="hidden" name="id" value={i.id}/>
             <input type="hidden" name="back" value="/finance"/>
-            <input name="method" placeholder="wire / card…" style={{width:86, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
-            <button className="btn mini">Mark paid</button></form>
+            <button className="btn mini">Settle balance</button></form>
           <form method="POST" action="/api/act">
             <input type="hidden" name="action" value="invoice_void"/>
             <input type="hidden" name="id" value={i.id}/>
             <input type="hidden" name="back" value="/finance"/>
             <button className="btn mini quiet" style={{color:'#b8231a'}}>Void</button></form>
         </div>}</td>
-        <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700}}>{usd(tot(i))}
+        <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700}}>
+          {i.status === 'open' && paidIn[i.id] ? <>
+            {usd(balance(i))} <span style={{fontSize:11, fontWeight:600, color:'#1d7a3d'}}>due</span>
+            <div style={{fontSize:11, color:'#86868b', fontWeight:400}}>{usd(paidIn[i.id])} received of {usd(tot(i))}</div>
+          </> : <>{usd(tot(i))}
           {(i.tax_cents || i.shipping_cents) ? <div style={{fontSize:11, color:'#86868b', fontWeight:400}}>
-            {usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''}</div> : null}</td>
+            {usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''}</div> : null}</>}</td>
       </tr>; })}
       {!shown.length && <tr><td colSpan={9} style={{color:'#86868b'}}>
         {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</td></tr>}
