@@ -37,6 +37,9 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 ## Housekeeping
 - PURGE DEMO DATA before go-live: collectors/inquiries/invoices/payments where collector email like 'demo-%@import.chasecontemporary.com' (created 8/27 to exercise the full workflow)
 
+## Deliberately LAST
+- "What Bernie Sees" owner dashboard: killed the placeholder Board page (8/27). Build only after launch, composed from the data every other page is accumulating (Finance collections, Artists velocity, Commissions, campaign attribution, response speed). Not before.
+
 ## Parked decisions
 - Site go-live over live Shopify theme — Bernie
 - artcloud.market seat: keep during transition or sunset — Bernie
