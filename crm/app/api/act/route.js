@@ -160,6 +160,11 @@ export async function POST(req) {
   } else if (action === 'status') {
     await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: rep });
+  } else if (action === 'payout_complete') {
+    await db.from('commissions').update({ paid_at: new Date().toISOString() })
+      .eq('person', form.get('person')).eq('period', form.get('period')).is('paid_at', null);
+    await db.from('activities').insert({ entity_type: 'commission', entity_id: id || '00000000-0000-0000-0000-000000000000',
+      kind: 'payout_complete', body: `${form.get('person')} · ${form.get('period')}`, actor: rep });
   } else if (action === 'rule_add') {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
