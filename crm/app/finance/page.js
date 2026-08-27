@@ -1,5 +1,6 @@
 import Shell from '../../components/Shell';
 import DocPreview from '../../components/DocPreview';
+import ArStage from '../../components/ArStage';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -50,7 +51,7 @@ export default async function Finance({ searchParams }) {
     value: (s.sale_items || []).reduce((a, it) => a + Number(it.agreed_cents || 0), 0),
     titles: (s.sale_items || []).map(it => it.title).join(', ') })).filter(s => s.value > 0 || (s.sale_items || []).length);
 
-  const shown = view === 'paid' ? paid : view === 'all' ? all : open;
+  const shown = view === 'paid' ? paid : view === 'all' ? all : [...open].sort((a, b) => new Date(a.issued_at) - new Date(b.issued_at));
   const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['all', 'All']];
   return <Shell active="finance">
     <div className="h1">Finance</div>
@@ -63,6 +64,29 @@ export default async function Finance({ searchParams }) {
       <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Outstanding AR · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
       <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commission pool accrued, unsettled</div></div>
     </div>
+
+    {open.length > 0 && (() => {
+      const ORDER = [['issued','Issued','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Nudged','#af52de'],['promised','Promised','#ff9500']];
+      const by = {};
+      open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
+      const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
+        || (i.promise_date && new Date(i.promise_date) < new Date()));
+      return <div className="card" style={{marginTop:16}}>
+        <div className="cardtitle">AR pipeline · where every open dollar sits in the chase</div>
+        <div style={{display:'flex', gap:6, marginTop:4}}>
+          {ORDER.map(([k, label, color]) => {
+            const rows = by[k] || [];
+            const amt = rows.reduce((s, i) => s + tot(i), 0);
+            const w = ar > 0 ? Math.max(rows.length ? 10 : 4, Math.round(100 * amt / ar)) : 25;
+            return <div key={k} style={{flexGrow:w, minWidth:90}}>
+              <div style={{height:7, borderRadius:4, background: rows.length ? color : '#e8e8ed'}}/>
+              <div style={{fontSize:11.5, fontWeight:650, marginTop:6}}>{label} · {rows.length}</div>
+              <div style={{fontSize:12.5, fontVariantNumeric:'tabular-nums', fontWeight:700}}>{rows.length ? usd(amt) : '—'}</div>
+            </div>; })}
+        </div>
+        {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
+          {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + tot(i), 0))}) — over 30 days or past a promise date</div>}
+      </div>; })()}
 
     <div className="card" style={{marginTop:16}}>
       <div className="cardtitle">Revenue rhythm · last 24 months</div>
@@ -121,7 +145,7 @@ export default async function Finance({ searchParams }) {
         <td style={{fontSize:12.5, color: i.status === 'open' && age > 30 ? '#b8231a' : '#86868b'}}>{age}d</td>
         <td>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
           : i.status === 'void' ? <span className="pill">Void</span>
-          : <span className="pill blue">Open</span>}</td>
+          : <ArStage id={i.id} value={i.ar_status} promiseDate={i.promise_date}/>}</td>
         <td style={{whiteSpace:'nowrap'}}>
           <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
             <input type="hidden" name="action" value="invoice_pdf"/>
