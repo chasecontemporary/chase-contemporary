@@ -11,6 +11,11 @@ export default async function Campaigns() {
       .eq('available', true).not('image_url', 'is', null).not('handle', 'is', null)
       .order('created_at', { ascending: false }).limit(24),
   ]);
+  const allIds = [...new Set((camps || []).flatMap(x => (x.artwork_ids || []).slice(0, 3)))];
+  const { data: thumbRows } = allIds.length
+    ? await db.from('artworks').select('id, image_url').in('id', allIds) : { data: [] };
+  const thumbOf = {}; (thumbRows || []).forEach(t => thumbOf[t.id] = t.image_url);
+  const klaviyo = !!process.env.KLAVIYO_API_KEY;
   const KIND = { drop: 'Drop', newsletter: 'Newsletter', oneoff: 'One-off' };
   const ACTIVE = '/campaigns';
   return <Shell active="audiences">
@@ -23,22 +28,29 @@ export default async function Campaigns() {
     <div className="h1" style={{fontSize:18, marginTop:8}}>Campaigns</div>
     <div className="sub">Drops, releases, and letters — drafted here, designed in the site&apos;s language, sent only on explicit approval</div>
 
-    <div className="tblcard"><table className="tbl"><thead><tr>
-      <th>Campaign</th><th>Kind</th><th>Audience</th><th>Works</th><th>Status</th><th>Created</th>
-    </tr></thead><tbody>
-      {(camps || []).map(c => <tr key={c.id}>
-        <td><a href={'/campaigns/' + c.id} style={{fontWeight:600}}>{c.name}</a>
-          <div style={{fontSize:12, color:'#86868b'}}>{c.subject}</div></td>
-        <td><span className="pill">{KIND[c.kind] || c.kind}</span></td>
-        <td style={{fontSize:12.5}}>{c.audiences?.name || '—'}</td>
-        <td>{(c.artwork_ids || []).length || '—'}</td>
-        <td>{c.status === 'approved' ? <span className="pill green">Approved</span>
-          : c.status === 'sent' ? <span className="pill green">Sent</span>
-          : <span className="pill blue">Draft</span>}</td>
-        <td style={{fontSize:12.5, color:'#86868b'}}>{new Date(c.created_at).toLocaleDateString()}</td>
-      </tr>)}
-      {!(camps || []).length && <tr><td colSpan={6} style={{color:'#86868b'}}>No campaigns yet — draft the first drop below.</td></tr>}
-    </tbody></table></div>
+    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:12, marginTop:14}}>
+      {(camps || []).map(x => <a key={x.id} href={'/campaigns/' + x.id} className="card"
+        style={{padding:14, display:'block', textDecoration:'none', color:'inherit'}}>
+        <div style={{display:'flex', gap:6, marginBottom:10}}>
+          {(x.artwork_ids || []).slice(0, 3).map(aid => thumbOf[aid]
+            ? <img key={aid} src={thumbOf[aid] + (thumbOf[aid].includes('?') ? '&' : '?') + 'width=200'} alt=""
+                style={{width:'33%', aspectRatio:'1', objectFit:'cover', borderRadius:8, background:'#fafafa'}}/>
+            : <span key={aid} style={{width:'33%', aspectRatio:'1', borderRadius:8, background:'#f0f0f2'}}/>)}
+          {!(x.artwork_ids || []).length && <span style={{width:'100%', aspectRatio:'3', borderRadius:8, background:'#fafafa',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, letterSpacing:'.08em', color:'#c7c7cc'}}>NEWSLETTER</span>}
+        </div>
+        <div style={{display:'flex', gap:8, alignItems:'center'}}>
+          <span style={{fontWeight:650, fontSize:14, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{x.name}</span>
+          {x.klaviyo_campaign_id ? <span className="pill green" style={{fontSize:9.5, fontWeight:700}}>IN KLAVIYO</span>
+            : x.status === 'approved' ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:9.5, fontWeight:700}}>APPROVED</span>
+            : <span className="pill blue" style={{fontSize:9.5, fontWeight:700}}>DRAFT</span>}
+        </div>
+        <div style={{fontSize:12, color:'#86868b', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{x.subject}</div>
+        <div style={{fontSize:11.5, color:'#86868b', marginTop:6}}>
+          {KIND[x.kind] || x.kind} · {x.audiences?.name || 'no audience'} · {(x.artwork_ids || []).length || 'no'} works</div>
+      </a>)}
+      {!(camps || []).length && <div className="empty" style={{gridColumn:'1/-1'}}>No campaigns yet — draft the first drop below.</div>}
+    </div>
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Draft a campaign</div>
     <div className="sub">Pick the works, write the story, choose the audience — preview renders in the website&apos;s design</div>

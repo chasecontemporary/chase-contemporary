@@ -3,6 +3,8 @@ import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
 import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
+import { klaviyoReady, ensureList, syncMembers, pushCampaign } from '../../../lib/klaviyo';
+import { renderCampaignEmail } from '../../../lib/email';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
 
@@ -19,6 +21,37 @@ export async function POST(req) {
       kind: 'assigned', body: owner ? `to ${owner}` : 'unassigned', actor: rep });
     if (req.headers.get('accept')?.includes('application/json') || form.get('back') === 'json') {
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+  } else if (action === 'audience_sync') {
+    if (!klaviyoReady())
+      return Response.redirect(new URL('/audiences?err=klaviyo-not-connected', req.url), 303);
+    const { data: aud } = await db.from('audiences').select('*').eq('id', id).single();
+    if (aud) {
+      const listId = await ensureList(aud);
+      const { data: ids } = await db.rpc('audience_ids', { def: aud.definition });
+      const memberIds = (ids || []).map(x => typeof x === 'string' ? x : x.audience_ids || x.id).filter(Boolean);
+      let members = [];
+      for (let i = 0; i < memberIds.length; i += 500) {
+        const { data: chunk } = await db.from('collectors').select('email, first_name, last_name, city')
+          .in('id', memberIds.slice(i, i + 500));
+        members = members.concat((chunk || []).filter(m => m.email && !m.email.endsWith('import.chasecontemporary.com')));
+      }
+      const n = await syncMembers(listId, members);
+      await db.from('audiences').update({ klaviyo_list_id: listId,
+        synced_at: new Date().toISOString(), synced_count: n }).eq('id', id);
+    }
+  } else if (action === 'campaign_push') {
+    if (!klaviyoReady())
+      return Response.redirect(new URL('/campaigns?err=klaviyo-not-connected', req.url), 303);
+    const { data: camp } = await db.from('campaigns').select('*, audiences(*)').eq('id', id).single();
+    if (camp && camp.status === 'approved' && camp.audiences?.klaviyo_list_id) {
+      const { data: works } = (camp.artwork_ids || []).length
+        ? await db.from('artworks').select('*').in('id', camp.artwork_ids)
+        : { data: [] };
+      const ordered = (camp.artwork_ids || []).map(aid => (works || []).find(w => w.id === aid)).filter(Boolean);
+      const html = renderCampaignEmail({ campaign: camp, artworks: ordered });
+      const kid = await pushCampaign(camp, html, camp.audiences.klaviyo_list_id);
+      await db.from('campaigns').update({ klaviyo_campaign_id: kid, pushed_at: new Date().toISOString() }).eq('id', id);
     }
   } else if (action === 'audience_add') {
     await db.from('audiences').insert({ name: form.get('name'), created_by: rep,

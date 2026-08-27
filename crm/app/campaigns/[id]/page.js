@@ -33,6 +33,17 @@ export default async function Campaign({ params }) {
         <input type="hidden" name="back" value={'/campaigns/' + c.id}/>
         <button className="btn">Approve this draft</button>
       </form>}
+      {c.status === 'approved' && !c.klaviyo_campaign_id && (process.env.KLAVIYO_API_KEY
+        ? (c.audiences?.klaviyo_list_id
+          ? <form method="POST" action="/api/act">
+              <input type="hidden" name="action" value="campaign_push"/>
+              <input type="hidden" name="id" value={c.id}/>
+              <input type="hidden" name="back" value={'/campaigns/' + c.id}/>
+              <button className="btn">Push to Klaviyo</button>
+            </form>
+          : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10.5, fontWeight:700}}>SYNC THE AUDIENCE TO KLAVIYO FIRST</span>)
+        : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10.5, fontWeight:700}}>PUSH · AWAITING KLAVIYO KEY</span>)}
+      {c.klaviyo_campaign_id && <span className="pill green" style={{fontSize:10.5, fontWeight:700}}>IN KLAVIYO · SEND FROM THERE</span>}
       <form method="POST" action="/api/act">
         <input type="hidden" name="action" value="campaign_del"/>
         <input type="hidden" name="id" value={c.id}/>
@@ -41,8 +52,8 @@ export default async function Campaign({ params }) {
       </form>
     </div>
     <div style={{fontSize:12.5, color:'#86868b', marginTop:10}}>
-      Nothing sends from here yet: sending activates when the email provider account (gallery-owned) is connected.
-      Approval marks the draft ready; the send itself will always be a separate, explicit step.
+      Approval marks the draft ready. Push then creates the campaign in Klaviyo — brand template, synced audience —
+      and the actual send is scheduled inside Klaviyo, always a human decision.
     </div>
 
     <div className="h1" style={{fontSize:18, marginTop:30}}>Email preview</div>
