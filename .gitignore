@@ -3,3 +3,4 @@ SECRETS.local.md
 
 # real exports (PII) never in git
 data/
+.vercel

@@ -194,82 +194,85 @@ export default async function Finance({ searchParams }) {
               {isOpen ? usd(balance(i)) : usd(tot(i))}
               {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#86868b', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>
           </summary>
-          <div style={{padding:'4px 18px 16px', borderTop:'1px solid #f5f5f7'}}>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:18, marginTop:12}}>
-              <div>
-                <div className="cardtitle" style={{marginBottom:6}}>Collector</div>
-                {c ? <div style={{fontSize:13}}>
-                  <a style={{fontWeight:650}} href={'/collectors/' + c.id}>{[c.first_name, c.last_name].filter(Boolean).join(' ')}</a>
-                  {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#86868b', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
-                  {c.phone && <div style={{marginTop:4}}><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
-                  {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
-                </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
-              </div>
-              <div>
-                <div className="cardtitle" style={{marginBottom:6}}>Money</div>
-                <div style={{fontSize:12.5, lineHeight:1.8}}>
-                  <div>Total {usd(tot(i))}{(i.tax_cents || i.shipping_cents) ? <span style={{color:'#86868b'}}> ({usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''})</span> : null}</div>
-                  {hist.map((p, ix) => <div key={ix} style={{color:'#1d7a3d'}}>
-                    + {usd(p.amount_cents)} received {p.settled_at ? new Date(p.settled_at).toLocaleDateString() : ''}{p.method ? ' · ' + p.method : ''}</div>)}
-                  {isOpen && <div style={{fontWeight:700}}>Balance {usd(balance(i))}</div>}
-                  {i.last_nudge_at && <div style={{color:'#86868b'}}>Last follow-up {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
-                </div>
-              </div>
-              <div>
-                <div className="cardtitle" style={{marginBottom:6}}>Documents &amp; chase</div>
-                <div style={{display:'flex', flexDirection:'column', gap:6, marginBottom:8}}>
-                  {i.pdf_url && <span><DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/></span>}
-                  {(docsBySale[i.sale_id] || []).map((doc, ix) => <span key={ix}>
-                    <DocPreview compact url={doc.url} label={doc.label}/></span>)}
-                  {!i.pdf_url && !(docsBySale[i.sale_id] || []).length &&
-                    <span style={{fontSize:12, color:'#86868b'}}>No documents yet — generate the invoice PDF below.</span>}
-                </div>
-                <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
-                  {isOpen && <span style={{display:'inline-flex', gap:6, alignItems:'center'}}>
-                    <span style={{fontSize:11.5, color:'#86868b'}}>Where is it in the chase?</span>
-                    <ArStage id={i.id} value={i.ar_status}/></span>}
-                  <form method="POST" action="/api/act" style={{display:'inline-block'}}>
-                    <input type="hidden" name="action" value="invoice_pdf"/>
-                    <input type="hidden" name="id" value={i.id}/>
-                    <input type="hidden" name="back" value="/finance"/>
-                    <button className="btn mini quiet">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
-                  </form>
-                  {isOpen && (payReady
-                    ? <form method="POST" action="/api/act" style={{display:'inline-block'}}>
-                        <input type="hidden" name="action" value="invoice_paylink"/>
-                        <input type="hidden" name="id" value={i.id}/>
-                        <input type="hidden" name="back" value="/finance"/>
-                        <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
-                      </form>
-                    : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700}}>PAY LINK · AWAITING SHOPIFY</span>)}
-                  {i.pay_url && <a className="pill blue" href={i.pay_url} target="_blank">Pay ↗</a>}
-                </div>
+          <div style={{padding:'16px 20px 18px', borderTop:'1px solid #f0f0f2',
+            display:'grid', gridTemplateColumns:'200px minmax(240px,320px) 1fr', gap:32}}>
+            <div>
+              <div className="cardtitle" style={{marginBottom:8}}>Collector</div>
+              {c ? <div style={{fontSize:13, lineHeight:1.7}}>
+                <a style={{fontWeight:650}} href={'/collectors/' + c.id}>{[c.first_name, c.last_name].filter(Boolean).join(' ')}</a>
+                {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#86868b', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
+                {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
+                {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
+              </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
+            </div>
+            <div>
+              <div className="cardtitle" style={{marginBottom:8}}>Money</div>
+              <div style={{fontSize:13, fontVariantNumeric:'tabular-nums'}}>
+                <div style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#6e6e73'}}>
+                  <span>Total</span><span>{usd(tot(i))}</span></div>
+                {(i.tax_cents || i.shipping_cents) ? <div style={{padding:'0 0 3px', fontSize:11.5, color:'#86868b'}}>
+                  incl. {i.tax_cents ? usd(i.tax_cents) + ' tax' : ''}{i.tax_cents && i.shipping_cents ? ' · ' : ''}{i.shipping_cents ? usd(i.shipping_cents) + ' shipping' : ''}</div> : null}
+                {hist.map((p, ix) => <div key={ix} style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#1d7a3d'}}>
+                  <span>Received {p.settled_at ? new Date(p.settled_at).toLocaleDateString() : ''}{p.method ? ' · ' + p.method : ''}</span>
+                  <span>−{usd(p.amount_cents)}</span></div>)}
+                {isOpen && <div style={{display:'flex', justifyContent:'space-between', padding:'6px 0 0', marginTop:4,
+                  borderTop:'1px solid #e8e8ed', fontWeight:700}}>
+                  <span>Balance</span><span>{usd(balance(i))}</span></div>}
+                {i.last_nudge_at && <div style={{fontSize:11.5, color:'#86868b', marginTop:6}}>Last follow-up {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
               </div>
             </div>
-            {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', marginTop:14, flexWrap:'wrap'}}>
-              <form method="POST" action="/api/act" style={{display:'flex', gap:6}}>
-                <input type="hidden" name="action" value="invoice_payment"/>
-                <input type="hidden" name="id" value={i.id}/>
-                <input type="hidden" name="back" value="/finance"/>
-                <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Received"/></label>
-                <input name="method" placeholder="wire / card…" style={{width:100, fontSize:12.5, border:'1px solid #e8e8ed', borderRadius:10, height:36, padding:'0 10px', fontFamily:'inherit'}}/>
-                <button className="btn mini quiet">Record payment</button>
-                {!paidIn[i.id] && <button className="btn mini quiet" name="fraction" value="0.5">Record 50% deposit · {usd(Math.round(tot(i) / 2))}</button>}
-              </form>
+            <div>
+              <div className="cardtitle" style={{marginBottom:8}}>Documents</div>
+              <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:14}}>
+                {i.pdf_url && <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>}
+                {(docsBySale[i.sale_id] || []).map((doc, ix) => <DocPreview key={ix} compact url={doc.url} label={doc.label}/>)}
+                <form method="POST" action="/api/act" style={{display:'inline-block'}}>
+                  <input type="hidden" name="action" value="invoice_pdf"/>
+                  <input type="hidden" name="id" value={i.id}/>
+                  <input type="hidden" name="back" value="/finance"/>
+                  <button className="btn mini quiet">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
+                </form>
+                {isOpen && payReady && <form method="POST" action="/api/act" style={{display:'inline-block'}}>
+                  <input type="hidden" name="action" value="invoice_paylink"/>
+                  <input type="hidden" name="id" value={i.id}/>
+                  <input type="hidden" name="back" value="/finance"/>
+                  <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
+                </form>}
+                {i.pay_url && <a className="pill blue" href={i.pay_url} target="_blank">Pay ↗</a>}
+              </div>
+              {isOpen && <>
+                <div className="cardtitle" style={{marginBottom:8}}>Chase stage</div>
+                <ArStage id={i.id} value={i.ar_status}/>
+              </>}
+            </div>
+          </div>
+          {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
+            borderTop:'1px solid #f0f0f2', background:'#fbfbfd'}}>
+            <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center'}}>
+              <input type="hidden" name="action" value="invoice_payment"/>
+              <input type="hidden" name="id" value={i.id}/>
+              <input type="hidden" name="back" value="/finance"/>
+              <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Amount received"/></label>
+              <input name="method" placeholder="wire / card" style={{width:96, fontSize:12.5, border:'1px solid #e8e8ed', borderRadius:10, height:36, padding:'0 10px', fontFamily:'inherit', background:'#fff'}}/>
+              <button className="btn mini quiet">Record payment</button>
+              {!paidIn[i.id] && <button className="btn mini quiet" name="fraction" value="0.5">50% deposit · {usd(Math.round(tot(i) / 2))}</button>}
+            </form>
+            <div style={{marginLeft:'auto', display:'flex', gap:14, alignItems:'center'}}>
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_paid"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button className="btn mini">{paidIn[i.id] ? <>Record final {usd(balance(i))} · paid in full</> : <>Mark paid in full · {usd(balance(i))}</>}</button>
+                <button className="btn mini">{paidIn[i.id] ? 'Record final ' + usd(balance(i)) : 'Mark paid in full'}</button>
               </form>
-              <form method="POST" action="/api/act" style={{marginLeft:'auto'}}>
+              <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_void"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button className="btn mini quiet" style={{color:'#b8231a'}}>Void</button>
+                <button style={{background:'none', border:0, color:'#b8231a', fontSize:12.5, fontWeight:600,
+                  fontFamily:'inherit', cursor:'pointer', padding:0}}>Void</button>
               </form>
-            </div>}
-          </div>
+            </div>
+          </div>}
         </details>; })}
       {!shown.length && <div className="empty">
         {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</div>}
