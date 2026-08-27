@@ -17,6 +17,33 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 ## In flight
 - (nothing — awaiting Shopify token + wire paragraph)
 
+## PRODUCTION READINESS (audit 8/28 — full report: artifact 054e216c)
+Phase 1 — BEFORE the team touches it (~1 week):
+- Mobile: zero @media queries in the codebase; Finance/Artists/Commissions rows overflow a phone; Kanban HTML5 drag never fires on iOS Safari. Add one max-width:900px block + a stage dropdown per card.
+- Silent write failures: only 1 of ~40 actions in act/route.js checks the DB error. Capture + surface via ?err banner (pattern exists on inventory page). Kanban move()/saveNote() swallow errors and saveNote clears the box before confirming.
+- No error.js / not-found.js — any throw = raw white screen (Devyn hit this 8/27).
+- Auth: single shared code, cookie value IS the password, cc_rep is user-settable so the audit trail is self-declared. AND commissions default to showing EVERYONE (personal only when role==='rep'; no cookie = sees all). Flip to deny-by-default now; Supabase Auth per-person after.
+- Invoice with no collector: `required` sits on a hidden input (browsers don't validate) -> no sale row -> close-out never marks the artwork sold / never writes purchase or commission. Invoice reads "paid", inventory silently wrong.
+- Zero confirm() anywhere; Void sits beside Mark paid in full; neither is reversible. Add confirmations + an undo-settlement action.
+- Backups: no PITR, no export script, no verified restore. 27k collector records.
+
+Phase 2 — first two weeks of selling:
+- Double-click = duplicate invoice / duplicate payment (no busy state, no idempotency key on payments).
+- Money guardrails: overpayment accepted (hidden by Math.max(0,...)), negative line items allowed, NaN -> null.
+- invoice_manual is 6 writes with no transaction; a mid-failure orphans a sale marked 'invoiced' that appears on no screen. Move to an RPC.
+- No monitoring/error tracking. Inquiry bridge is fire-and-forget (.catch(){}); degrades to the Shopify inbox, which is the thing we're replacing.
+- /d/ details links never expire; add 14-day expiry + noindex on /d/ and /o/.
+- RLS off on offers, offer_responses, site_events, visitor_links (all others deny-by-default).
+- No rate limiting on /api/inquiry, /api/visit, /api/offer, /api/login.
+
+Phase 3 — before the book gets big (time bombs, nothing wrong today — verified):
+- PostgREST caps every request at 1000 rows (verified empirically). Finance counts from newest 200 invoices + sums newest 1000 payments -> drifts within ~1yr of selling. Move balances to a SQL view.
+- site_events: no retention, and no index matching Today's query (occurred_at desc where collector_id not null). Breaks Today first.
+- Only 11 indexes exist; missing on artworks(available/artist/title), invoices(collector_id/ar_status), payments(status/settled_at), collectors(details_token) — the /d/ page seq-scans 27k rows.
+- /pipeline: 8 sequential round trips (most parallelizable) + ~500KB of leads to the browser via select('*').
+- collector_index re-aggregates the whole book on every Omnisearch keystroke.
+- No tests anywhere — settlement chain is the highest-consequence code in the app.
+
 ## Queued (ordered per 8/28 competitive discovery — highest leverage first)
 - Reserves/holds on works with expiry: "holding until Friday" as a status + auto-release, prevents double-selling with multiple reps. (Distinct from the killed take-home trials — this is a work-level sales reserve, work never leaves the gallery.)
 - Email logging to collector records: BCC dropbox (crm@ address) that files sent mail onto the contact timeline. ARTERNAL's core insight: deal history lives in the inbox.
