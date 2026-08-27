@@ -6,19 +6,29 @@ export async function POST(req) {
   const { data: c } = await db.from('collectors').select('id').eq('details_token', token).single();
   if (!c) return new Response('Link expired', { status: 404 });
   const g = (k) => (form.get(k) || '').trim() || null;
-  const patch = {
-    first_name: g('first_name'), last_name: g('last_name'),
-    phone: g('phone'),
-    address_line1: g('address_line1'), address_line2: g('address_line2'),
-    city: g('city'), state: g('state'), zip: g('zip'), country: g('country'),
-    details_completed_at: new Date().toISOString(),
-  };
+  if (form.get('mode') === 'confirm') {
+    const { data: cur } = await db.from('collectors').select('address_line1, address_line2, city, state, zip, country, shipping_line1').eq('id', c.id).single();
+    const stamp = { details_completed_at: new Date().toISOString() };
+    if (cur && !cur.shipping_line1) Object.assign(stamp, { shipping_line1: cur.address_line1,
+      shipping_line2: cur.address_line2, shipping_city: cur.city, shipping_state: cur.state,
+      shipping_zip: cur.zip, shipping_country: cur.country });
+    await db.from('collectors').update(stamp).eq('id', c.id);
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: c.id,
+      kind: 'details_confirmed', body: 'collector confirmed details on file', actor: 'collector' });
+    return Response.redirect(new URL('/d/' + token, req.url), 303);
+  }
+  const patch = { details_completed_at: new Date().toISOString() };
+  for (const k of ['first_name','last_name','phone','address_line1','address_line2','city','state','zip','country']) {
+    const v = g(k); if (v) patch[k] = v;
+  }
   const email = g('email');
   if (email) patch.email = email.toLowerCase();
   if (form.get('ship_same')) {
-    patch.shipping_line1 = patch.address_line1; patch.shipping_line2 = patch.address_line2;
-    patch.shipping_city = patch.city; patch.shipping_state = patch.state;
-    patch.shipping_zip = patch.zip; patch.shipping_country = patch.country;
+    const { data: cur } = await db.from('collectors').select('address_line1, address_line2, city, state, zip, country').eq('id', c.id).single();
+    const b = { ...cur, ...patch };
+    patch.shipping_line1 = b.address_line1; patch.shipping_line2 = b.address_line2;
+    patch.shipping_city = b.city; patch.shipping_state = b.state;
+    patch.shipping_zip = b.zip; patch.shipping_country = b.country;
   } else {
     patch.shipping_line1 = g('shipping_line1'); patch.shipping_line2 = g('shipping_line2');
     patch.shipping_city = g('shipping_city'); patch.shipping_state = g('shipping_state');
