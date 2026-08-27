@@ -15,20 +15,23 @@ export default async function Finance({ searchParams }) {
   const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
   const since = new Date(); since.setMonth(since.getMonth() - 36);
   const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }] = await Promise.all([
-    db.from('invoices').select('*, collectors(first_name, last_name)').order('issued_at', { ascending: false }).limit(200),
+    db.from('invoices').select('*, collectors(id, first_name, last_name, phone, email, city, state)').order('issued_at', { ascending: false }).limit(200),
     db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
     db.from('finance_monthly').select('*').gte('month', since.toISOString().slice(0, 10)).order('month'),
     db.from('commissions').select('amount_cents').eq('settled', false).limit(1000),
     db.from('sales').select('id, created_at, owner, collectors(id, first_name, last_name), sale_items(agreed_cents, title)')
       .eq('status', 'open').order('created_at').limit(50),
-    db.from('payments').select('invoice_id, amount_cents').eq('status', 'settled').not('invoice_id', 'is', null).limit(1000),
+    db.from('payments').select('invoice_id, amount_cents, method, settled_at').eq('status', 'settled').not('invoice_id', 'is', null).order('settled_at').limit(1000),
   ]);
   const all = invs || [];
   const open = all.filter(i => i.status === 'open');
   const paid = all.filter(i => i.status === 'paid');
   const tot = (i) => i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0);
-  const paidIn = {};
-  (payRows || []).forEach(p => { paidIn[p.invoice_id] = (paidIn[p.invoice_id] || 0) + Number(p.amount_cents); });
+  const paidIn = {}, payHist = {};
+  (payRows || []).forEach(p => {
+    paidIn[p.invoice_id] = (paidIn[p.invoice_id] || 0) + Number(p.amount_cents);
+    (payHist[p.invoice_id] = payHist[p.invoice_id] || []).push(p);
+  });
   const balance = (i) => Math.max(0, tot(i) - (paidIn[i.id] || 0));
   const ar = open.reduce((s, i) => s + balance(i), 0);
   const now = Date.now();
@@ -61,13 +64,19 @@ export default async function Finance({ searchParams }) {
     <div className="h1">Finance</div>
     <div className="sub">Cash reality: what came in, what is owed, what is waiting to be asked for</div>
 
-    <div className="stats">
-      <div className="stat"><div className="n">{usd(ytd)}</div>
-        <div className="l">Collected {yr}{yoy !== null ? <span style={{color: yoy >= 0 ? '#1d7a3d' : '#b25a00', fontWeight:700}}> · {yoy >= 0 ? '+' : ''}{yoy}% vs {yr - 1}</span> : ''}</div></div>
-      <div className="stat"><div className="n">{usd(t12)}</div><div className="l">Collected, trailing 12 months</div></div>
-      <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Outstanding AR · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
-      <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commission pool accrued, unsettled</div></div>
-    </div>
+    {(() => {
+      const thisMonth = new Date(); thisMonth.setDate(1);
+      const mKey = thisMonth.toISOString().slice(0, 7);
+      const lastM = new Date(thisMonth); lastM.setMonth(lastM.getMonth() - 1);
+      const lKey = lastM.toISOString().slice(0, 7);
+      const collThis = M.filter(m => String(m.month).slice(0, 7) === mKey).reduce((s, m) => s + Number(m.collected_cents), 0);
+      const collLast = M.filter(m => String(m.month).slice(0, 7) === lKey).reduce((s, m) => s + Number(m.collected_cents), 0);
+      return <div className="stats">
+        <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Outstanding AR · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
+        <div className="stat"><div className="n">{usd(collThis)}</div><div className="l">Closed {new Date().toLocaleDateString('en-US', { month: 'long' })}</div></div>
+        <div className="stat"><div className="n">{usd(collLast)}</div><div className="l">Closed {lastM.toLocaleDateString('en-US', { month: 'long' })}</div></div>
+        <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commission pool accrued, unsettled</div></div>
+      </div>; })()}
 
     {(() => {
       const ORDER = [['issued','Issued','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Nudged','#af52de'],['promised','Promised','#ff9500']];
@@ -93,22 +102,6 @@ export default async function Finance({ searchParams }) {
         {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
           No open AR right now. Each invoice moves Issued → Sent → Nudged → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
-
-    <div className="card" style={{marginTop:16}}>
-      <div className="cardtitle">Revenue rhythm · last 24 months</div>
-      <div style={{display:'flex', alignItems:'flex-end', gap:4, height:120, marginTop:6}}>
-        {chart.map(m => {
-          const d = new Date(m.month);
-          const h = Math.max(3, Math.round(112 * Number(m.collected_cents) / maxM));
-          return <div key={m.month} title={d.toLocaleDateString('en-US', { month:'short', year:'numeric' }) + ' · ' + usd(m.collected_cents) + ' · ' + m.sales + ' sales'}
-            style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
-            <div style={{width:'100%', maxWidth:26, height:h, background: d.getFullYear() === yr ? '#1d1d1f' : '#d2d2d7',
-              borderRadius:4}}/>
-            <span style={{fontSize:9, color:'#86868b', letterSpacing:'.02em'}}>{d.getMonth() === 0 ? d.getFullYear() : d.getMonth() % 3 === 0 ? d.toLocaleDateString('en-US', { month:'narrow' }) : ''}</span>
-          </div>; })}
-      </div>
-      <div style={{fontSize:11.5, color:'#86868b', marginTop:6}}>Peak {usdK(maxM)} · black = {yr} · hover any bar for the month</div>
-    </div>
 
     {waiting.length > 0 && <div className="card" style={{marginTop:16}}>
       <div className="cardtitle">Waiting on an invoice · the cash gap</div>
