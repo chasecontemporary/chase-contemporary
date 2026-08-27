@@ -5,6 +5,7 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- Full-journey attribution BUILT 8/27 (live loop tested end-to-end): anonymous visitor id (localStorage cc_vid) + sendBeacon page views -> site_events; inquiry submit stitches the whole trail to the collector (visitor_links + retro backfill); collector_journey view; "Visits to our site" row in the pipeline drawer. Site-side JS is in the theme and goes live with theme go-live. Later identity moments (Klaviyo click UTMs, checkout) plug into the same tables.
 - Comp engine phase 1 + valuation section w/ invoice-cited comps + thumbnails
 - Artists page (capital allocation: sell-through x revenue x on-hand, DOUBLE DOWN / MOVE STOCK verdicts)
 - Aging move-list on Today
@@ -15,7 +16,6 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - (nothing — awaiting Shopify token + wire paragraph)
 
 ## Queued
-- Full-journey attribution (Devyn 8/27): today's "path through the site" is one session only (sessionStorage breadcrumb + referrer + UTM + time on page). Upgrade = first-party anonymous visitor id cookie + a visits/events table; link the id to the collector at identity moments (inquiry submit, email click, checkout) so every past visit from that browser stitches into their record. Klaviyo UTMs then tie campaigns -> return visits -> inquiries -> invoices. All first-party in our Supabase; Safari caps JS cookies at 7 days so set it server-side.
 - COA generator: per-work certificate PDF from the invoice brand pipeline
 - Bulk push to site: stage all READY TO LIST works as Shopify drafts (after token proves out on 5-10 works)
 - Image-quality scoring for Artcloud CDN photos (extend the sharpness gate before bulk publish)

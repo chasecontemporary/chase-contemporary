@@ -67,11 +67,22 @@ export async function POST(req) {
       utm: p.utm || null,
       seconds_on_page: parseInt(p.seconds_on_page) || null,
       device: p.device || null,
+      visitor_id: /^v-[a-z0-9]{8,40}$/.test(p.visitor_id || '') ? p.visitor_id : null,
       owner: 'Sara',
     })
     .select()
     .single();
   if (iErr) return json({ error: iErr.message }, 500);
+
+  // identity moment: stitch this browser's anonymous trail to the collector —
+  // past AND future page views from this visitor land on their record
+  if (inquiry.visitor_id) {
+    await db.from('visitor_links').upsert({
+      visitor_id: inquiry.visitor_id, collector_id: collector.id, linked_via: 'inquiry',
+    }, { onConflict: 'visitor_id' });
+    await db.from('site_events').update({ collector_id: collector.id })
+      .eq('visitor_id', inquiry.visitor_id).is('collector_id', null);
+  }
 
   await db.from('activities').insert({
     entity_type: 'inquiry', entity_id: inquiry.id,

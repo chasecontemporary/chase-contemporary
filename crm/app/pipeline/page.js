@@ -22,11 +22,14 @@ export default async function Pipeline() {
       .select('*, sale_items(*)').eq('status', 'open').in('collector_id', collectorIds);
     (sales || []).forEach(s => { saleMap[s.collector_id] = s; });
   }
-  let ltvMap = {}, invoiceMap = {};
+  let ltvMap = {}, invoiceMap = {}, journeyMap = {};
   if (collectorIds.length) {
     const { data: idx } = await db.from('collector_index')
       .select('id, spend_cents, works, tags').in('id', collectorIds);
     (idx || []).forEach(x => ltvMap[x.id] = x);
+    const { data: jn } = await db.from('collector_journey')
+      .select('*').in('collector_id', collectorIds);
+    (jn || []).forEach(j => journeyMap[j.collector_id] = j);
     const { data: openInv } = await db.from('invoices')
       .select('id, invoice_number, amount_cents, tax_cents, shipping_cents, collector_id')
       .eq('status', 'open').in('collector_id', collectorIds);
@@ -67,6 +70,7 @@ export default async function Pipeline() {
     ltv: Number(ltvMap[r.collector_id]?.spend_cents || 0), worksOwned: Number(ltvMap[r.collector_id]?.works || 0),
     vip: (ltvMap[r.collector_id]?.tags || []).includes('VIP list'),
     openInvoice: invoiceMap[r.collector_id] || null,
+    journey: journeyMap[r.collector_id] || null,
     competition: competition[r.id] || { others: 0, committed: null } }));
   const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
   return <Shell active="pipeline">

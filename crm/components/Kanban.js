@@ -205,6 +205,15 @@ export default function Kanban({ initial, team = [] }) {
                   return <span style={{color:col, fontWeight:650}}> — {txt}</span>;
                 })()}</span>
             : <span style={{color:'#86868b'}}>Not given</span>]);
+          if (openLead.journey) {
+            const j = openLead.journey;
+            const days = Math.round((Date.now() - new Date(j.first_seen).getTime()) / 86400000);
+            rows.push(['Visits to our site',
+              <span>{j.visit_days === 1
+                ? <b>{j.page_views} page{j.page_views === 1 ? '' : 's'} in one visit</b>
+                : <b>{j.page_views} pages over {j.visit_days} days</b>}
+                <span style={{color:'#86868b'}}> · first visit {days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago'}</span></span>]);
+          }
           if (openLead.openInvoice) rows.push(['Open invoice',
             <a href="/finance" style={{color:'#0071e3', fontWeight:650}}>
               №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} for {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} — open in Finance →</a>]);

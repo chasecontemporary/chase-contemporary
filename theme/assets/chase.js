@@ -21,6 +21,21 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(function () { set('cc-secs', Math.round((Date.now() - t) / 1000)); }, 2000);
   } catch (e) {}
 
+  /* full-journey trail: stable anonymous visitor id + page-view beacon.
+     Anonymous until they inquire — then the whole trail stitches to their record. */
+  var CC_VID = null;
+  try {
+    CC_VID = localStorage.getItem('cc_vid');
+    if (!CC_VID || !/^v-[a-z0-9]{8,40}$/.test(CC_VID)) {
+      CC_VID = 'v-' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+      localStorage.setItem('cc_vid', CC_VID);
+    }
+    if (navigator.sendBeacon) navigator.sendBeacon(
+      'https://chase-engine.vercel.app/api/visit',
+      JSON.stringify({ v: CC_VID, p: location.pathname,
+        r: document.referrer || '', u: location.search || '' }));
+  } catch (e) {}
+
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
@@ -328,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var m = k.match(/^contact\[(.+)\]$/);
           payload[m ? m[1] : k] = v;
         });
+        if (CC_VID) payload.visitor_id = CC_VID;
         fetch(ENGINE, {
           method: 'POST', keepalive: true,
           headers: { 'Content-Type': 'application/json' },
