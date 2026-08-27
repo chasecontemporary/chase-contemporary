@@ -187,8 +187,7 @@ export default async function Finance({ searchParams }) {
             <span style={{fontSize:12.5, color:'#3a3a3c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? ' · ' + i.artist : ''}</span>
             <span>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
               : i.status === 'void' ? <span className="pill">Void</span>
-              : <span className="pill" style={overdueRow ? {background:'#ffefdc', color:'#b25a00', fontWeight:700} : {background:'#f0f0f2', fontWeight:700}}>
-                  {({issued:'UNSENT',sent:'SENT',fu1:'FOLLOW UP 1',fu2:'FOLLOW UP 2',fu3:'FOLLOW UP 3'}[i.ar_status] || 'UNSENT')}</span>}</span>
+              : <ArStage id={i.id} value={i.ar_status}/>}</span>
             <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10, fontWeight:700}}>DEPOSIT IN · {usd(paidIn[i.id])}</span> : ''}</span>
             <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
               {isOpen ? usd(balance(i)) : usd(tot(i))}
@@ -204,10 +203,6 @@ export default async function Finance({ searchParams }) {
                 {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
                 {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
               </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
-              {isOpen && <div style={{marginTop:14}}>
-                <div className="cardtitle" style={{marginBottom:8}}>Chase stage</div>
-                <ArStage id={i.id} value={i.ar_status}/>
-              </div>}
             </div>
             <div>
               <div className="cardtitle" style={{marginBottom:8}}>Money</div>
