@@ -8,6 +8,7 @@ export default async function Inventory({ searchParams }) {
   const sp = (await searchParams) || {};
   const q = sp.q || '';
   const loc = sp.loc || '';
+  const artist = sp.artist || '';
   const view = sp.view || 'available';       // available | sold | all
   const page = Math.max(1, Number(sp.page) || 1);
 
@@ -15,18 +16,20 @@ export default async function Inventory({ searchParams }) {
   if (view === 'available') query = query.eq('available', true);
   if (view === 'sold') query = query.eq('available', false);
   if (q) query = query.or(`title.ilike.%${q}%,artist.ilike.%${q}%,medium.ilike.%${q}%`);
+  if (artist) query = query.eq('artist', artist);
   if (loc === 'Unassigned') query = query.or('location.is.null,location.eq.');
   else if (loc) query = query.eq('location', loc);
   query = query.order('image_url', { ascending: false, nullsFirst: false })
     .order('price_cents', { ascending: false, nullsFirst: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
 
-  const [{ data: rows, count: matchCount }, { count: availableCount }, { count: soldCount }, { data: valAgg }, { data: byLoc }] = await Promise.all([
+  const [{ data: rows, count: matchCount }, { count: availableCount }, { count: soldCount }, { data: valAgg }, { data: byLoc }, { data: allArtists }] = await Promise.all([
     query,
     db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true),
     db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', false),
     db.from('artworks').select('price_cents.sum()').eq('available', true),
     db.from('inventory_by_location').select('*').order('value_cents', { ascending: false }),
+    db.from('artist_stats').select('artist, works').order('artist'),
   ]);
   const works = rows || [];
   const ids = works.map(w => w.id);
@@ -45,7 +48,7 @@ export default async function Inventory({ searchParams }) {
   const locs = (byLoc || []).filter(l => l.available > 0);
   const pages = Math.max(1, Math.ceil((matchCount || 0) / PAGE));
   const href = (over) => {
-    const p = new URLSearchParams({ view, ...(q && { q }), ...(loc && { loc }), ...over });
+    const p = new URLSearchParams({ view, ...(q && { q }), ...(loc && { loc }), ...(artist && { artist }), ...over });
     return '/inventory?' + p.toString();
   };
   const VIEWS = [['available', `On hand · ${Number(availableCount || 0).toLocaleString()}`],
@@ -53,7 +56,7 @@ export default async function Inventory({ searchParams }) {
                  ['all', 'Everything']];
   return <Shell active="inventory">
     <div className="h1">Inventory</div>
-    <div className="sub">{view === 'available' ? 'What the gallery can sell right now' : view === 'sold' ? 'The sold archive' : 'The full book'}{loc ? ` · at ${loc}` : ''}{q ? ` · "${q}"` : ''}</div>
+    <div className="sub">{view === 'available' ? 'What the gallery can sell right now' : view === 'sold' ? 'The sold archive' : 'The full book'}{artist ? ` · ${artist}` : ''}{loc ? ` · at ${loc}` : ''}{q ? ` · "${q}"` : ''}</div>
     <div className="stats">
       <div className="stat"><div className="n">{Number(availableCount || 0).toLocaleString()}</div><div className="l">Works on hand</div></div>
       <div className="stat"><div className="n">{usd(onHandValue)}</div><div className="l">On-hand value (priced retail)</div></div>
@@ -66,6 +69,17 @@ export default async function Inventory({ searchParams }) {
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
       <form style={{display:'inline'}}>
         <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
+        {loc && <input type="hidden" name="loc" value={loc}/>}
+        <select name="artist" defaultValue={artist} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
+          fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', maxWidth:190}}>
+          <option value="">All artists</option>
+          {(allArtists || []).map(x => <option key={x.artist} value={x.artist}>{x.artist} ({x.works})</option>)}
+        </select>
+        <button className="btn mini" style={{marginLeft:6}}>Go</button>
+      </form>
+      <form style={{display:'inline'}}>
+        <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
+        {artist && <input type="hidden" name="artist" value={artist}/>}
         <select name="loc" defaultValue={loc} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
           fontFamily:'inherit', fontSize:12.5, padding:'6px 12px'}} onChange={undefined}>
           <option value="">All locations</option>
@@ -75,6 +89,7 @@ export default async function Inventory({ searchParams }) {
       </form>
       <form style={{marginLeft:'auto', flex:1, maxWidth:340}}>
         <input type="hidden" name="view" value={view}/>{loc && <input type="hidden" name="loc" value={loc}/>}
+        {artist && <input type="hidden" name="artist" value={artist}/>}
         <input className="search" style={{marginTop:0}} name="q" defaultValue={q} placeholder="Search title, artist, medium" />
       </form>
     </div>
