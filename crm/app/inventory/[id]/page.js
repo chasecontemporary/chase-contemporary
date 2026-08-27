@@ -9,6 +9,11 @@ export default async function Unit({ params, searchParams }) {
   const pusherr = (await searchParams)?.pusherr;
   const { data: a } = await db.from('artworks').select('*').eq('id', id).single();
   if (!a) return <Shell active="inventory"><div className="empty">Not found</div></Shell>;
+  const { data: comps } = a.artist ? await db.from('artist_comps').select('*').eq('artist', a.artist).single()
+    .then(r => r) : { data: null };
+  const area = a.dims_h_in > 0 && a.dims_w_in > 0 ? a.dims_h_in * a.dims_w_in : 0;
+  const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
+  const suggested = area && ppsi ? Math.round(ppsi * area / 100) * 100 : 0;
   const [{ data: inqs }, { data: buys }, { data: appr }] = await Promise.all([
     a.handle ? db.from('inquiries').select('*, collectors(id, first_name, last_name, budget_range)')
       .eq('artwork_handle', a.handle).order('created_at', { ascending: false }) : { data: [] },
@@ -74,6 +79,20 @@ export default async function Unit({ params, searchParams }) {
         {!(a.price_cents > 0) && <div className="card" style={{marginTop:14}}>
           <div style={{fontSize:13, fontWeight:650, marginBottom:4}}>Internal estimate</div>
           <div style={{fontSize:12, color:'#86868b', marginBottom:8}}>What we hold this POR work at. Never shown to collectors — range bids in the pipeline read as a % of this.</div>
+          {suggested > 0 && <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:10, flexWrap:'wrap'}}>
+            <span className="pill" style={{background:'#f0f0f2', fontSize:11, fontWeight:700}}>
+              SUGGESTED {usd(suggested * 100)}</span>
+            <span style={{fontSize:11.5, color:'#86868b'}}>
+              from {comps.n_comps} realized sales of {a.artist} · median ${(ppsi / 100).toFixed(0)}/sq in
+              {comps.n_recent >= 5 ? ' (recency-weighted)' : ''} · {a.dims_h_in} × {a.dims_w_in} in</span>
+            <form method="POST" action="/api/act" style={{display:'inline'}}>
+              <input type="hidden" name="action" value="artwork_value"/>
+              <input type="hidden" name="id" value={a.id}/>
+              <input type="hidden" name="value" value={suggested}/>
+              <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+              <button className="btn mini">Use suggestion</button>
+            </form>
+          </div>}
           <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
             <input type="hidden" name="action" value="artwork_value"/>
             <input type="hidden" name="id" value={a.id}/>
