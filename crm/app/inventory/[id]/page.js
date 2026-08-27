@@ -30,7 +30,7 @@ export default async function Unit({ params, searchParams }) {
   let compRows = [];
   if (a.artist) {
     const { data: cr } = await db.from('purchases')
-      .select('id, amount_cents, purchased_at, artcloud_key, source, collectors(id, first_name, last_name), artworks!inner(id, title, artist, dims_h_in, dims_w_in, medium)')
+      .select('id, amount_cents, purchased_at, artcloud_key, source, collectors(id, first_name, last_name), artworks!inner(id, title, artist, dims_h_in, dims_w_in, medium, image_url)')
       .eq('artworks.artist', a.artist).gt('amount_cents', 50000)
       .not('artworks.dims_h_in', 'is', null).order('purchased_at', { ascending: false }).limit(400);
     const withPpsi = (cr || []).filter(r => r.artworks?.dims_h_in > 0 && r.artworks?.dims_w_in > 0)
@@ -41,6 +41,8 @@ export default async function Unit({ params, searchParams }) {
           .sort((x, y) => new Date(y.purchased_at) - new Date(x.purchased_at))
       : withPpsi.slice(0, 8);
   }
+  const { data: bio } = a.artist ? await db.from('artist_bios').select('bio').eq('artist', a.artist).single()
+    .then(r => r) : { data: null };
   const gaps = a.available && !a.shopify_product_id ? listingGaps(a) : [];
   const back = '/inventory/' + a.id;
   const priced = (a.price_cents || 0) > 0;
@@ -107,6 +109,18 @@ export default async function Unit({ params, searchParams }) {
               : <span style={{color:'#86868b'}}>Not listed</span>}</Row>
         </div>
 
+        {(a.description || a.provenance) && <div className="card">
+          <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>About this work</div>
+          {a.description && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
+          {a.provenance && <div style={{marginTop:a.description ? 12 : 0}}>
+            <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#86868b', marginBottom:4}}>Provenance</div>
+            <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a3c', whiteSpace:'pre-line'}}>{a.provenance}</div>
+          </div>}
+        </div>}
+        {bio?.bio && <details className="edit">
+          <summary>About {a.artist}</summary>
+          <div style={{fontSize:13.5, lineHeight:1.7, whiteSpace:'pre-line', marginTop:12, color:'#1d1d1f'}}>{bio.bio}</div>
+        </details>}
         {!priced && <div className="card">
           <div style={{fontSize:13.5, fontWeight:650}}>Internal estimate</div>
           <div style={{fontSize:12, color:'#86868b', marginTop:3, marginBottom:12}}>
@@ -210,7 +224,13 @@ export default async function Unit({ params, searchParams }) {
       {compRows.map(r => {
         const invNo = r.artcloud_key ? r.artcloud_key.split('|')[0] : null;
         return <tr key={r.id}>
-        <td style={{fontWeight:600}}><a href={'/inventory/' + r.artworks.id}>{r.artworks.title}</a></td>
+        <td><div style={{display:'flex', gap:10, alignItems:'center'}}>
+          {r.artworks.image_url
+            ? <img src={r.artworks.image_url + (r.artworks.image_url.includes('?') ? '&' : '?') + 'width=72'} alt=""
+                style={{width:36, height:36, objectFit:'cover', borderRadius:6, flex:'0 0 auto', background:'#fafafa'}}/>
+            : <span style={{width:36, height:36, borderRadius:6, background:'#f0f0f2', flex:'0 0 auto'}}/>}
+          <a style={{fontWeight:600}} href={'/inventory/' + r.artworks.id}>{r.artworks.title}</a>
+        </div></td>
         <td style={{color:'#86868b', fontSize:12.5}}>{r.artworks.dims_h_in} × {r.artworks.dims_w_in} in</td>
         <td style={{fontSize:12.5}}>{new Date(r.purchased_at).toLocaleDateString()}</td>
         <td style={{fontVariantNumeric:'tabular-nums', fontWeight:650}}>{usd(r.amount_cents)}</td>
