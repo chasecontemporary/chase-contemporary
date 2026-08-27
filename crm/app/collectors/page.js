@@ -2,80 +2,142 @@ import Shell from '../../components/Shell';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
+const ago = (d) => {
+  if (!d) return null;
+  const days = Math.floor((Date.now() - new Date(d)) / 86400000);
+  if (days < 1) return 'today';
+  if (days < 30) return days + 'd ago';
+  if (days < 365) return Math.floor(days / 30) + ' mo ago';
+  return Math.floor(days / 365) + ' yr ago';
+};
+const initials = (c) => ((c.first_name || c.email || '?')[0] + (c.last_name?.[0] || '')).toUpperCase();
 
 export default async function Collectors({ searchParams }) {
   const sp = (await searchParams) || {};
   const q = sp.q || '';
   const seg = sp.seg || 'all';
-  let query = db.from('collector_index').select('*')
-    .order('spend_cents', { ascending: false })
-    .order('last_inq', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(500);
-  if (q) query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%,city.ilike.%${q}%,company.ilike.%${q}%`);
-  if (seg === 'buyers') query = query.gt('spend_cents', 0);
-  if (seg === 'trade') query = query.eq('trade', true);
-  if (seg === 'news') query = query.eq('newsletter', true);
-  if (seg === 'vip') query = query.contains('tags', ['VIP list']);
-  if (seg === 'active') query = query.gt('open_inq', 0);
-  const [{ data: rows }, { count: totalCollectors }, { count: totalBuyers }, { data: ltvAgg }] = await Promise.all([
-    query,
-    db.from('collectors').select('id', { count: 'exact', head: true }),
-    db.from('collector_index').select('id', { count: 'exact', head: true }).gt('spend_cents', 0),
-    db.from('purchases').select('amount_cents.sum()'),
+  const artist = sp.artist || '';
+  const min = sp.min || '';
+  const def = { seg, q: q || null, artist: artist || null, min_spend: min || null };
+
+  const [{ data: list }, { data: bookStats }, { data: topArtists }] = await Promise.all([
+    db.rpc('collector_list', { def, lim: 200 }),
+    db.from('book_stats').select('*').single(),
+    db.from('artist_stats').select('artist, sold').gt('sold', 0).order('sold', { ascending: false }).limit(40),
   ]);
-  const totalLtv = ltvAgg?.[0]?.sum || 0;
-  const list = rows || [];
-  const ids = list.map(r => r.id);
-  const topArtist = {}, interests = {}, pins = {};
+  const rows = list || [];
+  const ids = rows.map(r => r.id);
+  const pins = {}, boughtArtists = {};
   if (ids.length) {
-    const [{ data: buys }, { data: inqs }, { data: pinRows }] = await Promise.all([
-      db.from('purchases').select('collector_id, amount_cents, artist').in('collector_id', ids),
-      db.from('inquiries').select('collector_id, artist').in('collector_id', ids),
+    const [{ data: pinRows }, { data: buys }] = await Promise.all([
       db.from('collector_interests').select('collector_id, label').in('collector_id', ids),
+      db.from('purchases').select('collector_id, artist, amount_cents').in('collector_id', ids),
     ]);
-    (buys || []).forEach(b => { if (b.artist) {
-      const t = topArtist[b.collector_id] = topArtist[b.collector_id] || {};
-      t[b.artist] = (t[b.artist] || 0) + b.amount_cents; } });
-    (inqs || []).forEach(i => { if (i.artist)
-      (interests[i.collector_id] = interests[i.collector_id] || new Set()).add(i.artist); });
     (pinRows || []).forEach(p => (pins[p.collector_id] = pins[p.collector_id] || []).push(p.label));
+    (buys || []).forEach(b => { if (b.artist) {
+      const t = boughtArtists[b.collector_id] = boughtArtists[b.collector_id] || {};
+      t[b.artist] = (t[b.artist] || 0) + b.amount_cents; } });
   }
+  const s = bookStats || {};
   const segs = [['all','All'],['buyers','Buyers'],['active','Active pipeline'],['vip','VIP'],['trade','Trade'],['news','Newsletter']];
+  const MINS = [['','Any lifetime'],['10000','$10k+'],['50000','$50k+'],['100000','$100k+'],['250000','$250k+']];
+  const href = (over) => {
+    const p = new URLSearchParams();
+    const merged = { seg, q, artist, min, ...over };
+    Object.entries(merged).forEach(([k, v]) => { if (v && v !== 'all') p.set(k, v); });
+    const str = p.toString();
+    return '/collectors' + (str ? '?' + str : '');
+  };
+  const filtered = seg !== 'all' || artist || min || q;
   return <Shell active="collectors">
     <div className="h1">Collectors</div>
-    <div className="sub">{totalCollectors?.toLocaleString()} in the book · showing top {list.length}{q ? ` for "${q}"` : ''} by lifetime value</div>
+    <div className="sub">{Number(s.collectors || 0).toLocaleString()} in the book · ranked by lifetime value</div>
     <div className="stats">
-      <div className="stat"><div className="n">{(totalCollectors || 0).toLocaleString()}</div><div className="l">Collectors</div></div>
-      <div className="stat"><div className="n">{(totalBuyers || 0).toLocaleString()}</div><div className="l">Buyers</div></div>
-      <div className="stat"><div className="n">{usd(totalLtv)}</div><div className="l">Total lifetime value</div></div>
-      <div className="stat"><div className="n">{totalBuyers ? usd(totalLtv / totalBuyers) : '—'}</div><div className="l">Avg LTV per buyer</div></div>
+      <div className="stat"><div className="n">{Number(s.collectors || 0).toLocaleString()}</div><div className="l">Collectors</div></div>
+      <div className="stat"><div className="n">{Number(s.buyers || 0).toLocaleString()}</div><div className="l">Buyers</div></div>
+      <div className="stat"><div className="n">{usd(s.ltv_cents)}</div><div className="l">Total lifetime value</div></div>
+      <div className="stat"><div className="n">{s.buyers ? usd(s.ltv_cents / s.buyers) : '—'}</div><div className="l">Avg LTV per buyer</div></div>
     </div>
-    <div style={{display:'flex', gap:8, marginTop:20, alignItems:'center', flexWrap:'wrap'}}>
-      {segs.map(([k, label]) => <a key={k} href={`/collectors?seg=${k}${q ? '&q=' + q : ''}`}
-        className="pill" style={seg === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
-      <form style={{marginLeft:'auto'}}><input type="hidden" name="seg" value={seg}/>
-        <input className="search" style={{marginTop:0}} name="q" defaultValue={q} placeholder="Search name, email, city, company" /></form>
+
+    <div className="card" style={{marginTop:20, padding:'14px 16px'}}>
+      <div style={{display:'flex', gap:7, alignItems:'center', flexWrap:'wrap'}}>
+        {segs.map(([k, label]) => <a key={k} href={href({ seg: k })} className="pill"
+          style={seg === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#f5f5f7'}}>{label}</a>)}
+      </div>
+      <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginTop:12}}>
+        <form style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+          {seg !== 'all' && <input type="hidden" name="seg" value={seg}/>}
+          <select name="artist" defaultValue={artist} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
+            fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', maxWidth:200}}>
+            <option value="">Any artist interest</option>
+            {(topArtists || []).map(a => <option key={a.artist} value={a.artist}>{a.artist}</option>)}
+          </select>
+          <select name="min" defaultValue={min} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
+            fontFamily:'inherit', fontSize:12.5, padding:'6px 12px'}}>
+            {MINS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <input className="search" style={{marginTop:0, width:240}} name="q" defaultValue={q} placeholder="Search name, email, city, company"/>
+          <button className="btn mini">Apply</button>
+          {filtered && <a href="/collectors" style={{fontSize:12.5, color:'#86868b'}}>Clear</a>}
+        </form>
+        <form method="POST" action="/api/act" style={{marginLeft:'auto', display:'flex', gap:6, alignItems:'center'}}>
+          <input type="hidden" name="action" value="audience_add"/>
+          <input type="hidden" name="back" value="/audiences"/>
+          <input type="hidden" name="seg" value={seg}/>
+          <input type="hidden" name="artist" value={artist}/>
+          <input type="hidden" name="min_spend" value={min}/>
+          <input type="hidden" name="consented" value="true"/>
+          <input name="name" placeholder="Save view as audience…" required
+            style={{border:'1px solid #e8e8ed', borderRadius:99, fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', width:190}}/>
+          <button className="btn mini">Save segment</button>
+        </form>
+      </div>
     </div>
-    <div className="tblcard"><table className="tbl"><thead><tr>
-      <th>Collector</th><th>Lifetime</th><th>Works</th><th>Open</th><th>Interests</th><th>Last activity</th><th>Location</th><th>Flags</th>
-    </tr></thead><tbody>
-      {list.map(c => {
-        const fav = topArtist[c.id] ? Object.entries(topArtist[c.id]).sort((a,b)=>b[1]-a[1])[0][0] : null;
-        const ints = [...new Set([...(pins[c.id] || []), ...(fav ? [fav] : []), ...(interests[c.id] || [])])].slice(0, 3);
+
+    <div className="tblcard" style={{marginTop:14}}>
+      <div style={{padding:'10px 18px', fontSize:12, color:'#86868b', borderBottom:'1px solid #f0f0f2'}}>
+        {rows.length} shown{filtered ? ' · filtered' : ' · top of the book'} · the save box turns this exact view into an email audience</div>
+      {rows.map(c => {
+        const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email;
+        const synthetic = c.email?.endsWith('import.chasecontemporary.com');
+        const vip = (c.tags || []).includes('VIP list');
+        const fav = boughtArtists[c.id]
+          ? Object.entries(boughtArtists[c.id]).sort((a, b) => b[1] - a[1])[0][0] : null;
+        const ints = [...new Set([...(fav ? [fav] : []), ...(pins[c.id] || [])])].slice(0, 2);
         const lastAct = [c.last_buy, c.last_inq].filter(Boolean).sort().pop();
-        return <tr key={c.id}>
-        <td><a href={'/collectors/'+c.id} style={{fontWeight:600}}>{[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}</a>
-          <div style={{fontSize:12, color:'#86868b'}}>{c.email?.endsWith('import.chasecontemporary.com') ? 'no email on file' : c.email}{c.company ? ' · ' + c.company : ''}</div></td>
-        <td style={{fontVariantNumeric:'tabular-nums', fontWeight:700}}>{c.spend_cents ? usd(c.spend_cents) : '—'}</td>
-        <td>{c.works || '—'}</td>
-        <td>{c.open_inq ? <span className="pill blue">{c.open_inq}</span> : '—'}</td>
-        <td style={{fontSize:12.5}}>{ints.join(' · ') || '—'}</td>
-        <td style={{fontSize:12.5, color:'#86868b'}}>{lastAct ? new Date(lastAct).toLocaleDateString() : '—'}</td>
-        <td style={{fontSize:12.5}}>{[c.city, c.state].filter(Boolean).join(', ') || '—'}</td>
-        <td>{c.trade ? <span className="pill blue">Trade</span> : null} {c.newsletter ? <span className="pill">News</span> : null}</td>
-      </tr>; })}
-    </tbody></table></div>
+        return <a key={c.id} href={'/collectors/' + c.id} style={{display:'grid',
+          gridTemplateColumns:'44px minmax(220px,1.4fr) minmax(180px,1fr) 150px', gap:16, alignItems:'center',
+          padding:'13px 18px', borderBottom:'1px solid #f5f5f7', textDecoration:'none', color:'inherit'}}>
+          <div style={{width:40, height:40, borderRadius:'50%', background:'#f0f0f2', display:'flex',
+            alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#6e6e73'}}>{initials(c)}</div>
+          <div>
+            <div style={{display:'flex', gap:6, alignItems:'center', flexWrap:'wrap'}}>
+              <span style={{fontWeight:650, fontSize:14}}>{name}</span>
+              {vip && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1d1d1f', color:'#fff'}}>VIP</span>}
+              {c.trade && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>TRADE</span>}
+              {c.open_inq > 0 && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>{c.open_inq} OPEN</span>}
+            </div>
+            <div style={{fontSize:12, color:'#86868b', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {[[c.city, c.state].filter(Boolean).join(', '), c.company, synthetic ? null : c.email].filter(Boolean).join(' · ') || '—'}
+            </div>
+          </div>
+          <div>
+            <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+              {ints.map(i => <span key={i} className="pill" style={{fontSize:10.5, background:'#f5f5f7'}}>{i}</span>)}
+              {!ints.length && <span style={{fontSize:12, color:'#c7c7cc'}}>no signals yet</span>}
+            </div>
+            {lastAct && <div style={{fontSize:11.5, color:'#86868b', marginTop:4}}>active {ago(lastAct)}</div>}
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:15, fontWeight:700, fontVariantNumeric:'tabular-nums'}}>
+              {c.spend_cents > 0 ? usd(c.spend_cents) : '—'}</div>
+            <div style={{fontSize:11.5, color:'#86868b', marginTop:2}}>
+              {c.works > 0 ? `${c.works} work${c.works > 1 ? 's' : ''}${c.last_buy ? ' · last ' + ago(c.last_buy) : ''}` : 'no purchases'}</div>
+          </div>
+        </a>; })}
+      {!rows.length && <div className="empty">No collectors match.</div>}
+    </div>
+
     <form method="POST" action="/api/act" className="inline-form" style={{marginTop:20, flexWrap:'wrap'}}>
       <input type="hidden" name="action" value="collector_add"/>
       <input type="hidden" name="back" value="/collectors"/>
