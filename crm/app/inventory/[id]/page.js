@@ -1,10 +1,12 @@
 import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
+import { listingGaps } from '../../../lib/readiness';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
-export default async function Unit({ params }) {
+export default async function Unit({ params, searchParams }) {
   const { id } = await params;
+  const pusherr = (await searchParams)?.pusherr;
   const { data: a } = await db.from('artworks').select('*').eq('id', id).single();
   if (!a) return <Shell active="inventory"><div className="empty">Not found</div></Shell>;
   const [{ data: inqs }, { data: buys }, { data: appr }] = await Promise.all([
@@ -21,7 +23,9 @@ export default async function Unit({ params }) {
           alt="" style={{width:'100%', borderRadius:8}}/>}
       </div>
       <div>
-        <div className="h1">{a.title}</div>
+        {pusherr && <div style={{gridColumn:'1/-1', background:'#ffefdc', color:'#b25a00', borderRadius:12,
+      padding:'10px 14px', fontSize:13, fontWeight:600}}>Push blocked — missing: {pusherr}</div>}
+    <div className="h1">{a.title}</div>
         <div className="sub">{a.artist}</div>
         <div className="stats" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
           <div className="stat"><div className="n" style={{fontSize:22}}>{(a.price_cents||0) > 0 ? usd(a.price_cents)
@@ -37,17 +41,36 @@ export default async function Unit({ params }) {
             <dt>Type</dt><dd>{a.product_type || '—'}</dd>
             <dt>Location</dt><dd>{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : '—'))}</dd>
             {a.handle ? <><dt>On site</dt><dd><a style={{color:'#0071e3'}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">View product page ↗</a></dd></>
-              : a.available ? <><dt>On site</dt><dd>
-                <form method="POST" action="/api/act" style={{display:'inline'}}>
-                  <input type="hidden" name="action" value="artwork_push"/>
-                  <input type="hidden" name="id" value={a.id}/>
-                  <input type="hidden" name="back" value={'/inventory/' + a.id}/>
-                  <button className="btn mini">Push to site (draft)</button>
-                </form>
-                <span style={{fontSize:11.5, color:'#86868b', marginLeft:8}}>Creates an unpublished Shopify product — invisible until published</span>
-              </dd></> : null}
+              : a.available ? <><dt>On site</dt><dd>{(() => {
+                const gaps = listingGaps(a);
+                return gaps.length
+                  ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10.5}}>NOT READY: {gaps.join(' · ').toUpperCase()}</span>
+                  : <>
+                    <form method="POST" action="/api/act" style={{display:'inline'}}>
+                      <input type="hidden" name="action" value="artwork_push"/>
+                      <input type="hidden" name="id" value={a.id}/>
+                      <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+                      <button className="btn mini">Push to site (draft)</button>
+                    </form>
+                    <span style={{fontSize:11.5, color:'#86868b', marginLeft:8}}>Ready · image resolution checked at push · lands unpublished</span>
+                  </>;
+              })()}</dd></> : null}
           </dl>
         </div>
+        {!a.shopify_product_id && a.available && <div className="card" style={{marginTop:14}}>
+          <div style={{fontSize:13, fontWeight:650, marginBottom:8}}>Work details <span style={{fontWeight:400, color:'#86868b', fontSize:12}}>· close listing gaps here</span></div>
+          <form method="POST" action="/api/act" className="inline-form" style={{margin:0, flexWrap:'wrap'}}>
+            <input type="hidden" name="action" value="artwork_update"/>
+            <input type="hidden" name="id" value={a.id}/>
+            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+            <input name="title" defaultValue={a.title || ''} placeholder="Title" style={{flex:1, minWidth:180}}/>
+            <input name="artist" defaultValue={a.artist || ''} placeholder="Artist" style={{width:150}}/>
+            <input name="medium" defaultValue={a.medium || ''} placeholder="Medium" style={{width:170}}/>
+            <input name="h" type="number" step="0.01" defaultValue={a.dims_h_in || ''} placeholder="H in" style={{width:70}}/>
+            <input name="w" type="number" step="0.01" defaultValue={a.dims_w_in || ''} placeholder="W in" style={{width:70}}/>
+            <button className="btn mini">Save</button>
+          </form>
+        </div>}
         {!(a.price_cents > 0) && <div className="card" style={{marginTop:14}}>
           <div style={{fontSize:13, fontWeight:650, marginBottom:4}}>Internal estimate</div>
           <div style={{fontSize:12, color:'#86868b', marginBottom:8}}>What we hold this POR work at. Never shown to collectors — range bids in the pipeline read as a % of this.</div>

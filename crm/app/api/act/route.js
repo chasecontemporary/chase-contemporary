@@ -3,6 +3,7 @@ import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice } from '../../../lib/settle';
 import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
+import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 
 export async function POST(req) {
   const form = await req.formData();
@@ -33,11 +34,24 @@ export async function POST(req) {
     await db.from('campaigns').update({ status: 'approved', approved_by: rep }).eq('id', id);
   } else if (action === 'campaign_del') {
     await db.from('campaigns').delete().eq('id', id);
+  } else if (action === 'artwork_update') {
+    const patch = {};
+    for (const f of ['title','artist','medium']) if (form.has(f)) patch[f] = form.get(f) || null;
+    if (form.has('h')) patch.dims_h_in = Number(form.get('h')) || null;
+    if (form.has('w')) patch.dims_w_in = Number(form.get('w')) || null;
+    await db.from('artworks').update(patch).eq('id', id);
   } else if (action === 'artwork_push') {
     if (!shopifyReady())
       return Response.redirect(new URL((form.get('back') || '/inventory') + '?err=shopify-not-connected', req.url), 303);
     const { data: art } = await db.from('artworks').select('*').eq('id', id).single();
     if (art && !art.shopify_product_id) {
+      const gaps = listingGaps(art);
+      if (!gaps.length) {
+        const w = await probeImageWidth(art.image_url);
+        if (w !== null && w < MIN_IMAGE_PX) gaps.push(`image too small (${w}px, needs ${MIN_IMAGE_PX})`);
+      }
+      if (gaps.length)
+        return Response.redirect(new URL((form.get('back') || '/inventory') + '?pusherr=' + encodeURIComponent(gaps.join(', ')), req.url), 303);
       const { pushProduct } = await import('../../../lib/shopify');
       const { productId, handle } = await pushProduct(art);
       await db.from('artworks').update({ shopify_product_id: productId, handle }).eq('id', id);

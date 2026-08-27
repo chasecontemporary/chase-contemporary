@@ -1,5 +1,6 @@
 import Shell from '../../components/Shell';
 import Sel from '../../components/Sel';
+import { listingGaps } from '../../lib/readiness';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -130,8 +131,13 @@ export default async function Inventory({ searchParams }) {
             if (a.available && mo !== null && mo >= 1) bits.push(<span key="mo"
               style={{...chip, ...(mo > 12 ? {background:'#ffefdc', color:'#b25a00'} : {background:'#f0f0f2', color:'#6e6e73'})}}>
               {mo} MO ON HAND</span>);
-            if (a.available && !a.shopify_product_id) bits.push(<span key="ns"
-              style={{...chip, background:'#fff', border:'1px solid #e8e8ed', color:'#86868b'}}>NOT ON SITE</span>);
+            if (a.available && !a.shopify_product_id) {
+              const ready = listingGaps(a).length === 0;
+              bits.push(<span key="ns" style={{...chip, ...(ready
+                ? {background:'#e4f7e9', color:'#1d7a3d'}
+                : {background:'#fff', border:'1px solid #e8e8ed', color:'#86868b'})}}>
+                {ready ? 'READY TO LIST' : 'LISTING GAPS'}</span>);
+            }
             return bits.length ? <div style={{marginTop:6, display:'flex', gap:5, flexWrap:'wrap'}}>{bits}</div> : null;
           })()}
         </div>
