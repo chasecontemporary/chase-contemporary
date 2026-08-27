@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 // AR chase stage for an open invoice: select posts immediately; Promised asks for a date.
-const STAGES = [['issued','Issued'],['sent','Sent'],['nudged','Nudged'],['promised','Promised']];
+const STAGES = [['issued','Not sent'],['sent','Sent'],['nudged','Reminded'],['promised','Payment promised']];
 export default function ArStage({ id, value, promiseDate }) {
   const [asking, setAsking] = useState(false);
   const post = async (st, date) => {

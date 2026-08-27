@@ -23,7 +23,7 @@ function tracked(page, text, { x, y, size, font, color = INK, spacing = 1.6 }) {
 const trackedWidth = (font, text, size, spacing = 1.6) =>
   [...String(text).toUpperCase()].reduce((w, ch) => w + font.widthOfTextAtSize(ch, size) + spacing, -spacing);
 
-export async function buildInvoicePdf({ invoice, collector, items }) {
+export async function buildInvoicePdf({ invoice, collector, items, payments = [] }) {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   const regular = await doc.embedFont(asset('fonts/nimbus-sans-novus-regular.ttf'));
@@ -119,9 +119,30 @@ export async function buildInvoicePdf({ invoice, collector, items }) {
   y -= 4;
   page.drawLine({ start: { x: tx, y: y + 10 }, end: { x: 612 - M, y: y + 10 }, thickness: 0.7, color: INK });
   y -= 4;
-  tracked(page, 'TOTAL DUE', { x: tx, y, size: 8.5, font: semibold, spacing: 1.8 });
-  const tv = usd(total);
-  page.drawText(tv, { x: 612 - M - semibold.widthOfTextAtSize(tv, 14), y: y - 2, size: 14, font: semibold });
+  const received = payments.reduce((s, p) => s + Number(p.amount_cents || 0), 0);
+  if (received > 0) {
+    tracked(page, 'TOTAL', { x: tx, y, size: 8.5, font: semibold, spacing: 1.8 });
+    const tv0 = usd(total);
+    page.drawText(tv0, { x: 612 - M - semibold.widthOfTextAtSize(tv0, 11), y: y - 1, size: 11, font: semibold });
+    y -= 17;
+    for (const pmt of payments) {
+      const lbl = 'Received' + (pmt.settled_at ? ' ' + new Date(pmt.settled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '') + (pmt.method ? ' · ' + pmt.method : '');
+      page.drawText(lbl, { x: tx, y, size: 9, font: regular, color: GRAY });
+      const pv = '\u2212' + usd(pmt.amount_cents);
+      page.drawText(pv, { x: 612 - M - regular.widthOfTextAtSize(pv, 9), y, size: 9, font: regular, color: GRAY });
+      y -= 14;
+    }
+    y -= 2;
+    page.drawLine({ start: { x: tx, y: y + 10 }, end: { x: 612 - M, y: y + 10 }, thickness: 0.7, color: INK });
+    y -= 4;
+    tracked(page, 'BALANCE DUE', { x: tx, y, size: 8.5, font: semibold, spacing: 1.8 });
+    const bv = usd(Math.max(0, total - received));
+    page.drawText(bv, { x: 612 - M - semibold.widthOfTextAtSize(bv, 14), y: y - 2, size: 14, font: semibold });
+  } else {
+    tracked(page, 'TOTAL DUE', { x: tx, y, size: 8.5, font: semibold, spacing: 1.8 });
+    const tv = usd(total);
+    page.drawText(tv, { x: 612 - M - semibold.widthOfTextAtSize(tv, 14), y: y - 2, size: 14, font: semibold });
+  }
   y -= 44;
 
   // payment

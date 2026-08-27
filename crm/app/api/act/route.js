@@ -187,6 +187,15 @@ export async function POST(req) {
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
   } else if (action === 'invoice_from_sale') {
+    // one invoice per sale — the thesis. An existing open invoice is returned, never duplicated.
+    const { data: existing } = await db.from('invoices').select('id, invoice_number')
+      .eq('sale_id', id).neq('status', 'void').limit(1);
+    if (existing?.length) {
+      if (form.get('back') && form.get('back') !== 'json')
+        return Response.redirect(new URL(form.get('back'), req.url), 303);
+      return new Response(JSON.stringify({ ok: true, invoice_number: existing[0].invoice_number, existing: true }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     const { data: items } = await db.from('sale_items').select('*').eq('sale_id', id);
     const { data: sale } = await db.from('sales').select('*').eq('id', id).single();
     if (sale && items?.length) {
@@ -241,7 +250,9 @@ export async function POST(req) {
           dims: it.artworks?.dims_h_in ? `${it.artworks.dims_h_in} × ${it.artworks.dims_w_in} in` : null }));
       }
       if (!items.length) items = [{ artist: inv.artist, title: inv.title, amount_cents: inv.amount_cents }];
-      const bytes = await buildInvoicePdf({ invoice: inv, collector: inv.collectors, items });
+      const { data: pays } = await db.from('payments').select('amount_cents, method, settled_at')
+        .eq('invoice_id', id).eq('status', 'settled').order('settled_at');
+      const bytes = await buildInvoicePdf({ invoice: inv, collector: inv.collectors, items, payments: pays || [] });
       const num = String(inv.invoice_number).padStart(4, '0');
       const blob = await put(`invoices/chase-contemporary-invoice-${num}.pdf`, Buffer.from(bytes),
         { access: 'public', contentType: 'application/pdf', addRandomSuffix: true, allowOverwrite: true });
@@ -258,7 +269,11 @@ export async function POST(req) {
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
       kind: 'ar_' + st, body: form.get('promise_date') || null, actor: rep });
   } else if (action === 'invoice_payment') {
-    const amt = Math.round(Number(String(form.get('amount') || '0').replace(/[$,\s]/g, '')) * 100);
+    let amt = Math.round(Number(String(form.get('amount') || '0').replace(/[$,\s]/g, '')) * 100);
+    if (!amt && form.get('fraction')) {
+      const { data: fi } = await db.from('invoices').select('amount_cents, tax_cents, shipping_cents').eq('id', id).single();
+      if (fi) amt = Math.round((fi.amount_cents + (fi.tax_cents || 0) + (fi.shipping_cents || 0)) * Number(form.get('fraction')));
+    }
     if (amt > 0) {
       const r = await recordPayment(id, amt, form.get('method') || null);
       if (r) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,

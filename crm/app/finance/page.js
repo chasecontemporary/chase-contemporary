@@ -88,7 +88,7 @@ export default async function Finance({ searchParams }) {
       </div>; })()}
 
     {(() => {
-      const ORDER = [['issued','Issued','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Nudged','#af52de'],['promised','Promised','#ff9500']];
+      const ORDER = [['issued','Not sent','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Reminded','#af52de'],['promised','Promised','#ff9500']];
       const by = {};
       open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
       const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
@@ -109,7 +109,7 @@ export default async function Finance({ searchParams }) {
         {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
           {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + balance(i), 0))}) — over 30 days or past a promise date</div>}
         {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
-          No open AR right now. Each invoice moves Issued → Sent → Nudged → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
+          No open AR right now. Each invoice moves Not sent → Sent → Reminded → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
 
     {waiting.length > 0 && <div className="card" style={{marginTop:16}}>
@@ -163,7 +163,7 @@ export default async function Finance({ searchParams }) {
             <span>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
               : i.status === 'void' ? <span className="pill">Void</span>
               : <span className="pill" style={overdueRow ? {background:'#ffefdc', color:'#b25a00', fontWeight:700} : {background:'#f0f0f2', fontWeight:700}}>
-                  {(i.ar_status || 'issued').toUpperCase()}{i.ar_status === 'promised' && i.promise_date ? ' ' + new Date(i.promise_date).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</span>}</span>
+                  {({issued:'NOT SENT',sent:'SENT',nudged:'REMINDED',promised:'PROMISED'}[i.ar_status || 'issued'])}{i.ar_status === 'promised' && i.promise_date ? ' ' + new Date(i.promise_date).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</span>}</span>
             <span style={{fontSize:11.5, color:'#86868b'}}>{isOpen && paidIn[i.id] ? usd(paidIn[i.id]) + ' in' : ''}</span>
             <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
               {isOpen ? usd(balance(i)) : usd(tot(i))}
@@ -228,6 +228,7 @@ export default async function Finance({ searchParams }) {
                 <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Received"/></label>
                 <input name="method" placeholder="wire / card…" style={{width:100, fontSize:12.5, border:'1px solid #e8e8ed', borderRadius:10, height:36, padding:'0 10px', fontFamily:'inherit'}}/>
                 <button className="btn mini quiet">Record payment</button>
+                {!paidIn[i.id] && <button className="btn mini quiet" name="fraction" value="0.5">Record 50% deposit · {usd(Math.round(tot(i) / 2))}</button>}
               </form>
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_paid"/>
