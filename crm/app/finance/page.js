@@ -68,7 +68,7 @@ export default async function Finance({ searchParams }) {
     if (a.coa_url) list.push({ label: 'COA · ' + (a.title || it.title), url: a.coa_url });
   });
   const shown = view === 'paid' ? paid : view === 'all' ? all : [...open].sort((a, b) => new Date(a.issued_at) - new Date(b.issued_at));
-  const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['all', 'All']];
+  const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['payments', 'Payments received'], ['all', 'All']];
   return <Shell active="finance">
     <div className="h1">Finance</div>
     <div className="sub">Cash reality: what came in, what is owed, what is waiting to be asked for</div>
@@ -88,11 +88,11 @@ export default async function Finance({ searchParams }) {
       </div>; })()}
 
     {(() => {
-      const ORDER = [['issued','Not sent','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Reminded','#af52de'],['promised','Promised','#ff9500']];
+      const ORDER = [['issued','Unsent','#8e8e93'],['sent','Sent','#0071e3'],['fu1','Follow up 1','#5e5ce6'],['fu2','Follow up 2','#af52de'],['fu3','Follow up 3','#ff9500']];
       const by = {};
       open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
       const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
-        || (i.promise_date && new Date(i.promise_date) < new Date()));
+       );
       return <div className="card" style={{marginTop:16}}>
         <div className="cardtitle">AR pipeline · where every open dollar sits in the chase</div>
         <div style={{display:'flex', gap:6, marginTop:4}}>
@@ -107,9 +107,9 @@ export default async function Finance({ searchParams }) {
             </div>; })}
         </div>
         {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
-          {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + balance(i), 0))}) — over 30 days or past a promise date</div>}
+          {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + balance(i), 0))}) — open more than 30 days</div>}
         {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
-          No open AR right now. Each invoice moves Not sent → Sent → Reminded → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
+          No open AR right now. Each invoice moves Unsent → Sent → Follow up 1/2/3 until paid; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
 
     {waiting.length > 0 && <div className="card" style={{marginTop:16}}>
@@ -140,13 +140,37 @@ export default async function Finance({ searchParams }) {
       {VIEWS.map(([k, label]) => <a key={k} href={'/finance?view=' + k} className="pill"
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
     </div>
-    <div style={{display:'flex', flexDirection:'column', gap:10, marginTop:12}}>
+    {view === 'payments' && (() => {
+      const invByI = {}; all.forEach(i => invByI[i.id] = i);
+      const rows = (payRows || []).slice().reverse();
+      const byMonth = {};
+      rows.forEach(p => { const k = String(p.settled_at || '').slice(0, 7); (byMonth[k] = byMonth[k] || []).push(p); });
+      return <div style={{display:'flex', flexDirection:'column', gap:10, marginTop:12}}>
+        {Object.entries(byMonth).map(([mo, ps]) => <div className="card" key={mo} style={{padding:'12px 18px'}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
+            <div className="cardtitle" style={{marginBottom:8}}>{new Date(mo + '-02').toLocaleDateString('en-US', { month:'long', year:'numeric' })}</div>
+            <div style={{fontWeight:700, fontVariantNumeric:'tabular-nums'}}>{usd(ps.reduce((s, p) => s + Number(p.amount_cents), 0))}</div>
+          </div>
+          {ps.map((p, ix) => {
+            const inv = invByI[p.invoice_id];
+            return <div key={ix} style={{display:'flex', gap:12, alignItems:'center', padding:'8px 0',
+              borderBottom:'1px solid #f5f5f7', fontSize:13}}>
+              <span style={{color:'#86868b', fontSize:12, width:80}}>{p.settled_at ? new Date(p.settled_at).toLocaleDateString() : '—'}</span>
+              <span style={{flex:1}}>{inv ? <>№{String(inv.invoice_number).padStart(4,'0')} · {inv.collectors ? [inv.collectors.first_name, inv.collectors.last_name].filter(Boolean).join(' ') : '—'}
+                <span style={{color:'#86868b'}}> · {inv.title}</span></> : 'Unlinked payment'}</span>
+              <span className="pill" style={{fontSize:10.5}}>{p.method || '—'}</span>
+              <span style={{fontWeight:700, fontVariantNumeric:'tabular-nums', color:'#1d7a3d'}}>+{usd(p.amount_cents)}</span>
+            </div>; })}
+        </div>)}
+        {!rows.length && <div className="empty">No payments recorded yet.</div>}
+      </div>; })()}
+    {view !== 'payments' && <div style={{display:'flex', flexDirection:'column', gap:10, marginTop:12}}>
       {shown.map(i => {
         const age = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
         const c = i.collectors;
         const hist = payHist[i.id] || [];
         const isOpen = i.status === 'open';
-        const overdueRow = isOpen && (age > 30 || (i.promise_date && new Date(i.promise_date) < new Date()));
+        const overdueRow = isOpen && (age > 30);
         return <details key={i.id} className="edit" style={{padding:0, overflow:'hidden'}}>
           <summary style={{padding:'13px 18px', display:'grid',
             gridTemplateColumns:'14px 46px 52px minmax(150px,1fr) minmax(130px,1.1fr) 110px 90px 130px', gap:12, alignItems:'center'}}>
@@ -163,8 +187,8 @@ export default async function Finance({ searchParams }) {
             <span>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
               : i.status === 'void' ? <span className="pill">Void</span>
               : <span className="pill" style={overdueRow ? {background:'#ffefdc', color:'#b25a00', fontWeight:700} : {background:'#f0f0f2', fontWeight:700}}>
-                  {({issued:'NOT SENT',sent:'SENT',nudged:'REMINDED',promised:'PROMISED'}[i.ar_status || 'issued'])}{i.ar_status === 'promised' && i.promise_date ? ' ' + new Date(i.promise_date).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</span>}</span>
-            <span style={{fontSize:11.5, color:'#86868b'}}>{isOpen && paidIn[i.id] ? usd(paidIn[i.id]) + ' in' : ''}</span>
+                  {({issued:'UNSENT',sent:'SENT',fu1:'FOLLOW UP 1',fu2:'FOLLOW UP 2',fu3:'FOLLOW UP 3'}[i.ar_status] || 'UNSENT')}</span>}</span>
+            <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10, fontWeight:700}}>DEPOSIT IN · {usd(paidIn[i.id])}</span> : ''}</span>
             <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
               {isOpen ? usd(balance(i)) : usd(tot(i))}
               {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#86868b', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>
@@ -187,8 +211,7 @@ export default async function Finance({ searchParams }) {
                   {hist.map((p, ix) => <div key={ix} style={{color:'#1d7a3d'}}>
                     + {usd(p.amount_cents)} received {p.settled_at ? new Date(p.settled_at).toLocaleDateString() : ''}{p.method ? ' · ' + p.method : ''}</div>)}
                   {isOpen && <div style={{fontWeight:700}}>Balance {usd(balance(i))}</div>}
-                  {i.promise_date && <div style={{color:'#b25a00'}}>Promised by {new Date(i.promise_date).toLocaleDateString()}</div>}
-                  {i.last_nudge_at && <div style={{color:'#86868b'}}>Last nudged {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
+                  {i.last_nudge_at && <div style={{color:'#86868b'}}>Last follow-up {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
                 </div>
               </div>
               <div>
@@ -201,7 +224,7 @@ export default async function Finance({ searchParams }) {
                     <span style={{fontSize:12, color:'#86868b'}}>No documents yet — generate the invoice PDF below.</span>}
                 </div>
                 <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
-                  {isOpen && <ArStage id={i.id} value={i.ar_status} promiseDate={i.promise_date}/>}
+                  {isOpen && <ArStage id={i.id} value={i.ar_status}/>}
                   <form method="POST" action="/api/act" style={{display:'inline-block'}}>
                     <input type="hidden" name="action" value="invoice_pdf"/>
                     <input type="hidden" name="id" value={i.id}/>
@@ -247,7 +270,7 @@ export default async function Finance({ searchParams }) {
         </details>; })}
       {!shown.length && <div className="empty">
         {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</div>}
-    </div>
+    </div>}
 
     <details className="edit" style={{marginTop:16}}>
       <summary>Manual invoice — walk-in or off-pipeline sale</summary>

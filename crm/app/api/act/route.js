@@ -263,8 +263,7 @@ export async function POST(req) {
   } else if (action === 'invoice_ar') {
     const st = form.get('ar_status');
     const patch = { ar_status: st };
-    if (st === 'nudged') patch.last_nudge_at = new Date().toISOString();
-    if (st === 'promised' && form.get('promise_date')) patch.promise_date = form.get('promise_date');
+    if (st.startsWith('fu')) patch.last_nudge_at = new Date().toISOString();
     await db.from('invoices').update(patch).eq('id', id);
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
       kind: 'ar_' + st, body: form.get('promise_date') || null, actor: rep });
