@@ -87,7 +87,7 @@ export default async function Collectors({ searchParams }) {
           <input type="hidden" name="min_spend" value={min}/>
           <input type="hidden" name="consented" value="true"/>
           <input name="name" placeholder="Save view as audience…" required
-            style={{border:'1px solid #e8e8ed', borderRadius:99, fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', width:190}}/>
+            style={{border:'1px solid #e8e8ed', borderRadius:10, height:36, fontFamily:'inherit', fontSize:12.5, padding:'0 12px', width:190}}/>
           <button className="btn mini">Save segment</button>
         </form>
       </div>

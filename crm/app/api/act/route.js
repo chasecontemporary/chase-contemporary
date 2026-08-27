@@ -59,7 +59,7 @@ export async function POST(req) {
         kind: 'pushed_to_site', body: 'draft product ' + handle, actor: rep });
     }
   } else if (action === 'artwork_value') {
-    const cents = Math.round(Number(form.get('value') || 0) * 100);
+    const cents = Math.round(Number(String(form.get('value') || '0').replace(/[$,\s]/g, '')) * 100);
     await db.from('artworks').update({ internal_value_cents: cents || null }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
       kind: 'internal_value_set', body: cents ? '$' + (cents / 100).toLocaleString() : 'cleared', actor: rep });

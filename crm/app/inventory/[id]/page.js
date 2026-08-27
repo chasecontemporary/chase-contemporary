@@ -130,7 +130,9 @@ export default async function Unit({ params, searchParams }) {
             <input type="hidden" name="action" value="artwork_value"/>
             <input type="hidden" name="id" value={a.id}/>
             <input type="hidden" name="back" value={back}/>
-            <input name="value" type="number" step="0.01" defaultValue={a.internal_value_cents ? a.internal_value_cents / 100 : ''} placeholder="Estimate $" style={{width:160}}/>
+            <label className="money"><span>$</span>
+              <input name="value" inputMode="numeric" defaultValue={a.internal_value_cents ? (a.internal_value_cents / 100).toLocaleString() : ''} placeholder="Estimate"/>
+            </label>
             <button className="btn mini">Save</button>
           </form>
         </div>}
