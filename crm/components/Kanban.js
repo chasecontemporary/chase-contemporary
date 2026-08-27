@@ -1,6 +1,7 @@
 'use client';
 import BrandSelect from './BrandSelect';
 import SaleWizard from './SaleWizard';
+import OfferComposer from './OfferComposer';
 import { useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
@@ -153,6 +154,9 @@ export default function Kanban({ initial, team = [] }) {
             }}>{openLead.first_called_at ? '✓ Called' : 'Log call'}</button>
             {!['invoice','paid'].includes(openLead.status) &&
               <button className="btn mini" onClick={() => setWizard(true)}>Start sale</button>}
+            <OfferComposer key={openLead.id} quiet collectorId={openLead.collector_id}
+              collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
+              defaultWork={a && a.available ? a : null}/>
             {!openLead.contacted_at && <span style={{fontSize:12, color:'#ff3b30', fontWeight:600}}>
               Awaiting first response</span>}
           </div>

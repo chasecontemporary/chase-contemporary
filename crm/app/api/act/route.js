@@ -142,6 +142,26 @@ export async function POST(req) {
     if (form.get('back') === 'json')
       return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     return Response.redirect(new URL((form.get('back') || '/collectors/' + id) + '?dlink=' + encodeURIComponent(url), req.url), 303);
+  } else if (action === 'offer_create') {
+    const items = JSON.parse(form.get('items') || '[]')
+      .filter(x => x.id).slice(0, 10)
+      .map(x => ({ id: x.id, price_cents: Number(x.price_cents) > 0 ? Math.round(Number(x.price_cents)) : null }));
+    if (!items.length) return new Response(JSON.stringify({ error: 'no works' }), { status: 400 });
+    const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    const days = Math.min(90, Math.max(1, Number(form.get('expires_days')) || 14));
+    const { data: offer, error: oErr } = await db.from('offers').insert({
+      token, collector_id: id, inquiry_id: form.get('inquiry_id') || null,
+      title: form.get('title') || null, note: form.get('note') || null,
+      items, created_by: rep === 'rep' ? null : rep,
+      expires_at: new Date(Date.now() + days * 86400000).toISOString(),
+    }).select().single();
+    if (oErr) return new Response(JSON.stringify({ error: oErr.message }), { status: 500 });
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
+      kind: 'offer_sent', body: `${offer.title || 'Private selection'} · ${items.length} work${items.length > 1 ? 's' : ''}`, actor: rep });
+    const url = new URL(req.url).origin + '/o/' + token;
+    return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } else if (action === 'offer_revoke') {
+    await db.from('offers').update({ status: 'revoked' }).eq('id', id);
   } else if (action === 'collector_update') {
     const fields = ['salutation','first_name','last_name','company','phone','email',
       'address_line1','address_line2','city','state','zip','country',

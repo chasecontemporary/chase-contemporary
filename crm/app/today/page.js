@@ -34,6 +34,7 @@ export default async function Today() {
 
   const [
     { data: team }, { data: inqs }, { data: paysNew }, { data: formsDone }, { data: visits },
+    { data: offersViewed },
     { data: chaseInv }, { data: openInv }, { data: paysAll }, { data: paysMonth },
     { data: respRows }, { data: agingRows },
   ] = await Promise.all([
@@ -47,6 +48,8 @@ export default async function Today() {
       .gte('details_completed_at', H48).limit(20),
     db.from('site_events').select('collector_id, path, occurred_at, collectors(first_name, last_name)')
       .not('collector_id', 'is', null).gte('occurred_at', H48).order('occurred_at', { ascending: false }).limit(400),
+    db.from('offers').select('id, title, view_count, last_viewed_at, collector_id, collectors(first_name, last_name)')
+      .gte('last_viewed_at', H48).order('last_viewed_at', { ascending: false }).limit(20),
     db.from('invoices').select('id, invoice_number, amount_cents, tax_cents, shipping_cents, ar_status, issued_at, last_nudge_at, collectors(id, first_name, last_name)')
       .eq('status', 'open').order('issued_at').limit(200),
     db.from('invoices').select('id, amount_cents, tax_cents, shipping_cents').eq('status', 'open').limit(500),
@@ -73,6 +76,10 @@ export default async function Today() {
   (formsDone || []).forEach(c => pulse.push({
     at: c.details_completed_at, kind: 'Form completed', color: '#5e5ce6', href: '/collectors/' + c.id,
     text: `${nameOf(c)} filled in their billing details`,
+  }));
+  (offersViewed || []).forEach(o => pulse.push({
+    at: o.last_viewed_at, kind: 'Selection opened', color: '#af52de', href: '/collectors/' + o.collector_id,
+    text: `${nameOf(o.collectors)} opened ${o.title ? `"${o.title}"` : 'their private selection'}${o.view_count > 1 ? ` — ${o.view_count} times now` : ''}`,
   }));
   const byVisitor = {};
   (visits || []).forEach(e => {

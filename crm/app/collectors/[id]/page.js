@@ -1,5 +1,6 @@
 import Shell from '../../../components/Shell';
 import BrandSelect from '../../../components/BrandSelect';
+import OfferComposer from '../../../components/OfferComposer';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
@@ -15,11 +16,13 @@ export default async function Card({ params, searchParams }) {
   const dlink = (await searchParams)?.dlink;
   const { data: c } = await db.from('collectors').select('*').eq('id', id).single();
   if (!c) return <Shell active="collectors"><div className="empty">Not found</div></Shell>;
-  const [{ data: inqs }, { data: acts }, { data: buys }, { data: pins }] = await Promise.all([
+  const [{ data: inqs }, { data: acts }, { data: buys }, { data: pins }, { data: offers }] = await Promise.all([
     db.from('inquiries').select('*').eq('collector_id', id).order('created_at', { ascending: false }),
     db.from('activities').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(30),
     db.from('purchases').select('*, artworks(image_url, handle, medium, product_type)').eq('collector_id', id).order('purchased_at', { ascending: false }),
     db.from('collector_interests').select('*').eq('collector_id', id).order('created_at'),
+    db.from('offers').select('*, offer_responses(artwork_id)').eq('collector_id', id)
+      .order('created_at', { ascending: false }).limit(10),
   ]);
   const taste = computeTaste(buys || [], inqs || [], pins || []);
   const purchases = buys || [];
@@ -57,6 +60,36 @@ export default async function Card({ params, searchParams }) {
       <div className="stat"><div className="n" style={{fontSize:17,paddingTop:6}}>{openInqs.length}</div><div className="l">Open inquiries</div></div>
     </div>
 
+
+    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:34}}>
+      <div>
+        <div className="h1" style={{fontSize:18}}>Private selections</div>
+        <div className="sub" style={{marginTop:2}}>Curated works sent just to them — you see when they open it</div>
+      </div>
+      <OfferComposer collectorId={c.id}
+        collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}/>
+    </div>
+    {(offers || []).length > 0 && <div style={{background:'#fff', border:'1px solid #ececf0',
+      borderRadius:12, boxShadow:'0 1px 2px rgba(0,0,0,.03)', marginTop:12}}>
+      {(offers || []).map((o, i) => {
+        const expired = o.expires_at && new Date(o.expires_at) < new Date();
+        const interested = (o.offer_responses || []).length;
+        return <div key={o.id} style={{display:'flex', gap:12, alignItems:'center',
+          padding:'11px 16px', borderTop: i ? '1px solid #f4f4f6' : 'none', fontSize:13.5}}>
+          <span style={{flex:1, minWidth:0}}>
+            <b>{o.title || 'Private selection'}</b>
+            <span style={{color:'#86868b'}}> · {(o.items || []).length} work{(o.items || []).length === 1 ? '' : 's'} · sent {new Date(o.created_at).toLocaleDateString()}</span>
+          </span>
+          {interested > 0 && <span style={{fontSize:12, fontWeight:700, color:'#1d7a3d'}}>
+            interested in {interested}</span>}
+          <span style={{fontSize:12, fontWeight:650,
+            color: expired ? '#86868b' : o.view_count > 0 ? '#0071e3' : '#b25a00'}}>
+            {expired ? 'expired' : o.view_count > 0
+              ? `opened ${o.view_count}× · last ${new Date(o.last_viewed_at).toLocaleDateString()}`
+              : 'not opened yet'}</span>
+          <a href={'/o/' + o.token} target="_blank" style={{fontSize:12, color:'#0071e3', fontWeight:650}}>View →</a>
+        </div>; })}
+    </div>}
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Taste profile</div>
     <div className="sub">Computed live from every purchase and inquiry · pin what you learn on calls</div>

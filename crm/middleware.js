@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith('/d/') || pathname.startsWith('/api/details') ||
+  if (pathname.startsWith('/d/') || pathname.startsWith('/o/') ||
+      pathname.startsWith('/api/details') || pathname.startsWith('/api/offer') ||
       pathname.startsWith('/api/shopify-webhook') ||
       pathname.startsWith('/api/stripe-webhook') || pathname.startsWith('/p/') ||
       pathname.startsWith('/api/inquiry') || pathname.startsWith('/api/visit') ||
