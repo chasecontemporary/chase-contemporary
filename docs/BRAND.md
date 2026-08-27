@@ -49,6 +49,11 @@ that isn't on the live site.
 - `.card`, `.tblcard`, `.tbl` — surfaces and tables; rows separated by `#f5f5f7` hairlines
 - `.btn` / `.btn.mini` — black primary, small variants
 - `.search` — rounded search input
+- **Control law (8/27):** everything you touch is ONE shape — 10px radius, 36px height:
+  buttons (`.btn`, `.btn.mini` differ only in label density), text inputs, selects, date
+  fields, search, the `$`-prefixed `.money` group. Pills are for STATUS and TABS only,
+  never for controls. Money inputs always carry the $ inside the control and format with
+  thousands separators.
 - `.sel` — THE select. Every dropdown in the engine uses it: appearance none, white,
   hairline border, pill radius (`.rect` for 10px in forms), custom gray chevron
   (inline SVG), blue focus ring. Filter selects auto-submit via `components/Sel.js`
