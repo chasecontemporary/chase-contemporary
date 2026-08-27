@@ -5,6 +5,7 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- Today rebuilt as THE landing page 8/28 (post competitive discovery, docs/CRM-DISCOVERY.md): omnisearch (collectors + works), "What's new" pulse (inquiries / money in / forms completed / known collectors seen on the site), "Needs attention" exceptions (answer now, gone quiet 5d+, money to chase, holds running out), 4-number money strip, Move list demoted to bottom. Personalized: reps see their own follow-ups. Old response-queue duplication with Pipeline removed.
 - Full-journey attribution BUILT 8/27 (live loop tested end-to-end): anonymous visitor id (localStorage cc_vid) + sendBeacon page views -> site_events; inquiry submit stitches the whole trail to the collector (visitor_links + retro backfill); collector_journey view; "Visits to our site" row in the pipeline drawer. Site-side JS is in the theme and goes live with theme go-live. Later identity moments (Klaviyo click UTMs, checkout) plug into the same tables.
 - Comp engine phase 1 + valuation section w/ invoice-cited comps + thumbnails
 - Artists page (capital allocation: sell-through x revenue x on-hand, DOUBLE DOWN / MOVE STOCK verdicts)
@@ -15,7 +16,12 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 ## In flight
 - (nothing — awaiting Shopify token + wire paragraph)
 
-## Queued
+## Queued (ordered per 8/28 competitive discovery — highest leverage first)
+- Offer sheets / private-view links: tokenized branded page of 3-10 curated works w/ prices for ONE collector, viewed-tracking via the journey layer. The #1 most-praised daily feature across Artlogic/ARTERNAL; we have all the infra (tokenized pages + site_events).
+- Reserves/holds on works with expiry: "holding until Friday" as a status + auto-release, prevents double-selling with multiple reps. (Distinct from the killed take-home trials — this is a work-level sales reserve, work never leaves the gallery.)
+- Email logging to collector records: BCC dropbox (crm@ address) that files sent mail onto the contact timeline. ARTERNAL's core insight: deal history lives in the inbox.
+- Artwork location field + movement log: "where is this piece right now" (wall / rack / framer / shipped) — one field + history, not a WMS.
+- Artist sold-works statement PDF: read-only per-artist report off existing sale lines (what sold, what's owed) — prevents spreadsheet regression without rebuilding consignment accounting.
 - COA generator: per-work certificate PDF from the invoice brand pipeline
 - Bulk push to site: stage all READY TO LIST works as Shopify drafts (after token proves out on 5-10 works)
 - Image-quality scoring for Artcloud CDN photos (extend the sharpness gate before bulk publish)
