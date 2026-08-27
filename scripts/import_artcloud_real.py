@@ -97,6 +97,7 @@ for i, r in enumerate(inventory):
         'artcloud_id': aid, 'title': r.get('Title') or 'Untitled', 'artist': artist,
         'price_cents': cents(r.get('Price')) or None, 'medium': r.get('Medium') or None,
         'image_url': r.get('Image') or None, 'available': r.get('Active') == 'Yes',
+        'acquired_at': (lambda d: d if d and int(d[:4]) >= 2005 else None)(iso(r.get('Date Added'))),
         'dims_h_in': float(r['Height']) if re.match(r'^\d+(\.\d+)?$', r.get('Height') or '') else None,
         'dims_w_in': float(r['Width']) if re.match(r'^\d+(\.\d+)?$', r.get('Width') or '') else None,
     })

@@ -29,6 +29,18 @@ export default async function Inventory({ searchParams }) {
     db.from('inventory_by_location').select('*').order('value_cents', { ascending: false }),
   ]);
   const works = rows || [];
+  const ids = works.map(w => w.id);
+  const handles = works.map(w => w.handle).filter(Boolean);
+  const artists = [...new Set(works.map(w => w.artist).filter(Boolean))];
+  const [{ data: activeHolds }, { data: openInqs }, { data: aStats }] = await Promise.all([
+    ids.length ? db.from('holds').select('artwork_id, kind, out_to').in('artwork_id', ids).eq('status', 'active') : Promise.resolve({ data: [] }),
+    handles.length ? db.from('inquiries').select('artwork_handle')
+      .in('artwork_handle', handles).in('status', ['new','contacted','in_conversation','hold','invoice']) : Promise.resolve({ data: [] }),
+    artists.length ? db.from('artist_stats').select('*').in('artist', artists) : Promise.resolve({ data: [] }),
+  ]);
+  const holdMap = {}; (activeHolds || []).forEach(h => holdMap[h.artwork_id] = h);
+  const inqMap = {}; (openInqs || []).forEach(i => inqMap[i.artwork_handle] = (inqMap[i.artwork_handle] || 0) + 1);
+  const statMap = {}; (aStats || []).forEach(s => statMap[s.artist] = s);
   const onHandValue = valAgg?.[0]?.sum || 0;
   const locs = (byLoc || []).filter(l => l.available > 0);
   const pages = Math.max(1, Math.ceil((matchCount || 0) / PAGE));
@@ -70,14 +82,20 @@ export default async function Inventory({ searchParams }) {
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:14, marginTop:18}}>
       {works.map(a => <a key={a.id} href={'/inventory/' + a.id} className="card"
         style={{padding:10, display:'block', textDecoration:'none', color:'inherit'}}>
-        <div style={{aspectRatio:'1', background:'#fafafa', borderRadius:8, overflow:'hidden',
+        <div style={{aspectRatio:'1', background:'#fafafa', borderRadius:8, overflow:'hidden', position:'relative',
           display:'flex', alignItems:'center', justifyContent:'center'}}>
           {a.image_url
             ? <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=480'} alt=""
                 style={{width:'100%', height:'100%', objectFit:'contain'}} loading="lazy"/>
             : <span style={{fontSize:10.5, letterSpacing:'.08em', color:'#c7c7cc'}}>NO IMAGE</span>}
+          <div style={{position:'absolute', top:8, left:8, right:8, display:'flex', gap:5, flexWrap:'wrap'}}>
+            {inqMap[a.handle] > 0 && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>
+              {inqMap[a.handle]} INQUIRING</span>}
+            {holdMap[a.id]?.kind === 'approval' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#ff9500', color:'#fff'}}>ON APPROVAL</span>}
+            {holdMap[a.id]?.kind === 'hold' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1d1d1f', color:'#fff'}}>ON HOLD</span>}
+          </div>
         </div>
-        <div style={{marginTop:10, minHeight:64}}>
+        <div style={{marginTop:10, minHeight:80}}>
           <div style={{fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</div>
           <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a3c', marginTop:2, overflow:'hidden',
             display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical'}}>{a.title}</div>
@@ -88,6 +106,17 @@ export default async function Inventory({ searchParams }) {
           <div style={{fontSize:11, color:'#86868b', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
             {a.location || (a.shopify_product_id ? 'Site' : '')}{a.dims_h_in ? ` · ${a.dims_h_in} × ${a.dims_w_in} in` : ''}
           </div>
+          {(() => {
+            const st = statMap[a.artist];
+            const mo = a.acquired_at ? Math.floor((Date.now() - new Date(a.acquired_at)) / 2629800000) : null;
+            const bits = [];
+            if (st && st.sold > 0) bits.push(<span key="st">{st.sell_through}% sell-through · {st.sold} sold</span>);
+            if (a.available && mo !== null && mo >= 1) bits.push(
+              <span key="mo" style={mo > 12 ? {color:'#ff9500', fontWeight:600} : {}}>{mo} mo on hand</span>);
+            if (a.available && !a.shopify_product_id) bits.push(<span key="ns">not on site</span>);
+            return bits.length ? <div style={{fontSize:10.5, color:'#86868b', marginTop:4, display:'flex',
+              gap:0, flexWrap:'wrap'}}>{bits.map((b, i) => <span key={i}>{i > 0 && <span style={{margin:'0 5px'}}>·</span>}{b}</span>)}</div> : null;
+          })()}
         </div>
       </a>)}
       {!works.length && <div className="empty" style={{gridColumn:'1/-1'}}>Nothing matches.</div>}
