@@ -140,19 +140,19 @@ export default async function Unit({ params, searchParams }) {
         </details>}
         <div className="card">
           <div className="cardtitle">Documents</div>
-          <div style={{display:'flex', gap:12, alignItems:'flex-start', flexWrap:'wrap'}}>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'}}>
+            {[['tearsheet','tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
+              <input type="hidden" name="action" value="artwork_collateral"/>
+              <input type="hidden" name="id" value={a.id}/>
+              <input type="hidden" name="kind" value={kind}/>
+              <input type="hidden" name="back" value={back}/>
+              <button className="btn mini quiet">{(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Regenerate ' + label : 'Generate ' + label}</button>
+            </form>)}
+          </div>
+          {(a.tearsheet_url || a.coa_url) && <div style={{display:'flex', gap:12, flexWrap:'wrap', marginTop:14}}>
             {a.tearsheet_url && <DocPreview url={a.tearsheet_url} label="Tear sheet"/>}
             {a.coa_url && <DocPreview url={a.coa_url} label="Certificate of Authenticity"/>}
-            <span style={{display:'inline-flex', gap:8, flexWrap:'wrap', alignItems:'center', minHeight:36}}>
-              {[['tearsheet','tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
-                <input type="hidden" name="action" value="artwork_collateral"/>
-                <input type="hidden" name="id" value={a.id}/>
-                <input type="hidden" name="kind" value={kind}/>
-                <input type="hidden" name="back" value={back}/>
-                <button className="btn mini quiet">{(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Re-issue ' + label : 'Generate ' + label}</button>
-              </form>)}
-            </span>
-          </div>
+          </div>}
         </div>
         {!priced && <div className="card">
           <div className="cardtitle">Internal estimate</div>
