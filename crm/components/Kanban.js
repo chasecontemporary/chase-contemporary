@@ -7,8 +7,8 @@ import { useState } from 'react';
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
 const LABEL = { new:'Inbound', contacted:'Contacted', in_conversation:'In conversation',
   hold:'Hold', invoice:'Invoiced', paid:'Closed', nurture:'Nurture' };
-const COLOR = { new:'#0071e3', contacted:'#5e5ce6', in_conversation:'#af52de',
-  hold:'#ff9500', invoice:'#ff9f0a', paid:'#34c759', nurture:'#8e8e93' };
+const COLOR = { new:'#2257c5', contacted:'#56599f', in_conversation:'#7d4d9e',
+  hold:'#b7791f', invoice:'#9a6a16', paid:'#35804a', nurture:'#82827b' };
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const usdK = (c) => {
   const d = Math.round((c || 0) / 100);
@@ -77,7 +77,7 @@ export default function Kanban({ initial, team = [] }) {
   const missing = openLead ? [!c.address_line1 && 'billing address', !c.phone && 'phone',
     (!c.email || c.email.endsWith?.('import.chasecontemporary.com')) && 'email'].filter(Boolean) : [];
   const secTitle = { fontSize:11, fontWeight:650, letterSpacing:'.07em', textTransform:'uppercase',
-    color:'#86868b', margin:'18px 0 8px' };
+    color:'#73736c', margin:'18px 0 8px' };
 
   return <>
     <div className="cols">
@@ -99,27 +99,27 @@ export default function Kanban({ initial, team = [] }) {
           onDragStart={() => setDragId(l.id)}
           onDragEnd={() => setDragId(null)}
           onClick={() => setOpenLead(l)}
-          style={str === 2 ? {borderLeft:'3px solid #1d7a3d'} : str === 1 ? {borderLeft:'3px solid #d2d2d7'} : {}}>
+          style={str === 2 ? {borderLeft:'3px solid #2e6b3f'} : str === 1 ? {borderLeft:'3px solid #cccdc4'} : {}}>
           {l.artwork?.image_url && <img src={l.artwork.image_url + (l.artwork.image_url.includes('?') ? '&' : '?') + 'width=560'}
             alt="" style={{width:'calc(100% + 28px)', margin:'-12px -14px 10px', height:120,
-              objectFit:'cover', borderRadius:'10px 10px 0 0', display:'block'}}/>}
+              objectFit:'cover', borderRadius:'2px 2px 0 0', display:'block'}}/>}
           <div style={{minWidth:0}}>
             <div className="t" style={{display:'flex', gap:6, alignItems:'center'}}>
               <span style={{overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{l.collectors?.first_name} {l.collectors?.last_name}</span>
-              {l.vip && <span className="pill" style={{fontSize:9, fontWeight:700, background:'#1d1d1f', color:'#fff', flex:'0 0 auto'}}>VIP</span>}
+              {l.vip && <span className="pill" style={{fontSize:9, fontWeight:700, background:'#1a1a18', color:'#fff', flex:'0 0 auto'}}>VIP</span>}
             </div>
-            {l.ltv > 0 && <div style={{fontSize:10.5, fontWeight:700, color:'#1d7a3d', marginTop:1}}>
+            {l.ltv > 0 && <div style={{fontSize:10.5, fontWeight:700, color:'#2e6b3f', marginTop:1}}>
               {usdK(l.ltv)} collector{l.worksOwned ? ` · ${l.worksOwned} owned` : ''}</div>}
             <div className="s" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{l.artwork_title || l.purpose}</div>
           </div>
           {l.competition?.others > 0 && <div style={{fontSize:11, fontWeight:700, marginTop:6,
-            color: l.competition.committed ? '#ff3b30' : '#b8860b'}}>
+            color: l.competition.committed ? '#c02d23' : '#8f6f14'}}>
             {l.competition.committed ? '⛔ Committed elsewhere' : '⚡ ' + l.competition.others + ' other interested'}</div>}
           <div className="s" style={{display:'flex', justifyContent:'space-between', marginTop:6}}>
-            <span style={{fontWeight:700, color:'#1d1d1f', fontVariantNumeric:'tabular-nums'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
+            <span style={{fontWeight:700, color:'#1a1a18', fontVariantNumeric:'tabular-nums'}}>{leadValue(l) ? usd(leadValue(l)) : '—'}</span>
             {s === 'hold'
-              ? <span style={{color: holdLeft(l).includes('expired') ? '#ff3b30' : '#b8860b', fontWeight:600}}>{holdLeft(l)}</span>
-              : <span style={{color: ageDays(l.stage_changed_at || l.created_at) >= 5 ? '#b8860b' : '#86868b'}}>
+              ? <span style={{color: holdLeft(l).includes('expired') ? '#c02d23' : '#8f6f14', fontWeight:600}}>{holdLeft(l)}</span>
+              : <span style={{color: ageDays(l.stage_changed_at || l.created_at) >= 5 ? '#8f6f14' : '#73736c'}}>
                   {ageDays(l.stage_changed_at || l.created_at)}d</span>}
           </div>
           {l.owner && <div className="s">{l.owner}</div>}
@@ -134,14 +134,14 @@ export default function Kanban({ initial, team = [] }) {
           <button className="close" onClick={() => setOpenLead(null)}>✕</button>
           <h2><a className="namelink" href={'/collectors/' + openLead.collector_id}>
             {c.first_name} {c.last_name}</a>
-            {openLead.vip && <span className="badge" style={{background:'#1d1d1f', color:'#fff'}}>VIP</span>}
+            {openLead.vip && <span className="badge" style={{background:'#1a1a18', color:'#fff'}}>VIP</span>}
             {openLead.inquiryCount > 1 && <span className="badge">{openLead.inquiryCount} open inquiries</span>}
             {c.trade ? <span className="badge">Trade</span> : null}</h2>
           <div className="sub">{[c.email && !c.email.endsWith?.('import.chasecontemporary.com') ? c.email : null,
             fmtPhone(c.phone)].filter(Boolean).join(' · ') || 'No contact details yet'}</div>
           <div style={{marginTop:12, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
             <BrandSelect options={STAGES.map(s => [s, LABEL[s]])} value={openLead.status}
-              control pillColor={(v) => COLOR[v] || '#8e8e93'} onValue={(v) => move(openLead.id, v)}/>
+              control pillColor={(v) => COLOR[v] || '#82827b'} onValue={(v) => move(openLead.id, v)}/>
             <button className="btn mini quiet" onClick={async () => {
               const fd = new FormData(); fd.set('action','called'); fd.set('id', openLead.id);
               await fetch('/api/act', { method:'POST', body: fd });
@@ -157,33 +157,33 @@ export default function Kanban({ initial, team = [] }) {
             <OfferComposer key={openLead.id} quiet collectorId={openLead.collector_id}
               collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
               defaultWork={a && a.available ? a : null}/>
-            {!openLead.contacted_at && <span style={{fontSize:12, color:'#ff3b30', fontWeight:600}}>
+            {!openLead.contacted_at && <span style={{fontSize:12, color:'#c02d23', fontWeight:600}}>
               Awaiting first response</span>}
           </div>
         </div>
         <div className="ld-body">
-        {openLead.competition?.committed && <div style={{background:'rgba(255,59,48,.1)', color:'#c0271d',
-          borderRadius:12, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
+        {openLead.competition?.committed && <div style={{background:'rgba(192,45,35,.1)', color:'#c0271d',
+          borderRadius:3, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
           This work is {openLead.competition.committed.stage === 'hold' ? 'on hold' :
             openLead.competition.committed.stage === 'invoice' ? 'invoiced' : 'sold'} for {openLead.competition.committed.name}.
           Offer alternatives, or wait for the hold to lapse.</div>}
         {!openLead.competition?.committed && openLead.competition?.others > 0 &&
-          <div style={{background:'rgba(255,149,0,.12)', color:'#8a5300',
-          borderRadius:12, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
+          <div style={{background:'rgba(183,121,31,.12)', color:'#8a5300',
+          borderRadius:3, padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
           ⚡ {openLead.competition.others} other active {openLead.competition.others === 1 ? 'inquiry' : 'inquiries'} on this work.
           Genuine scarcity — use it honestly. First hold deposit wins.</div>}
         {a && !a.available && !openLead.competition?.committed && ['new','contacted','in_conversation'].includes(openLead.status) &&
-          <div style={{background:'rgba(255,59,48,.1)', color:'#c0271d', borderRadius:12,
+          <div style={{background:'rgba(192,45,35,.1)', color:'#c0271d', borderRadius:3,
             padding:'12px 14px', fontSize:13, fontWeight:600, marginBottom:14}}>
           This work is marked sold in inventory. Offer alternatives.</div>}
 
         {a && <a className="ld-artwork" href={'/inventory/' + a.id}>
           {a.image_url && <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=800'} alt="" />}
           <div className="cap">
-            <div><div className="t">{a.title}</div><div className="a">{a.artist}{a.medium ? ' · ' + a.medium : ''}</div></div>
+            <div><div className="a">{a.artist}</div><div className="t">{a.title}{a.medium ? <span style={{fontStyle:'normal', color:'#73736c'}}> · {a.medium}</span> : null}</div></div>
             <div style={{textAlign:'right'}}>
               <div className="p">{(a.price_cents || 0) > 0 ? usd(a.price_cents)
-                : a.internal_value_cents > 0 ? <>POR <span style={{fontSize:11, color:'#86868b', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
+                : a.internal_value_cents > 0 ? <>POR <span style={{fontSize:11, color:'#73736c', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
                 : 'POR'}</div>
               <div className="open">Open in inventory →</div>
             </div>
@@ -197,18 +197,18 @@ export default function Kanban({ initial, team = [] }) {
           const rows = [];
           rows.push(['Bought from us before', openLead.ltv > 0
             ? <span><b style={{fontVariantNumeric:'tabular-nums'}}>{usd(openLead.ltv)}</b>
-                <span style={{color:'#86868b'}}> across {openLead.worksOwned} work{openLead.worksOwned === 1 ? '' : 's'}</span></span>
-            : <span style={{color:'#86868b'}}>Nothing yet — new collector</span>]);
+                <span style={{color:'#73736c'}}> across {openLead.worksOwned} work{openLead.worksOwned === 1 ? '' : 's'}</span></span>
+            : <span style={{color:'#73736c'}}>Nothing yet — new collector</span>]);
           rows.push(['Budget they gave us', budgetStr
             ? <span><b>{budgetStr}</b>
                 {price && budgetMid > 0 && (() => {
                   const pct = Math.round(100 * budgetMid * 100 / anchor);
-                  const [txt, col] = pct >= 100 ? [`covers the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#1d7a3d']
-                    : pct >= 65 ? [`close to the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#3a3a3c']
-                    : [`well below the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#b25a00'];
+                  const [txt, col] = pct >= 100 ? [`covers the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#2e6b3f']
+                    : pct >= 65 ? [`close to the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#3a3a35']
+                    : [`well below the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#9a551a'];
                   return <span style={{color:col, fontWeight:650}}> — {txt}</span>;
                 })()}</span>
-            : <span style={{color:'#86868b'}}>Not given</span>]);
+            : <span style={{color:'#73736c'}}>Not given</span>]);
           if (openLead.journey) {
             const j = openLead.journey;
             const days = Math.round((Date.now() - new Date(j.first_seen).getTime()) / 86400000);
@@ -216,19 +216,19 @@ export default function Kanban({ initial, team = [] }) {
               <span>{j.visit_days === 1
                 ? <b>{j.page_views} page{j.page_views === 1 ? '' : 's'} in one visit</b>
                 : <b>{j.page_views} pages over {j.visit_days} days</b>}
-                <span style={{color:'#86868b'}}> · first visit {days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago'}</span></span>]);
+                <span style={{color:'#73736c'}}> · first visit {days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago'}</span></span>]);
           }
           if (openLead.openInvoice) rows.push(['Open invoice',
-            <a href="/finance" style={{color:'#0071e3', fontWeight:650}}>
+            <a href="/finance" style={{color:'#2257c5', fontWeight:650}}>
               №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} for {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} — open in Finance →</a>]);
           if (openLead.openSale && !openLead.openInvoice) rows.push(['Sale in progress',
-            <span style={{color:'#86868b'}}>{openLead.openSale.sale_items.length} work{openLead.openSale.sale_items.length > 1 ? 's' : ''} at {usd(openLead.openSale.sale_items.reduce((s, i) => s + i.agreed_cents, 0))} — finish it with Start sale above</span>]);
-          return <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+            <span style={{color:'#73736c'}}>{openLead.openSale.sale_items.length} work{openLead.openSale.sale_items.length > 1 ? 's' : ''} at {usd(openLead.openSale.sale_items.reduce((s, i) => s + i.agreed_cents, 0))} — finish it with Start sale above</span>]);
+          return <div style={{border:'1px solid #e3e3dd', borderRadius:3, background:'#fff',
             boxShadow:'0 1px 2px rgba(0,0,0,.03)'}}>
             {rows.map(([lb, node], i) => <div key={lb} style={{display:'grid',
               gridTemplateColumns:'150px 1fr', gap:12, alignItems:'center', padding:'11px 16px',
-              borderTop: i ? '1px solid #f4f4f6' : 'none'}}>
-              <div style={{fontSize:12.5, color:'#86868b'}}>{lb}</div>
+              borderTop: i ? '1px solid #f0f0eb' : 'none'}}>
+              <div style={{fontSize:12.5, color:'#73736c'}}>{lb}</div>
               <div style={{fontSize:13.5, minWidth:0}}>{node}</div>
             </div>)}
           </div>;
@@ -237,10 +237,10 @@ export default function Kanban({ initial, team = [] }) {
         <div style={secTitle}>This inquiry</div>
         {(() => {
           const rows = [];
-          if (!a) rows.push(['Asking about', openLead.artwork_title || openLead.purpose || <span style={{color:'#86868b'}}>Not given</span>]);
-          rows.push(['When they want to buy', openLead.timeframe || <span style={{color:'#86868b'}}>Not given</span>]);
-          rows.push(['Where they are', [c.city, c.timezone].filter(Boolean).join(' · ') || <span style={{color:'#86868b'}}>Not given</span>]);
-          rows.push(['How they found us', openLead.source || c.source || <span style={{color:'#86868b'}}>Not given</span>]);
+          if (!a) rows.push(['Asking about', openLead.artwork_title || openLead.purpose || <span style={{color:'#73736c'}}>Not given</span>]);
+          rows.push(['When they want to buy', openLead.timeframe || <span style={{color:'#73736c'}}>Not given</span>]);
+          rows.push(['Where they are', [c.city, c.timezone].filter(Boolean).join(' · ') || <span style={{color:'#73736c'}}>Not given</span>]);
+          rows.push(['How they found us', openLead.source || c.source || <span style={{color:'#73736c'}}>Not given</span>]);
           rows.push(['Salesperson', <BrandSelect options={[['', 'Unassigned'], ...team.map(t => [t, t])]} value={openLead.owner || ''}
             onValue={async (owner) => {
               const fd = new FormData();
@@ -249,22 +249,22 @@ export default function Kanban({ initial, team = [] }) {
               setOpenLead(o => ({ ...o, owner }));
               setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
             }}/>]);
-          return <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+          return <div style={{border:'1px solid #e3e3dd', borderRadius:3, background:'#fff',
             boxShadow:'0 1px 2px rgba(0,0,0,.03)'}}>
             {rows.map(([lb, node], i) => <div key={lb} style={{display:'grid',
               gridTemplateColumns:'150px 1fr', gap:12, alignItems:'center', padding:'11px 16px',
-              borderTop: i ? '1px solid #f4f4f6' : 'none'}}>
-              <div style={{fontSize:12.5, color:'#86868b'}}>{lb}</div>
+              borderTop: i ? '1px solid #f0f0eb' : 'none'}}>
+              <div style={{fontSize:12.5, color:'#73736c'}}>{lb}</div>
               <div style={{fontSize:13.5, minWidth:0}}>{node}</div>
             </div>)}
           </div>;
         })()}
 
         <div style={secTitle}>Billing details for the invoice</div>
-        <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+        <div style={{border:'1px solid #e3e3dd', borderRadius:3, background:'#fff',
           boxShadow:'0 1px 2px rgba(0,0,0,.03)', padding:'13px 16px', fontSize:13.5}}>
           {missing.length === 0
-            ? <span style={{color:'#1d7a3d', fontWeight:650}}>Everything needed to invoice them is on file.</span>
+            ? <span style={{color:'#2e6b3f', fontWeight:650}}>Everything needed to invoice them is on file.</span>
             : <>
               <div>Still missing their <b>{missing.length > 1
                 ? missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1]
@@ -277,15 +277,15 @@ export default function Kanban({ initial, team = [] }) {
                   try { await navigator.clipboard.writeText(r.url); } catch {}
                   setDlink(r.url);
                 }}>Send them a form to fill in</button>
-                <a href={'/collectors/' + c.id} style={{fontSize:12.5, color:'#0071e3'}}>Or type the details in yourself →</a>
+                <a href={'/collectors/' + c.id} style={{fontSize:12.5, color:'#2257c5'}}>Or type the details in yourself →</a>
               </div>
               {dlink
                 ? <div style={{marginTop:10, fontSize:12}}>
-                    <span style={{color:'#1d7a3d', fontWeight:650}}>Link copied.</span> Paste it into a text or email —
+                    <span style={{color:'#2e6b3f', fontWeight:650}}>Link copied.</span> Paste it into a text or email —
                     what they enter saves to this collector automatically.
-                    <div style={{color:'#0071e3', wordBreak:'break-all', marginTop:3}}>{dlink}</div>
+                    <div style={{color:'#2257c5', wordBreak:'break-all', marginTop:3}}>{dlink}</div>
                   </div>
-                : <div style={{marginTop:8, fontSize:12, color:'#86868b'}}>
+                : <div style={{marginTop:8, fontSize:12, color:'#73736c'}}>
                     Makes a private page where they type in their own billing address and contact info.
                   </div>}
             </>}
@@ -299,7 +299,7 @@ export default function Kanban({ initial, team = [] }) {
         <div style={secTitle}>Notes</div>
         <textarea placeholder="What happened on the call, what they responded to, what to do next — saves to the collector's record"
           value={note} onChange={e => setNote(e.target.value)} rows={3}
-          style={{width:'100%', border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit',
+          style={{width:'100%', border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit',
             fontSize:13.5, padding:'10px 12px', outline:'none', resize:'vertical', lineHeight:1.6}}/>
         <div style={{display:'flex', justifyContent:'flex-end', marginTop:8}}>
           <button className="btn mini quiet" onClick={saveNote}>Save note</button>

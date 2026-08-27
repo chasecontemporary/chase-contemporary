@@ -34,20 +34,20 @@ export default function WorkPicker({ name = 'artwork_id', placeholder = 'Choose 
       onFocus={focus} onClick={() => { if (picked) { setPicked(null); onPick?.(null); setQ(''); load(''); } }}
       placeholder={placeholder} style={pickerInput}/>
     <svg width="10" height="6" viewBox="0 0 10 6" style={pickerChevron}>
-      <path d="M1 1l4 4 4-4" fill="none" stroke="#6e6e73" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <path d="M1 1l4 4 4-4" fill="none" stroke="#73736c" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
     {open && !picked && hits.length > 0 && <span style={pickerMenu}>
       {hits.map(h => <button key={h.id} type="button" onClick={() => choose(h)}
         style={{display:'flex', width:'100%', gap:10, alignItems:'center', textAlign:'left',
-          padding:'8px 10px', background:'#fff', border:0, borderBottom:'1px solid #f5f5f7',
+          padding:'8px 10px', background:'#fff', border:0, borderBottom:'1px solid #f2f2ee',
           cursor:'pointer', fontFamily:'inherit'}}>
-        {h.img ? <img src={h.img} alt="" style={{width:34, height:34, objectFit:'cover', borderRadius:6, flex:'0 0 auto'}}/>
-          : <span style={{width:34, height:34, borderRadius:6, background:'#f0f0f2', flex:'0 0 auto'}}/>}
+        {h.img ? <img src={h.img} alt="" style={{width:34, height:34, objectFit:'cover', borderRadius:2, flex:'0 0 auto'}}/>
+          : <span style={{width:34, height:34, borderRadius:2, background:'#eeeee9', flex:'0 0 auto'}}/>}
         <span style={{minWidth:0, flex:1}}>
           <span style={{display:'block', fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{h.title}</span>
-          <span style={{display:'block', fontSize:11.5, color:'#86868b'}}>{h.artist}</span>
+          <span style={{display:'block', fontSize:11.5, color:'#73736c'}}>{h.artist}</span>
         </span>
         {h.cents > 0 && <span style={{fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap'}}>
-          ${Math.round(h.cents / 100).toLocaleString()}{h.est ? <span style={{color:'#86868b', fontWeight:500}}> est</span> : ''}</span>}
+          ${Math.round(h.cents / 100).toLocaleString()}{h.est ? <span style={{color:'#73736c', fontWeight:500}}> est</span> : ''}</span>}
       </button>)}
     </span>}
   </span>;

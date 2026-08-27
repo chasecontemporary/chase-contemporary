@@ -21,21 +21,21 @@ export default async function Audiences() {
     <div className="h1">Email</div>
     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:4}}>
       {[['/audiences','Audiences'],['/campaigns','Campaigns']].map(([href, label]) => <a key={href} href={href}
-        className="pill" style={href === '/audiences' ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
-      <span style={{fontSize:12, color:'#86868b'}}>Audiences decide who · Campaigns decide what · Klaviyo delivers</span>
+        className="pill" style={href === '/audiences' ? {background:'#1a1a18', color:'#fff'} : {background:'#fff', border:'1px solid #e3e3dd'}}>{label}</a>)}
+      <span style={{fontSize:12, color:'#73736c'}}>Audiences decide who · Campaigns decide what · Klaviyo delivers</span>
     </div>
 
     <div className="stats">
       <div className="stat"><div className="n">{Number(mailable || 0).toLocaleString()}</div><div className="l">Mailable collectors (consented)</div></div>
       <div className="stat"><div className="n">{(auds || []).length}</div><div className="l">Audiences built</div></div>
       <div className="stat"><div className="n">{(auds || []).filter(a => a.klaviyo_list_id).length}</div><div className="l">Synced to Klaviyo</div></div>
-      <div className="stat"><div className="n" style={{fontSize:17, paddingTop:5, color: klaviyo ? '#1d7a3d' : '#b25a00'}}>{klaviyo ? 'Connected' : 'Awaiting key'}</div>
+      <div className="stat"><div className="n" style={{fontSize:17, paddingTop:5, color: klaviyo ? '#2e6b3f' : '#9a551a'}}>{klaviyo ? 'Connected' : 'Awaiting key'}</div>
         <div className="l">Klaviyo</div></div>
     </div>
 
     {!klaviyo && <div className="card" style={{marginTop:16, background:'#fffdf5'}}>
       <div style={{fontSize:13.5, fontWeight:650}}>Klaviyo not connected yet</div>
-      <div style={{fontSize:12.5, color:'#6e6e73', marginTop:4}}>
+      <div style={{fontSize:12.5, color:'#73736c', marginTop:4}}>
         Audiences work now — build and refine them here. The moment the Klaviyo API key lands, each
         audience syncs as a Klaviyo List with one click, membership refreshed before every send.</div>
     </div>}
@@ -49,21 +49,21 @@ export default async function Audiences() {
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontWeight:650, fontSize:14}}>{a.name}</div>
             <div style={{display:'flex', gap:5, marginTop:6, flexWrap:'wrap'}}>
-              <span className="pill" style={{background:'#f0f0f2', fontSize:10.5, fontWeight:700}}>{SEGS[d.seg || 'all']}</span>
-              {d.artist && <span className="pill" style={{background:'#f0f0f2', fontSize:10.5, fontWeight:700}}>{d.artist}</span>}
-              {d.min_spend && <span className="pill" style={{background:'#f0f0f2', fontSize:10.5, fontWeight:700}}>${Number(d.min_spend).toLocaleString()}+</span>}
-              {d.consented !== false && <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10.5, fontWeight:700}}>CONSENTED</span>}
+              <span className="pill" style={{background:'#eeeee9', fontSize:10.5, fontWeight:700}}>{SEGS[d.seg || 'all']}</span>
+              {d.artist && <span className="pill" style={{background:'#eeeee9', fontSize:10.5, fontWeight:700}}>{d.artist}</span>}
+              {d.min_spend && <span className="pill" style={{background:'#eeeee9', fontSize:10.5, fontWeight:700}}>${Number(d.min_spend).toLocaleString()}+</span>}
+              {d.consented !== false && <span className="pill" style={{background:'#e4f7e9', color:'#2e6b3f', fontSize:10.5, fontWeight:700}}>CONSENTED</span>}
             </div>
           </div>
           <div style={{textAlign:'right'}}>
             <div style={{fontWeight:700, fontSize:15, fontVariantNumeric:'tabular-nums'}}>{counts[i].toLocaleString()}</div>
-            <div style={{fontSize:11, color:'#86868b'}}>members today</div>
+            <div style={{fontSize:11, color:'#73736c'}}>members today</div>
           </div>
           <div style={{textAlign:'right', minWidth:150}}>
             {a.klaviyo_list_id
               ? <><span className="pill green" style={{fontSize:10, fontWeight:700}}>IN KLAVIYO{a.synced_count ? ' · ' + Number(a.synced_count).toLocaleString() : ''}</span>
-                  <div style={{fontSize:11, color:'#86868b', marginTop:3}}>synced {a.synced_at ? ago(a.synced_at) : ''}</div></>
-              : <span className="pill" style={{background:'#f0f0f2', fontSize:10, fontWeight:700}}>NOT SYNCED</span>}
+                  <div style={{fontSize:11, color:'#73736c', marginTop:3}}>synced {a.synced_at ? ago(a.synced_at) : ''}</div></>
+              : <span className="pill" style={{background:'#eeeee9', fontSize:10, fontWeight:700}}>NOT SYNCED</span>}
           </div>
           <div style={{display:'flex', gap:6, alignItems:'center'}}>
             {klaviyo
@@ -73,7 +73,7 @@ export default async function Audiences() {
                   <input type="hidden" name="back" value="/audiences"/>
                   <button className="btn mini quiet">{a.klaviyo_list_id ? 'Re-sync' : 'Sync to Klaviyo'}</button>
                 </form>
-              : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700}}>SYNC · AWAITING KEY</span>}
+              : <span className="pill" style={{background:'#f3e8d5', color:'#9a551a', fontSize:10, fontWeight:700}}>SYNC · AWAITING KEY</span>}
             <form method="POST" action="/api/act">
               <input type="hidden" name="action" value="audience_del"/>
               <input type="hidden" name="id" value={a.id}/>

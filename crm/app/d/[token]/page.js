@@ -48,7 +48,7 @@ export default async function Details({ params, searchParams }) {
   // ---------- confirm mode: we already hold their details — one tap ----------
   if (known && !sp.edit) {
     const row = (k, v) => v ? <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16,
-      padding: '13px 0', borderBottom: '1px solid #e8e8ed', fontSize: 13.5 }}>
+      padding: '13px 0', borderBottom: '1px solid #e3e3dd', fontSize: 13.5 }}>
       <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', paddingTop: 3 }}>{k}</span>
       <span style={{ textAlign: 'right', lineHeight: 1.6 }}>{v}</span></div> : null;
     const billing = <>{maskStreet(c.address_line1)}<br/>{[c.city, c.state, c.zip].filter(Boolean).join(', ')}{c.country ? <><br/>{c.country}</> : null}</>;
@@ -74,7 +74,7 @@ export default async function Details({ params, searchParams }) {
           color: '#000', textDecoration: 'none', borderBottom: '1px solid #000', paddingBottom: 2 }}>
           SOMETHING CHANGED? UPDATE DETAILS</a>
       </div>
-      <p style={{ fontSize: 10.5, lineHeight: 1.7, color: '#6e6e73', marginTop: 34, textAlign: 'center' }}>
+      <p style={{ fontSize: 10.5, lineHeight: 1.7, color: '#73736c', marginTop: 34, textAlign: 'center' }}>
         Details are shown in part for your privacy. Your information is used only to prepare your
         invoice and delivery. It is never shared.</p>
     </>);
@@ -121,7 +121,7 @@ export default async function Details({ params, searchParams }) {
       </div>
       <button style={{ ...btn, marginTop: 48 }}>CONFIRM DETAILS</button>
     </form>
-    <p style={{ fontSize: 10.5, lineHeight: 1.7, color: '#6e6e73', marginTop: 28, textAlign: 'center' }}>
+    <p style={{ fontSize: 10.5, lineHeight: 1.7, color: '#73736c', marginTop: 28, textAlign: 'center' }}>
       Your information is used only to prepare your invoice and delivery. It is never shared.</p>
   </>);
 }

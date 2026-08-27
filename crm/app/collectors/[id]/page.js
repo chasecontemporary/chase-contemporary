@@ -69,25 +69,25 @@ export default async function Card({ params, searchParams }) {
       <OfferComposer collectorId={c.id}
         collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}/>
     </div>
-    {(offers || []).length > 0 && <div style={{background:'#fff', border:'1px solid #ececf0',
-      borderRadius:12, boxShadow:'0 1px 2px rgba(0,0,0,.03)', marginTop:12}}>
+    {(offers || []).length > 0 && <div style={{background:'#fff', border:'1px solid #e3e3dd',
+      borderRadius:3, boxShadow:'0 1px 2px rgba(0,0,0,.03)', marginTop:12}}>
       {(offers || []).map((o, i) => {
         const expired = o.expires_at && new Date(o.expires_at) < new Date();
         const interested = (o.offer_responses || []).length;
         return <div key={o.id} style={{display:'flex', gap:12, alignItems:'center',
-          padding:'11px 16px', borderTop: i ? '1px solid #f4f4f6' : 'none', fontSize:13.5}}>
+          padding:'11px 16px', borderTop: i ? '1px solid #f0f0eb' : 'none', fontSize:13.5}}>
           <span style={{flex:1, minWidth:0}}>
             <b>{o.title || 'Private selection'}</b>
-            <span style={{color:'#86868b'}}> · {(o.items || []).length} work{(o.items || []).length === 1 ? '' : 's'} · sent {new Date(o.created_at).toLocaleDateString()}</span>
+            <span style={{color:'#73736c'}}> · {(o.items || []).length} work{(o.items || []).length === 1 ? '' : 's'} · sent {new Date(o.created_at).toLocaleDateString()}</span>
           </span>
-          {interested > 0 && <span style={{fontSize:12, fontWeight:700, color:'#1d7a3d'}}>
+          {interested > 0 && <span style={{fontSize:12, fontWeight:700, color:'#2e6b3f'}}>
             interested in {interested}</span>}
           <span style={{fontSize:12, fontWeight:650,
-            color: expired ? '#86868b' : o.view_count > 0 ? '#0071e3' : '#b25a00'}}>
+            color: expired ? '#73736c' : o.view_count > 0 ? '#2257c5' : '#9a551a'}}>
             {expired ? 'expired' : o.view_count > 0
               ? `opened ${o.view_count}× · last ${new Date(o.last_viewed_at).toLocaleDateString()}`
               : 'not opened yet'}</span>
-          <a href={'/o/' + o.token} target="_blank" style={{fontSize:12, color:'#0071e3', fontWeight:650}}>View →</a>
+          <a href={'/o/' + o.token} target="_blank" style={{fontSize:12, color:'#2257c5', fontWeight:650}}>View →</a>
         </div>; })}
     </div>}
 
@@ -103,20 +103,20 @@ export default async function Card({ params, searchParams }) {
           <td>{t.inquired || '—'}</td>
           <td><div className="meter"><i style={{width: Math.max(8, Math.round(100 * t.score / taste.affinity[0].score)) + '%'}}/></div></td>
         </tr>)}
-        {!taste.affinity.length && <tr><td colSpan={4} style={{color:'#86868b'}}>No signals yet — the first inquiry or purchase starts the profile.</td></tr>}
+        {!taste.affinity.length && <tr><td colSpan={4} style={{color:'#73736c'}}>No signals yet — the first inquiry or purchase starts the profile.</td></tr>}
       </tbody></table></div>
       <div className="tblcard" style={{margin:0}}><table className="tbl"><thead><tr>
         <th colSpan="2">Buying habits</th></tr></thead><tbody>
-        <tr><td style={{width:110, color:'#86868b'}}>Sweet spot</td><td>{taste.bandList.length
-          ? taste.bandList.map(([b, n], i) => <span key={b} className="pill" style={i === 0 ? {background:'#1d1d1f', color:'#fff', marginRight:6} : {marginRight:6}}>{b} · {n}</span>)
+        <tr><td style={{width:110, color:'#73736c'}}>Sweet spot</td><td>{taste.bandList.length
+          ? taste.bandList.map(([b, n], i) => <span key={b} className="pill" style={i === 0 ? {background:'#1a1a18', color:'#fff', marginRight:6} : {marginRight:6}}>{b} · {n}</span>)
           : c.budget_range ? 'Stated: ' + c.budget_range : '—'}</td></tr>
-        <tr><td style={{color:'#86868b'}}>Mediums</td><td>{taste.mediumList.map(([m, n]) => `${m} (${n})`).join(' · ') || '—'}</td></tr>
-        <tr><td style={{color:'#86868b'}}>Cadence</td><td>{taste.cadence
+        <tr><td style={{color:'#73736c'}}>Mediums</td><td>{taste.mediumList.map(([m, n]) => `${m} (${n})`).join(' · ') || '—'}</td></tr>
+        <tr><td style={{color:'#73736c'}}>Cadence</td><td>{taste.cadence
           ? <>{taste.cadence.avgGap ? (Math.round(taste.cadence.avgGap / 30) <= 1 ? 'Buys about monthly · ' : 'Buys about every ' + Math.round(taste.cadence.avgGap / 30) + ' months · ') : ''}last {Math.round(taste.cadence.daysSince)} days ago
-            {taste.cadence.due ? <span className="pill" style={{background:'#ff9500', color:'#fff', marginLeft:8}}>Due for outreach</span> : null}</>
+            {taste.cadence.due ? <span className="pill" style={{background:'#b7791f', color:'#fff', marginLeft:8}}>Due for outreach</span> : null}</>
           : '—'}</td></tr>
-        <tr><td style={{color:'#86868b'}}>Buys via</td><td>{taste.channelList.map(([s, n]) => `${s} (${n})`).join(' · ') || '—'}</td></tr>
-        <tr><td style={{color:'#86868b'}}>Season</td><td>{taste.monthList.slice(0, 2).map(([m]) => m).join(' · ') || '—'}</td></tr>
+        <tr><td style={{color:'#73736c'}}>Buys via</td><td>{taste.channelList.map(([s, n]) => `${s} (${n})`).join(' · ') || '—'}</td></tr>
+        <tr><td style={{color:'#73736c'}}>Season</td><td>{taste.monthList.slice(0, 2).map(([m]) => m).join(' · ') || '—'}</td></tr>
       </tbody></table></div>
     </div>
     <div style={{display:'flex', gap:8, marginTop:12, alignItems:'center', flexWrap:'wrap'}}>
@@ -124,8 +124,8 @@ export default async function Card({ params, searchParams }) {
         <input type="hidden" name="action" value="interest_del"/>
         <input type="hidden" name="iid" value={pin.id}/>
         <input type="hidden" name="back" value={'/collectors/' + c.id}/>
-        <button className="pill" style={{border:'1px solid #e8e8ed', background:'#fff', cursor:'pointer', fontFamily:'inherit'}}
-          title="Remove">{pin.label}<span style={{marginLeft:6, color:'#86868b'}}>×</span></button>
+        <button className="pill" style={{border:'1px solid #e3e3dd', background:'#fff', cursor:'pointer', fontFamily:'inherit'}}
+          title="Remove">{pin.label}<span style={{marginLeft:6, color:'#73736c'}}>×</span></button>
       </form>)}
       <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
         <input type="hidden" name="action" value="interest_add"/>
@@ -140,12 +140,12 @@ export default async function Card({ params, searchParams }) {
 
     <div className="tblcard"><table className="tbl"><thead><tr>
       <th colSpan="2">Who they are</th></tr></thead><tbody>
-      <tr><td style={{width:170,color:'#86868b'}}>Address</td><td>{address || '—'}</td></tr>
-      <tr><td style={{color:'#86868b'}}>Spouse / partner</td><td>{[c.spouse_first_name, c.spouse_last_name].filter(Boolean).join(' ') || '—'}</td></tr>
-      <tr><td style={{color:'#86868b'}}>Locale</td><td>{[c.city, c.timezone, c.locale].filter(Boolean).join(' · ') || '—'}</td></tr>
-      <tr><td style={{color:'#86868b'}}>Stated range</td><td>{c.budget_range || '—'}</td></tr>
-      <tr><td style={{color:'#86868b'}}>First touch</td><td>{[c.source, 'since ' + new Date(c.created_at).toLocaleDateString()].filter(Boolean).join(' · ')}</td></tr>
-      <tr><td style={{color:'#86868b'}}>Flags</td><td>{[c.trade && 'Trade', c.newsletter && 'Newsletter'].filter(Boolean).join(' · ') || '—'}</td></tr>
+      <tr><td style={{width:170,color:'#73736c'}}>Address</td><td>{address || '—'}</td></tr>
+      <tr><td style={{color:'#73736c'}}>Spouse / partner</td><td>{[c.spouse_first_name, c.spouse_last_name].filter(Boolean).join(' ') || '—'}</td></tr>
+      <tr><td style={{color:'#73736c'}}>Locale</td><td>{[c.city, c.timezone, c.locale].filter(Boolean).join(' · ') || '—'}</td></tr>
+      <tr><td style={{color:'#73736c'}}>Stated range</td><td>{c.budget_range || '—'}</td></tr>
+      <tr><td style={{color:'#73736c'}}>First touch</td><td>{[c.source, 'since ' + new Date(c.created_at).toLocaleDateString()].filter(Boolean).join(' · ')}</td></tr>
+      <tr><td style={{color:'#73736c'}}>Flags</td><td>{[c.trade && 'Trade', c.newsletter && 'Newsletter'].filter(Boolean).join(' · ') || '—'}</td></tr>
     </tbody></table></div>
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Invoice &amp; shipping details</div>
@@ -158,8 +158,8 @@ export default async function Card({ params, searchParams }) {
         (!c.email || c.email.endsWith('import.chasecontemporary.com')) && 'email',
       ].filter(Boolean);
       return <div style={{marginTop:8}}>{missing.length
-        ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:11}}>MISSING FOR INVOICE: {missing.join(' · ').toUpperCase()}</span>
-        : <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontWeight:700, fontSize:11}}>INVOICE-READY</span>}</div>;
+        ? <span className="pill" style={{background:'#f3e8d5', color:'#9a551a', fontWeight:700, fontSize:11}}>MISSING FOR INVOICE: {missing.join(' · ').toUpperCase()}</span>
+        : <span className="pill" style={{background:'#e4f7e9', color:'#2e6b3f', fontWeight:700, fontSize:11}}>INVOICE-READY</span>}</div>;
     })()}
     <form method="POST" action="/api/act" className="card" style={{marginTop:12, padding:16}}>
       <input type="hidden" name="action" value="collector_update"/>
@@ -171,7 +171,7 @@ export default async function Card({ params, searchParams }) {
         <input name="email" defaultValue={c.email?.endsWith('import.chasecontemporary.com') ? '' : (c.email || '')} placeholder="Email" type="email"/>
         <input name="phone" defaultValue={c.phone || ''} placeholder="Phone"/>
       </div>
-      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#86868b', margin:'12px 0 6px'}}>BILLING</div>
+      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#73736c', margin:'12px 0 6px'}}>BILLING</div>
       <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8}}>
         <input name="address_line1" defaultValue={c.address_line1 || ''} placeholder="Address line 1"/>
         <input name="address_line2" defaultValue={c.address_line2 || ''} placeholder="Address line 2"/>
@@ -180,7 +180,7 @@ export default async function Card({ params, searchParams }) {
         <input name="zip" defaultValue={c.zip || ''} placeholder="Zip"/>
         <input name="country" defaultValue={c.country || ''} placeholder="Country"/>
       </div>
-      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#86868b', margin:'12px 0 6px'}}>SHIPPING (drives sales tax + logistics; blank = same as billing)</div>
+      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#73736c', margin:'12px 0 6px'}}>SHIPPING (drives sales tax + logistics; blank = same as billing)</div>
       <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8}}>
         <input name="shipping_line1" defaultValue={c.shipping_line1 || ''} placeholder="Address line 1"/>
         <input name="shipping_line2" defaultValue={c.shipping_line2 || ''} placeholder="Address line 2"/>
@@ -198,15 +198,15 @@ export default async function Card({ params, searchParams }) {
         <input type="hidden" name="back" value={'/collectors/' + c.id}/>
         <button className="btn mini">{c.details_token ? 'Mint a fresh details link' : 'Create details link'}</button>
       </form>
-      <span style={{fontSize:12, color:'#86868b'}}>
+      <span style={{fontSize:12, color:'#73736c'}}>
         {c.details_completed_at ? 'Collector completed their details ' + new Date(c.details_completed_at).toLocaleDateString()
           : c.details_requested_at ? 'Link created ' + new Date(c.details_requested_at).toLocaleDateString() + ' · awaiting the collector'
           : 'Send the collector a branded page to fill these in themselves'}</span>
     </div>
     {dlink && <div className="card" style={{marginTop:10, padding:'10px 14px', display:'flex', gap:10, alignItems:'center'}}>
       <span style={{fontSize:12, fontWeight:650}}>Send this to the collector:</span>
-      <input readOnly defaultValue={dlink} onFocus={undefined} style={{flex:1, fontSize:12, border:'1px solid #e8e8ed',
-        borderRadius:8, padding:'6px 10px', fontFamily:'inherit', color:'#0071e3'}}/>
+      <input readOnly defaultValue={dlink} onFocus={undefined} style={{flex:1, fontSize:12, border:'1px solid #e3e3dd',
+        borderRadius:2, padding:'6px 10px', fontFamily:'inherit', color:'#2257c5'}}/>
     </div>}
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Collection</div>
@@ -223,7 +223,7 @@ export default async function Card({ params, searchParams }) {
         <td><span className="pill">{p.source}</span></td>
       </tr>)}
     </tbody></table>
-    {!purchases.length && <div style={{padding:'16px 18px', fontSize:13, color:'#86868b'}}>No recorded purchases yet — history arrives with the Artcloud import, or log one below.</div>}
+    {!purchases.length && <div style={{padding:'16px 18px', fontSize:13, color:'#73736c'}}>No recorded purchases yet — history arrives with the Artcloud import, or log one below.</div>}
     </div>
     <form method="POST" action="/api/act" className="inline-form" style={{marginTop:14}}>
       <input type="hidden" name="action" value="purchase_add"/>
@@ -256,9 +256,9 @@ export default async function Card({ params, searchParams }) {
     </form>
     <div className="tblcard"><table className="tbl"><tbody>
       {(acts||[]).map(a => <tr key={a.id}>
-        <td style={{color:'#86868b', width:180}}>{new Date(a.created_at).toLocaleString()}</td>
+        <td style={{color:'#73736c', width:180}}>{new Date(a.created_at).toLocaleString()}</td>
         <td><span className="pill">{a.kind.replace(/_/g,' ')}</span></td>
-        <td>{a.body}</td><td style={{color:'#86868b'}}>{a.actor}</td>
+        <td>{a.body}</td><td style={{color:'#73736c'}}>{a.actor}</td>
       </tr>)}
     </tbody></table></div>
   </Shell>;

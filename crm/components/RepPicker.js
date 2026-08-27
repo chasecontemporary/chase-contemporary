@@ -14,7 +14,7 @@ export default function RepPicker() {
     setMe(rep); window.location.reload();
   };
   return <div style={{position:'absolute', bottom:28, left:16, right:16}}>
-    <div style={{fontSize:11, color:'#86868b', fontWeight:600, padding:'0 2px 6px'}}>Signed in as</div>
+    <div style={{fontSize:11, color:'#73736c', fontWeight:600, padding:'0 2px 6px'}}>Signed in as</div>
     <BrandSelect options={team.map(t => [t.name, t.name])} value={me}
       placeholder="Choose…" width="100%" onValue={set}/>
   </div>;

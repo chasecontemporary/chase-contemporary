@@ -46,22 +46,22 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
   const current = options.find(o => String(o[0]) === String(val));
   const label = current ? current[1] : (placeholder || 'Choose…');
   const trigStyle = control
-    ? { appearance:'none', border:0, borderRadius:10, height:36, padding:'0 14px',
-        background: (pillColor ? pillColor(val) : '#8e8e93'), color:'#fff', fontFamily:'inherit',
+    ? { appearance:'none', border:0, borderRadius:2, height:36, padding:'0 14px',
+        background: (pillColor ? pillColor(val) : '#82827b'), color:'#fff', fontFamily:'inherit',
         fontSize:12.5, fontWeight:600, cursor:'pointer', display:'inline-flex',
         alignItems:'center', justifyContent:'center', gap:8, whiteSpace:'nowrap',
         transition:'filter .15s ease' }
     : pill
-    ? { appearance:'none', border:0, borderRadius:99, height:24, padding:'0 9px 0 11px',
-        background: (pillColor ? pillColor(val) : '#8e8e93'), color:'#fff', fontFamily:'inherit',
+    ? { appearance:'none', border:0, borderRadius:3, height:24, padding:'0 9px 0 11px',
+        background: (pillColor ? pillColor(val) : '#82827b'), color:'#fff', fontFamily:'inherit',
         fontSize:10.5, fontWeight:700, letterSpacing:'.04em', textTransform:'uppercase',
         cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }
-    : { appearance:'none', background:'#fff', border:'1px solid #e8e8ed', borderRadius:10,
-        height:36, padding:'0 12px', fontFamily:'inherit', fontSize:12.5, color: current ? '#1d1d1f' : '#86868b',
+    : { appearance:'none', background:'#fff', border:'1px solid #e3e3dd', borderRadius:2,
+        height:36, padding:'0 12px', fontFamily:'inherit', fontSize:12.5, color: current ? '#1a1a18' : '#73736c',
         cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, whiteSpace:'nowrap',
         width: width || 'auto', justifyContent:'space-between' };
   const chev = <svg width="9" height="6" viewBox="0 0 10 6" style={{flex:'0 0 auto'}}>
-    <path d="M1 1l4 4 4-4" fill="none" stroke={pill || control ? '#fff' : '#6e6e73'} strokeWidth="1.6"
+    <path d="M1 1l4 4 4-4" fill="none" stroke={pill || control ? '#fff' : '#73736c'} strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round"/></svg>;
   return <>
     {name && <input ref={inputRef} type="hidden" name={name} value={val}/>}
@@ -69,18 +69,18 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
       <span style={{overflow:'hidden', textOverflow:'ellipsis'}}>{label}</span>{chev}
     </button>
     {open && pos && <div ref={menuRef} onClick={(e) => e.stopPropagation()} style={{position:'fixed', top:pos.top, left:pos.left,
-      minWidth:pos.width, zIndex:90, background:'#fff', border:'1px solid #ececf0', borderRadius:12,
+      minWidth:pos.width, zIndex:90, background:'#fff', border:'1px solid #e3e3dd', borderRadius:3,
       boxShadow:'0 12px 40px rgba(0,0,0,.14)', padding:6, maxHeight:320, overflowY:'auto'}}>
       {options.map(([v, l]) => {
         const active = String(v) === String(val);
         return <button key={v} type="button" onClick={(e) => pick(e, v)}
           style={{display:'flex', width:'100%', alignItems:'center', gap:8, textAlign:'left',
-            padding:'8px 10px', border:0, borderRadius:8, cursor:'pointer', fontFamily:'inherit',
-            fontSize:13, fontWeight: active ? 650 : 450, color:'#1d1d1f',
-            background: active ? '#f0f0f2' : 'transparent'}}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f7'}
-          onMouseLeave={(e) => e.currentTarget.style.background = active ? '#f0f0f2' : 'transparent'}>
-          <span style={{width:14, color:'#0071e3', fontWeight:700}}>{active ? '✓' : ''}</span>{l}
+            padding:'8px 10px', border:0, borderRadius:2, cursor:'pointer', fontFamily:'inherit',
+            fontSize:13, fontWeight: active ? 650 : 450, color:'#1a1a18',
+            background: active ? '#eeeee9' : 'transparent'}}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#f2f2ee'}
+          onMouseLeave={(e) => e.currentTarget.style.background = active ? '#eeeee9' : 'transparent'}>
+          <span style={{width:14, color:'#2257c5', fontWeight:700}}>{active ? '✓' : ''}</span>{l}
         </button>; })}
     </div>}
   </>;

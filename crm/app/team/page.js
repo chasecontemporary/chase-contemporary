@@ -24,7 +24,7 @@ export default async function Team() {
       <th>Name</th><th>Role</th><th>Open leads</th><th>Closed</th><th>Avg speed to call</th><th>Status</th><th></th>
     </tr></thead><tbody>
       {(members||[]).map(m => <tr key={m.id}>
-        <td style={{fontWeight:600}}>{m.name}<div style={{fontSize:12,color:'#86868b',fontWeight:400}}>{m.email}</div></td>
+        <td style={{fontWeight:600}}>{m.name}<div style={{fontSize:12,color:'#73736c',fontWeight:400}}>{m.email}</div></td>
         <td style={{textTransform:'capitalize'}}>{m.role}</td>
         <td>{stats[m.name]?.open || 0}</td>
         <td>{stats[m.name]?.closed || 0}</td>

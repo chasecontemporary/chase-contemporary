@@ -97,14 +97,14 @@ export default async function Finance({ searchParams }) {
         ? Math.round(paidWithDates.reduce((s, p) => s + (new Date(p.paid_at) - new Date(p.issued_at)) / 86400000, 0) / paidWithDates.length)
         : null;
       return <div className="stats">
-        <div className="stat"><div className="n">{usd(ytd)}</div><div className="l">Closed {yr}{yoy !== null ? <span style={{color: yoy >= 0 ? '#1d7a3d' : '#b25a00', fontWeight:700}}> · {yoy >= 0 ? '+' : ''}{yoy}% vs {yr - 1}</span> : ''}</div></div>
+        <div className="stat"><div className="n">{usd(ytd)}</div><div className="l">Closed {yr}{yoy !== null ? <span style={{color: yoy >= 0 ? '#2e6b3f' : '#9a551a', fontWeight:700}}> · {yoy >= 0 ? '+' : ''}{yoy}% vs {yr - 1}</span> : ''}</div></div>
         <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Owed to the gallery · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
         <div className="stat"><div className="n">{usd(collThis)}</div><div className="l">Collected in {new Date().toLocaleDateString('en-US', { month: 'long' })}</div></div>
         <div className="stat"><div className="n">{avgDays === null ? '—' : avgDays + 'd'}</div><div className="l">Average days to collect</div></div>
       </div>; })()}
 
     {(() => {
-      const ORDER = [['issued','Unsent','#8e8e93'],['sent','Sent','#0071e3'],['fu1','Follow up 1','#5e5ce6'],['fu2','Follow up 2','#af52de'],['fu3','Follow up 3','#ff9500'],['paidstage','Paid','#34c759']];
+      const ORDER = [['issued','Unsent','#82827b'],['sent','Sent','#2257c5'],['fu1','Follow up 1','#56599f'],['fu2','Follow up 2','#7d4d9e'],['fu3','Follow up 3','#b7791f'],['paidstage','Paid','#35804a']];
       const by = { paidstage: paid };
       open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
       const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
@@ -117,24 +117,24 @@ export default async function Finance({ searchParams }) {
             const amt = k === 'paidstage' ? rows.reduce((s, i) => s + tot(i), 0) : rows.reduce((s, i) => s + balance(i), 0);
             const w = ar > 0 ? Math.max(rows.length ? 10 : 4, Math.round(100 * amt / ar)) : 25;
             return <div key={k} style={{flexGrow:w, minWidth:90}}>
-              <div style={{height:7, borderRadius:4, background: rows.length ? color : '#e8e8ed'}}/>
+              <div style={{height:7, borderRadius:4, background: rows.length ? color : '#e3e3dd'}}/>
               <div style={{fontSize:11.5, fontWeight:650, marginTop:6}}>{label} · {rows.length}</div>
               <div style={{fontSize:12.5, fontVariantNumeric:'tabular-nums', fontWeight:700}}>{rows.length ? usd(amt) : '—'}</div>
             </div>; })}
         </div>
         {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
           {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + balance(i), 0))}) — open more than 30 days</div>}
-        {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
+        {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#73736c'}}>
           No open AR right now. Each invoice moves Unsent → Sent → Follow up 1/2/3 until paid; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
 
     {waiting.length > 0 && <div className="card" style={{marginTop:16}}>
       <div className="cardtitle">Sales waiting for an invoice</div>
       {waiting.map(s => <div key={s.id} style={{display:'flex', gap:12, alignItems:'center', padding:'9px 0',
-        borderBottom:'1px solid #f5f5f7', fontSize:13.5}}>
+        borderBottom:'1px solid #f2f2ee', fontSize:13.5}}>
         <span style={{flex:1, minWidth:0}}>
           <a style={{fontWeight:600}} href={'/collectors/' + s.collectors?.id}>{[s.collectors?.first_name, s.collectors?.last_name].filter(Boolean).join(' ') || 'Collector'}</a>
-          <span style={{color:'#86868b'}}> · {s.titles || 'sale in progress'}{s.owner ? ' · ' + s.owner : ''}</span>
+          <span style={{color:'#73736c'}}> · {s.titles || 'sale in progress'}{s.owner ? ' · ' + s.owner : ''}</span>
         </span>
         <span style={{fontVariantNumeric:'tabular-nums', fontWeight:700}}>{usd(s.value)}</span>
         <form method="POST" action="/api/act">
@@ -148,14 +148,14 @@ export default async function Finance({ searchParams }) {
 
     {ar > 0 && <div className="stats" style={{marginTop:16}}>
       {Object.entries(buckets).map(([k, v]) => <div className="stat" key={k}>
-        <div className="n" style={{fontSize:19, color: k === '90+' && v > 0 ? '#b8231a' : k === '61–90' && v > 0 ? '#b25a00' : undefined}}>{usd(v)}</div>
+        <div className="n" style={{fontSize:19, color: k === '90+' && v > 0 ? '#b8231a' : k === '61–90' && v > 0 ? '#9a551a' : undefined}}>{usd(v)}</div>
         <div className="l">Aging {k} days</div></div>)}
     </div>}
 
     <div style={{display:'flex', gap:8, marginTop:22, alignItems:'center', flexWrap:'wrap'}}>
       {VIEWS.map(([k, label]) => <a key={k} href={'/finance?view=' + k} className="pill"
-        style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
-      <span style={{fontSize:12, color:'#86868b'}}>Click any invoice to open everything about it: contact, money received, documents, actions.</span>
+        style={view === k ? {background:'#1a1a18', color:'#fff'} : {background:'#fff', border:'1px solid #e3e3dd'}}>{label}</a>)}
+      <span style={{fontSize:12, color:'#73736c'}}>Click any invoice to open everything about it: contact, money received, documents, actions.</span>
     </div>
     {view === 'payments' && (() => {
       const invByI = {}; all.forEach(i => invByI[i.id] = i);
@@ -171,12 +171,12 @@ export default async function Finance({ searchParams }) {
           {ps.map((p, ix) => {
             const inv = invByI[p.invoice_id];
             return <div key={ix} style={{display:'flex', gap:12, alignItems:'center', padding:'8px 0',
-              borderBottom:'1px solid #f5f5f7', fontSize:13}}>
-              <span style={{color:'#86868b', fontSize:12, width:80}}>{p.settled_at ? new Date(p.settled_at).toLocaleDateString() : '—'}</span>
+              borderBottom:'1px solid #f2f2ee', fontSize:13}}>
+              <span style={{color:'#73736c', fontSize:12, width:80}}>{p.settled_at ? new Date(p.settled_at).toLocaleDateString() : '—'}</span>
               <span style={{flex:1}}>{inv ? <>№{String(inv.invoice_number).padStart(4,'0')} · {inv.collectors ? [inv.collectors.first_name, inv.collectors.last_name].filter(Boolean).join(' ') : '—'}
-                <span style={{color:'#86868b'}}> · {inv.title}</span></> : 'Unlinked payment'}</span>
+                <span style={{color:'#73736c'}}> · {inv.title}</span></> : 'Unlinked payment'}</span>
               <span className="pill" style={{fontSize:10.5}}>{p.method || '—'}</span>
-              <span style={{fontWeight:700, fontVariantNumeric:'tabular-nums', color:'#1d7a3d'}}>+{usd(p.amount_cents)}</span>
+              <span style={{fontWeight:700, fontVariantNumeric:'tabular-nums', color:'#2e6b3f'}}>+{usd(p.amount_cents)}</span>
             </div>; })}
         </div>)}
         {!rows.length && <div className="empty">No payments recorded yet.</div>}
@@ -193,48 +193,48 @@ export default async function Finance({ searchParams }) {
             gridTemplateColumns:'14px 46px 52px minmax(150px,1fr) minmax(130px,1.1fr) 110px 90px 130px', gap:12, alignItems:'center'}}>
             <span>{i.pdf_url
               ? <DocPreview thumb url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>
-              : <span style={{display:'block', width:42, height:54, borderRadius:6, border:'1px dashed #e8e8ed'}}/>}</span>
-            <span style={{fontSize:12, color:'#86868b', fontVariantNumeric:'tabular-nums'}}>№{String(i.invoice_number).padStart(4,'0')}</span>
+              : <span style={{display:'block', width:42, height:54, borderRadius:2, border:'1px dashed #e3e3dd'}}/>}</span>
+            <span style={{fontSize:12, color:'#73736c', fontVariantNumeric:'tabular-nums'}}>№{String(i.invoice_number).padStart(4,'0')}</span>
             <span style={{minWidth:0}}>
               <span style={{fontWeight:650, fontSize:13.5, display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
                 {c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : 'No collector'}</span>
-              <span style={{fontSize:11.5, color:'#86868b'}}>{new Date(i.issued_at).toLocaleDateString()} · {age}d{overdueRow ? ' · OVERDUE' : ''}</span>
+              <span style={{fontSize:11.5, color:'#73736c'}}>{new Date(i.issued_at).toLocaleDateString()} · {age}d{overdueRow ? ' · OVERDUE' : ''}</span>
             </span>
-            <span style={{fontSize:12.5, color:'#3a3a3c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? ' · ' + i.artist : ''}</span>
+            <span style={{fontSize:12.5, color:'#3a3a35', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? ' · ' + i.artist : ''}</span>
             <span>{i.status === 'paid' ? <span className="pill green" style={{display:'inline-flex', alignItems:'center', height:24, fontSize:10.5, fontWeight:700, letterSpacing:'.04em', whiteSpace:'nowrap'}}>PAID{i.method ? ' · ' + i.method.toUpperCase() : ''}</span>
               : i.status === 'void' ? <span className="pill">Void</span>
               : <ArStage id={i.id} value={i.ar_status}/>}</span>
-            <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10.5, fontWeight:700,
+            <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#2e6b3f', fontSize:10.5, fontWeight:700,
                 display:'inline-flex', alignItems:'center', height:24, whiteSpace:'nowrap', letterSpacing:'.04em'}}>DEPOSIT IN · {usd(paidIn[i.id])}</span> : ''}</span>
             <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
               {isOpen ? usd(balance(i)) : usd(tot(i))}
-              {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#86868b', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>
+              {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#73736c', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>
           </summary>
-          <div style={{padding:'16px 20px 18px', borderTop:'1px solid #f0f0f2',
+          <div style={{padding:'16px 20px 18px', borderTop:'1px solid #eeeee9',
             display:'grid', gridTemplateColumns:'200px minmax(240px,320px) 1fr', gap:32}}>
             <div>
               <div className="cardtitle" style={{marginBottom:8}}>Collector</div>
               {c ? <div style={{fontSize:13, lineHeight:1.7}}>
                 <a style={{fontWeight:650}} href={'/collectors/' + c.id}>{[c.first_name, c.last_name].filter(Boolean).join(' ')}</a>
-                {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#86868b', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
-                {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{fmtPhone(c.phone)}</a></div>}
-                {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
-              </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
+                {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#73736c', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
+                {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#2257c5'}}>{fmtPhone(c.phone)}</a></div>}
+                {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#2257c5'}}>{c.email}</a></div>}
+              </div> : <div style={{fontSize:12.5, color:'#73736c'}}>No collector attached</div>}
             </div>
             <div>
               <div className="cardtitle" style={{marginBottom:8}}>Money</div>
               <div style={{fontSize:13, fontVariantNumeric:'tabular-nums'}}>
-                <div style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#6e6e73'}}>
+                <div style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#73736c'}}>
                   <span>Total</span><span>{usd(tot(i))}</span></div>
-                {(i.tax_cents || i.shipping_cents) ? <div style={{padding:'0 0 3px', fontSize:11.5, color:'#86868b'}}>
+                {(i.tax_cents || i.shipping_cents) ? <div style={{padding:'0 0 3px', fontSize:11.5, color:'#73736c'}}>
                   incl. {i.tax_cents ? usd(i.tax_cents) + ' tax' : ''}{i.tax_cents && i.shipping_cents ? ' · ' : ''}{i.shipping_cents ? usd(i.shipping_cents) + ' shipping' : ''}</div> : null}
-                {hist.map((p, ix) => <div key={ix} style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#1d7a3d'}}>
+                {hist.map((p, ix) => <div key={ix} style={{display:'flex', justifyContent:'space-between', padding:'3px 0', color:'#2e6b3f'}}>
                   <span>Received {p.settled_at ? new Date(p.settled_at).toLocaleDateString() : ''}{p.method ? ' · ' + p.method : ''}</span>
                   <span>−{usd(p.amount_cents)}</span></div>)}
                 {isOpen && <div style={{display:'flex', justifyContent:'space-between', padding:'6px 0 0', marginTop:4,
-                  borderTop:'1px solid #e8e8ed', fontWeight:700}}>
+                  borderTop:'1px solid #e3e3dd', fontWeight:700}}>
                   <span>Balance</span><span>{usd(balance(i))}</span></div>}
-                {i.last_nudge_at && <div style={{fontSize:11.5, color:'#86868b', marginTop:6}}>Last follow-up {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
+                {i.last_nudge_at && <div style={{fontSize:11.5, color:'#73736c', marginTop:6}}>Last follow-up {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
               </div>
             </div>
             <div>
@@ -243,8 +243,8 @@ export default async function Finance({ searchParams }) {
                 <div style={{display:'flex', flexDirection:'column', gap:8, alignItems:'center'}}>
                   {i.pdf_url
                     ? <DocPreview url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>
-                    : <div style={{width:110, height:143, borderRadius:10, border:'1px dashed #d2d2d7',
-                        display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#86868b'}}>No PDF yet</div>}
+                    : <div style={{width:110, height:143, borderRadius:2, border:'1px dashed #cccdc4',
+                        display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#73736c'}}>No PDF yet</div>}
                   <form method="POST" action="/api/act">
                     <input type="hidden" name="action" value="invoice_pdf"/>
                     <input type="hidden" name="id" value={i.id}/>
@@ -264,18 +264,18 @@ export default async function Finance({ searchParams }) {
             </div>
           </div>
           {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
-            borderTop:'1px solid #f0f0f2', background:'#fbfbfd'}}>
+            borderTop:'1px solid #eeeee9', background:'#fbfbfd'}}>
             <FollowUp id={i.id} stage={i.ar_status} email={c && !c.email?.endsWith('import.chasecontemporary.com') ? c.email : ''}
               name={c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : ''}
               num={String(i.invoice_number).padStart(4,'0')} balance={usd(balance(i))}
               pdf={i.pdf_url} docs={docsBySale[i.sale_id] || []}/>
-            <span style={{width:1, height:22, background:'#e8e8ed'}}/>
+            <span style={{width:1, height:22, background:'#e3e3dd'}}/>
             <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center'}}>
               <input type="hidden" name="action" value="invoice_payment"/>
               <input type="hidden" name="id" value={i.id}/>
               <input type="hidden" name="back" value="/finance"/>
               <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Amount received"/></label>
-              <input name="method" placeholder="wire / card" style={{width:96, fontSize:12.5, border:'1px solid #e8e8ed', borderRadius:10, height:36, padding:'0 10px', fontFamily:'inherit', background:'#fff'}}/>
+              <input name="method" placeholder="wire / card" style={{width:96, fontSize:12.5, border:'1px solid #e3e3dd', borderRadius:2, height:36, padding:'0 10px', fontFamily:'inherit', background:'#fff'}}/>
               <button className="btn mini quiet">Record payment</button>
               {!paidIn[i.id] && <button className="btn mini quiet" name="fraction" value="0.5">50% deposit · {usd(Math.round(tot(i) / 2))}</button>}
             </form>

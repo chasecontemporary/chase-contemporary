@@ -28,16 +28,33 @@ that isn't on the live site.
 
 ## Surface 2 — Chase Engine (chase-engine.vercel.app, the CRM)
 
-"Like Apple designed it." System font stack (SF), sentence case, calm.
+**REGISTER V2 (8/28, Devyn's call): the gallery inside the tool.** The Apple-clone skin
+(SF font, iOS palette, 10px radii) is retired — it read "vibe-coded SaaS." The engine now
+wears the gallery's own register, adapted for operators. Usability law stands above
+aesthetics: nothing shrinks, contrast only goes up, buttons always look like buttons,
+36px hit targets, :focus-visible rings.
 
-**Tokens**
-- Ground `#f5f5f7` · surface `#fff` · ink `#1d1d1f` · secondary `#6e6e73` / `#86868b` ·
-  hairline `#e8e8ed` / `#f0f0f2` · disabled/hint `#c7c7cc`
-- Accent blue `#0071e3` (actions, links, focus ring `rgba(0,113,227,.12)`)
-- Semantic: green `#34c759` (paid/available), orange `#ff9500` (holds, due, aging),
-  red `#ff3b30` (overdue, destructive), stage colors on the pipeline
-  (`new #0071e3 · contacted #5e5ce6 · in_conversation #af52de · hold #ff9500 ·
-  invoice #ff9f0a · paid #34c759 · nurture #8e8e93`)
+**Tokens (v2 — globals.css is canonical)**
+- Ground `#f7f7f4` warm paper · surface `#fff` · ink `#1a1a18` · secondary `#73736c` ·
+  hairline `#e3e3dd` · wash `#f2f2ee` / `#eeeee9` · disabled `#c2c2bb`
+- **Black is the primary action.** `.btn` = ink `#1a1a18`, white text (the site's INQUIRE
+  language). Blue `#2257c5` (deep cobalt) is links + focus only, never buttons.
+- Semantic (editorial, muted, still unmistakable): green `#35804a`/`#2e6b3f` (paid, money
+  in), ochre `#b7791f` (holds/due), bronze `#9a6a16` (invoiced), amber-brown `#9a551a` /
+  `#8f6f14` (warnings, aging), red `#c02d23` (overdue, destructive)
+- Stage colors: `new #2257c5 · contacted #56599f · in_conversation #7d4d9e ·
+  hold #b7791f · invoice #9a6a16 · paid #35804a · nurture #82827b`
+- **Type: Nimbus Sans Novus** (next/font/local in layout.js, 400/500/600; 650/700 map to
+  the semibold file — never synthetic bold). Same family as the site and the PDFs.
+- **Shape: square.** `--r: 2px` on cards/controls, 3-4px on drawers/menus, radius 99/pill
+  shapes retired to 3px tags. Print, not app.
+- **H1s are tracked caps** (21px, .07em, uppercase) — exhibition-title register. Section
+  labels stay `.cardtitle` tracked caps. Stat labels now tracked caps too.
+- **Sidebar**: white panel, hairline right border, CHASE ENGINE wordmark in tracked caps,
+  active nav item = ink block with white text.
+- **Wall-label rule (engine-wide):** wherever a work is named: ARTIST in tracked caps,
+  *title* in italic. Drawer artwork card does this; extend to every remaining surface in
+  the Phase 2 polish pass.
 - Tinted chip pairs: green `#e4f7e9`/`#1d7a3d` · amber `#ffefdc`/`#b25a00` ·
   neutral `#f0f0f2`/`#3a3a3c`
 - Radii: cards 12–14px · controls 10px (`.rect`) · pills/selects 99px

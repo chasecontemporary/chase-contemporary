@@ -47,7 +47,7 @@ export default async function Unit({ params, searchParams }) {
   const priced = (a.price_cents || 0) > 0;
 
   return <Shell active="inventory">
-    {pusherr && <div style={{background:'#ffefdc', color:'#b25a00', borderRadius:12, marginBottom:16,
+    {pusherr && <div style={{background:'#f3e8d5', color:'#9a551a', borderRadius:3, marginBottom:16,
       padding:'11px 16px', fontSize:13, fontWeight:600}}>Push blocked — still missing: {pusherr}</div>}
     <div style={{display:'grid', gridTemplateColumns:'minmax(0,460px) 1fr', gap:32, alignItems:'start'}}>
 
@@ -55,9 +55,9 @@ export default async function Unit({ params, searchParams }) {
         <div className="card" style={{padding:14}}>
           {a.image_url
             ? <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=1200'}
-                alt="" style={{width:'100%', borderRadius:8, display:'block'}}/>
+                alt="" style={{width:'100%', borderRadius:2, display:'block'}}/>
             : <div style={{aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center',
-                background:'#fafafa', borderRadius:8, fontSize:11, letterSpacing:'.08em', color:'#c7c7cc'}}>NO IMAGE</div>}
+                background:'#fafaf7', borderRadius:2, fontSize:11, letterSpacing:'.08em', color:'#c2c2bb'}}>NO IMAGE</div>}
         </div>
       </div>
 
@@ -65,12 +65,12 @@ export default async function Unit({ params, searchParams }) {
         <div>
           <div style={{display:'flex', gap:10, alignItems:'center'}}>
             <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</span>
-            {out ? <span className="pill" style={{background:'#ff9500', color:'#fff', fontSize:10, fontWeight:700}}>ON APPROVAL</span>
+            {out ? <span className="pill" style={{background:'#b7791f', color:'#fff', fontSize:10, fontWeight:700}}>ON APPROVAL</span>
               : a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
               : <span className="pill" style={{fontSize:10, fontWeight:700}}>SOLD</span>}
           </div>
           <div className="h1" style={{fontSize:27, marginTop:4, letterSpacing:'-.02em'}}>{a.title}</div>
-          <div style={{fontSize:13, color:'#86868b', marginTop:5, overflow:'hidden',
+          <div style={{fontSize:13, color:'#73736c', marginTop:5, overflow:'hidden',
             textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:640}}>
             {[a.medium, a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null].filter(Boolean).join(' · ') || 'Details incomplete'}
           </div>
@@ -94,10 +94,10 @@ export default async function Unit({ params, searchParams }) {
           <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
           <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>
           <Row k="Website">{a.handle
-            ? <a style={{color:'#0071e3', fontWeight:500}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">On the site — view product ↗</a>
+            ? <a style={{color:'#2257c5', fontWeight:500}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">On the site — view product ↗</a>
             : a.available
               ? gaps.length
-                ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10.5}}>NOT READY · {gaps.join(' · ').toUpperCase()}</span>
+                ? <span className="pill" style={{background:'#f3e8d5', color:'#9a551a', fontWeight:700, fontSize:10.5}}>NOT READY · {gaps.join(' · ').toUpperCase()}</span>
                 : <span style={{display:'inline-flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
                     <form method="POST" action="/api/act" style={{display:'inline'}}>
                       <input type="hidden" name="action" value="artwork_push"/>
@@ -105,9 +105,9 @@ export default async function Unit({ params, searchParams }) {
                       <input type="hidden" name="back" value={back}/>
                       <button className="btn mini quiet">Push to site as draft</button>
                     </form>
-                    <span style={{fontSize:11.5, color:'#86868b'}}>Lands unpublished · resolution checked at push</span>
+                    <span style={{fontSize:11.5, color:'#73736c'}}>Lands unpublished · resolution checked at push</span>
                   </span>
-              : <span style={{color:'#86868b'}}>Not listed</span>}</Row>
+              : <span style={{color:'#73736c'}}>Not listed</span>}</Row>
         </div>
 
         {(() => {
@@ -120,8 +120,8 @@ export default async function Unit({ params, searchParams }) {
             <div className="cardtitle">About this work</div>
             {useful && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
             {a.provenance && <div style={{marginTop:useful ? 12 : 0}}>
-              <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#86868b', marginBottom:4}}>Provenance</div>
-              <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a3c', whiteSpace:'pre-line'}}>{a.provenance}</div>
+              <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#73736c', marginBottom:4}}>Provenance</div>
+              <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a35', whiteSpace:'pre-line'}}>{a.provenance}</div>
             </div>}
           </div> : null;
         })()}
@@ -129,13 +129,13 @@ export default async function Unit({ params, searchParams }) {
           <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>About this work</div>
           {a.description && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
           {a.provenance && <div style={{marginTop:a.description ? 12 : 0}}>
-            <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#86868b', marginBottom:4}}>Provenance</div>
-            <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a3c', whiteSpace:'pre-line'}}>{a.provenance}</div>
+            <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#73736c', marginBottom:4}}>Provenance</div>
+            <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a35', whiteSpace:'pre-line'}}>{a.provenance}</div>
           </div>}
         </div>}
         {bio?.bio && <details className="edit">
           <summary>About {a.artist}</summary>
-          <div style={{fontSize:13.5, lineHeight:1.7, whiteSpace:'pre-line', marginTop:12, color:'#1d1d1f'}}>{bio.bio}</div>
+          <div style={{fontSize:13.5, lineHeight:1.7, whiteSpace:'pre-line', marginTop:12, color:'#1a1a18'}}>{bio.bio}</div>
         </details>}
         <div className="card">
           <div className="cardtitle">Documents</div>
@@ -155,13 +155,13 @@ export default async function Unit({ params, searchParams }) {
         </div>
         {!priced && <div className="card">
           <div className="cardtitle">Internal estimate</div>
-          <div style={{fontSize:12, color:'#86868b', marginTop:-4, marginBottom:12}}>
+          <div style={{fontSize:12, color:'#73736c', marginTop:-4, marginBottom:12}}>
             What the gallery holds this work at — never shown to collectors. Range bids in the pipeline read as a percentage of this.</div>
           {suggested > 0 && <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap',
-            background:'#f5f5f7', borderRadius:10, padding:'10px 12px', marginBottom:12}}>
+            background:'#f2f2ee', borderRadius:2, padding:'10px 12px', marginBottom:12}}>
             <div style={{flex:1, minWidth:220}}>
               <div style={{fontSize:13, fontWeight:700, fontVariantNumeric:'tabular-nums'}}>{usd(suggested * 100)} suggested</div>
-              <div style={{fontSize:11.5, color:'#86868b', marginTop:2}}>
+              <div style={{fontSize:11.5, color:'#73736c', marginTop:2}}>
                 {comps.n_comps} realized {a.artist} sales · median ${(ppsi / 100).toFixed(0)}/sq in{comps.n_recent >= 5 ? ', recency-weighted' : ''}</div>
             </div>
             <form method="POST" action="/api/act">
@@ -187,7 +187,7 @@ export default async function Unit({ params, searchParams }) {
           <div className="cardtitle">Sold to</div>
           {(buys||[]).map(b => <div key={b.id} style={{fontSize:13.5, padding:'4px 0'}}>
             <a style={{fontWeight:600}} href={'/collectors/' + b.collectors?.id}>{b.collectors?.first_name} {b.collectors?.last_name}</a>
-            <span style={{color:'#86868b'}}> · {usd(b.amount_cents)} · {new Date(b.purchased_at).toLocaleDateString()}</span></div>)}
+            <span style={{color:'#73736c'}}> · {usd(b.amount_cents)} · {new Date(b.purchased_at).toLocaleDateString()}</span></div>)}
         </div>}
 
         {!a.shopify_product_id && a.available && <details className="edit">
@@ -236,18 +236,18 @@ export default async function Unit({ params, searchParams }) {
         <td><div style={{display:'flex', gap:10, alignItems:'center'}}>
           {r.artworks.image_url
             ? <img src={r.artworks.image_url + (r.artworks.image_url.includes('?') ? '&' : '?') + 'width=72'} alt=""
-                style={{width:36, height:36, objectFit:'cover', borderRadius:6, flex:'0 0 auto', background:'#fafafa'}}/>
-            : <span style={{width:36, height:36, borderRadius:6, background:'#f0f0f2', flex:'0 0 auto'}}/>}
+                style={{width:36, height:36, objectFit:'cover', borderRadius:2, flex:'0 0 auto', background:'#fafaf7'}}/>
+            : <span style={{width:36, height:36, borderRadius:2, background:'#eeeee9', flex:'0 0 auto'}}/>}
           <a style={{fontWeight:600}} href={'/inventory/' + r.artworks.id}>{r.artworks.title}</a>
         </div></td>
-        <td style={{color:'#86868b', fontSize:12.5}}>{r.artworks.dims_h_in} × {r.artworks.dims_w_in} in</td>
+        <td style={{color:'#73736c', fontSize:12.5}}>{r.artworks.dims_h_in} × {r.artworks.dims_w_in} in</td>
         <td style={{fontSize:12.5}}>{new Date(r.purchased_at).toLocaleDateString()}</td>
         <td style={{fontVariantNumeric:'tabular-nums', fontWeight:650}}>{usd(r.amount_cents)}</td>
         <td style={{fontVariantNumeric:'tabular-nums'}}>${(r.ppsi / 100).toFixed(0)}</td>
         <td style={{fontSize:12.5}}>{r.collectors ? <a href={'/collectors/' + r.collectors.id}>{[r.collectors.first_name, r.collectors.last_name].filter(Boolean).join(' ')}</a> : '—'}</td>
         <td style={{fontSize:12}}><span className="pill" style={{fontSize:10, fontWeight:700}}>{invNo ? 'INV ' + invNo : 'ENGINE'}</span></td>
       </tr>; })}
-      {!compRows.length && <tr><td colSpan={7} style={{color:'#86868b'}}>No sized comparable sales for this artist yet.</td></tr>}
+      {!compRows.length && <tr><td colSpan={7} style={{color:'#73736c'}}>No sized comparable sales for this artist yet.</td></tr>}
     </tbody></table></div>
     </>}
 
@@ -263,7 +263,7 @@ export default async function Unit({ params, searchParams }) {
         <td>{r.owner || '—'}</td>
       </tr>)}
     </tbody></table>
-    {!(inqs||[]).length && <div style={{padding:'14px 18px', fontSize:13, color:'#86868b'}}>No inquiries yet on this work.</div>}
+    {!(inqs||[]).length && <div style={{padding:'14px 18px', fontSize:13, color:'#73736c'}}>No inquiries yet on this work.</div>}
     </div>
   </Shell>;
 }

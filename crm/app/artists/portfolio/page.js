@@ -50,13 +50,13 @@ export default async function Portfolio({ searchParams }) {
   const VIEWS = [['onhand', `On hand · ${onHand.length}`], ['sold', `Sold · ${soldW.length}`], ['all', 'Everything']];
   return <Shell active="artists">
     <div style={{display:'flex', gap:14, alignItems:'center', fontSize:12.5, marginBottom:14}}>
-      <a href="/artists" style={{color:'#6e6e73', textDecoration:'none', fontWeight:600}}>← Artists</a>
+      <a href="/artists" style={{color:'#73736c', textDecoration:'none', fontWeight:600}}>← Artists</a>
       <a href={'/inventory?view=all&artist=' + encodeURIComponent(name)}
-        style={{color:'#6e6e73', textDecoration:'none'}}>View in full inventory →</a>
+        style={{color:'#73736c', textDecoration:'none'}}>View in full inventory →</a>
     </div>
     <div style={{display:'flex', gap:10, alignItems:'baseline', flexWrap:'wrap'}}>
       <div className="h1">{name}</div>
-      <span style={{fontSize:13, color:'#86868b'}}>portfolio · {perf.total_works} works all time</span>
+      <span style={{fontSize:13, color:'#73736c'}}>portfolio · {perf.total_works} works all time</span>
     </div>
 
     <div className="stats">
@@ -78,7 +78,7 @@ export default async function Portfolio({ searchParams }) {
         <div className="l">Average sale</div></div>
       <div className="stat"><div className="n" style={{fontSize:19}}>{comps ? '$' + (Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) / 100).toFixed(0) + '/sq in' : '—'}</div>
         <div className="l">Realized price per square inch</div></div>
-      <div className="stat"><div className="n" style={{fontSize:19, color: trend === null ? undefined : trend >= 0 ? '#1d7a3d' : '#b25a00'}}>
+      <div className="stat"><div className="n" style={{fontSize:19, color: trend === null ? undefined : trend >= 0 ? '#2e6b3f' : '#9a551a'}}>
         {trend === null ? '—' : trend >= 100 ? ((1 + trend / 100).toFixed(trend >= 400 ? 0 : 1)) + '\u00d7' : (trend >= 0 ? '+' : '\u2212') + Math.abs(trend) + '%'}</div>
         <div className="l">Price trend · last 3 years vs all time</div></div>
     </div>
@@ -90,28 +90,28 @@ export default async function Portfolio({ searchParams }) {
 
     <div style={{display:'flex', gap:8, marginTop:22, alignItems:'center'}}>
       {VIEWS.map(([k, label]) => <a key={k} href={'/artists/portfolio?name=' + encodeURIComponent(name) + '&v=' + k}
-        className="pill" style={v === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
+        className="pill" style={v === k ? {background:'#1a1a18', color:'#fff'} : {background:'#fff', border:'1px solid #e3e3dd'}}>{label}</a>)}
     </div>
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(190px, 1fr))', gap:14, marginTop:16}}>
       {shown.map(a => <a key={a.id} href={'/inventory/' + a.id} className="card"
         style={{padding:10, display:'block', textDecoration:'none', color:'inherit'}}>
-        <div style={{aspectRatio:'1', background:'#fafafa', borderRadius:8, overflow:'hidden',
+        <div style={{aspectRatio:'1', background:'#fafaf7', borderRadius:2, overflow:'hidden',
           display:'flex', alignItems:'center', justifyContent:'center'}}>
           {a.image_url
             ? <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=480'} alt=""
                 style={{width:'100%', height:'100%', objectFit:'contain'}} loading="lazy"/>
-            : <span style={{fontSize:10.5, letterSpacing:'.08em', color:'#c7c7cc'}}>NO IMAGE</span>}
+            : <span style={{fontSize:10.5, letterSpacing:'.08em', color:'#c2c2bb'}}>NO IMAGE</span>}
         </div>
         <div style={{marginTop:9}}>
-          <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a3c', overflow:'hidden',
+          <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a35', overflow:'hidden',
             textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{a.title}</div>
           <div style={{fontSize:12, marginTop:3, fontVariantNumeric:'tabular-nums', fontWeight:600}}>
             {(a.price_cents || 0) > 0 ? usd(a.price_cents)
-              : a.internal_value_cents > 0 ? <>POR <span style={{color:'#86868b', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
+              : a.internal_value_cents > 0 ? <>POR <span style={{color:'#73736c', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
               : 'POR'}
             {!a.available && <span className="pill" style={{marginLeft:7, fontSize:9.5}}>Sold</span>}
           </div>
-          <div style={{fontSize:11, color:'#86868b', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          <div style={{fontSize:11, color:'#73736c', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
             {a.location || (a.shopify_product_id ? 'Site' : '')}</div>
         </div>
       </a>)}
@@ -129,7 +129,7 @@ export default async function Portfolio({ searchParams }) {
             {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}</a></td>
           <td>{n}</td>
           <td style={{fontVariantNumeric:'tabular-nums', fontWeight:650}}>{usd(spent)}</td>
-          <td style={{fontSize:12.5, color:'#86868b'}}>{ago(last)}</td>
+          <td style={{fontSize:12.5, color:'#73736c'}}>{ago(last)}</td>
         </tr>)}
       </tbody></table></div>
     </>}

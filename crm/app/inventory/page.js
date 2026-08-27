@@ -67,7 +67,7 @@ export default async function Inventory({ searchParams }) {
 
     <div style={{display:'flex', gap:8, marginTop:20, alignItems:'center', flexWrap:'wrap'}}>
       {VIEWS.map(([k, label]) => <a key={k} href={href({ view: k, page: 1 })} className="pill"
-        style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
+        style={view === k ? {background:'#1a1a18', color:'#fff'} : {background:'#fff', border:'1px solid #e3e3dd'}}>{label}</a>)}
       <form style={{display:'inline-flex', gap:8}}>
         <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
         <Sel name="artist" defaultValue={artist}
@@ -85,53 +85,53 @@ export default async function Inventory({ searchParams }) {
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:14, marginTop:18}}>
       {works.map(a => <a key={a.id} href={'/inventory/' + a.id} className="card"
         style={{padding:10, display:'block', textDecoration:'none', color:'inherit'}}>
-        <div style={{aspectRatio:'1', background:'#fafafa', borderRadius:8, overflow:'hidden', position:'relative',
+        <div style={{aspectRatio:'1', background:'#fafaf7', borderRadius:2, overflow:'hidden', position:'relative',
           display:'flex', alignItems:'center', justifyContent:'center'}}>
           {a.image_url
             ? <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=480'} alt=""
                 style={{width:'100%', height:'100%', objectFit:'contain'}} loading="lazy"/>
-            : <span style={{fontSize:10.5, letterSpacing:'.08em', color:'#c7c7cc'}}>NO IMAGE</span>}
+            : <span style={{fontSize:10.5, letterSpacing:'.08em', color:'#c2c2bb'}}>NO IMAGE</span>}
           <div style={{position:'absolute', top:8, left:8, right:8, display:'flex', gap:5, flexWrap:'wrap'}}>
             {inqMap[a.handle] > 0 && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>
               {inqMap[a.handle]} INQUIRING</span>}
-            {holdMap[a.id]?.kind === 'approval' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#ff9500', color:'#fff'}}>ON APPROVAL</span>}
-            {holdMap[a.id]?.kind === 'hold' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1d1d1f', color:'#fff'}}>ON HOLD</span>}
+            {holdMap[a.id]?.kind === 'approval' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#b7791f', color:'#fff'}}>ON APPROVAL</span>}
+            {holdMap[a.id]?.kind === 'hold' && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1a1a18', color:'#fff'}}>ON HOLD</span>}
           </div>
         </div>
         <div style={{marginTop:10, minHeight:80}}>
           <div style={{fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</div>
-          <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a3c', marginTop:2, overflow:'hidden',
+          <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a35', marginTop:2, overflow:'hidden',
             display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical'}}>{a.title}</div>
           <div style={{fontSize:12, marginTop:4, fontVariantNumeric:'tabular-nums', fontWeight:600}}>
             {(a.price_cents || 0) > 0 ? usd(a.price_cents)
-              : a.internal_value_cents > 0 ? <>POR <span style={{color:'#86868b', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
+              : a.internal_value_cents > 0 ? <>POR <span style={{color:'#73736c', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
               : 'POR'}
             {!a.available && <span className="pill" style={{marginLeft:8}}>Sold</span>}
           </div>
-          <div style={{fontSize:11, color:'#86868b', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          <div style={{fontSize:11, color:'#73736c', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
             {a.location || (a.shopify_product_id ? 'Site' : '')}{a.dims_h_in ? ` · ${a.dims_h_in} × ${a.dims_w_in} in` : ''}
           </div>
           {(() => {
             const chip = {fontSize:10, fontWeight:700, letterSpacing:'.02em', padding:'3px 7px',
-              borderRadius:6, display:'inline-block', whiteSpace:'nowrap'};
+              borderRadius:2, display:'inline-block', whiteSpace:'nowrap'};
             const st = statMap[a.artist];
             const mo = a.acquired_at ? Math.floor((Date.now() - new Date(a.acquired_at)) / 2629800000) : null;
             const bits = [];
             if (st && st.sold > 0) {
               const pct = Number(st.sell_through);
-              const tone = pct >= 70 ? {background:'#e4f7e9', color:'#1d7a3d'}
-                : pct >= 40 ? {background:'#f0f0f2', color:'#3a3a3c'}
-                : {background:'#ffefdc', color:'#b25a00'};
+              const tone = pct >= 70 ? {background:'#e4f7e9', color:'#2e6b3f'}
+                : pct >= 40 ? {background:'#eeeee9', color:'#3a3a35'}
+                : {background:'#f3e8d5', color:'#9a551a'};
               bits.push(<span key="st" style={{...chip, ...tone}}>{pct}% SELLS · {st.sold} SOLD</span>);
             }
             if (a.available && mo !== null && mo >= 1) bits.push(<span key="mo"
-              style={{...chip, ...(mo > 12 ? {background:'#ffefdc', color:'#b25a00'} : {background:'#f0f0f2', color:'#6e6e73'})}}>
+              style={{...chip, ...(mo > 12 ? {background:'#f3e8d5', color:'#9a551a'} : {background:'#eeeee9', color:'#73736c'})}}>
               {mo} MO ON HAND</span>);
             if (a.available && !a.shopify_product_id) {
               const ready = listingGaps(a).length === 0;
               bits.push(<span key="ns" style={{...chip, ...(ready
-                ? {background:'#e4f7e9', color:'#1d7a3d'}
-                : {background:'#fff', border:'1px solid #e8e8ed', color:'#86868b'})}}>
+                ? {background:'#e4f7e9', color:'#2e6b3f'}
+                : {background:'#fff', border:'1px solid #e3e3dd', color:'#73736c'})}}>
                 {ready ? 'READY TO LIST' : 'LISTING GAPS'}</span>);
             }
             return bits.length ? <div style={{marginTop:6, display:'flex', gap:5, flexWrap:'wrap'}}>{bits}</div> : null;
@@ -141,9 +141,9 @@ export default async function Inventory({ searchParams }) {
       {!works.length && <div className="empty" style={{gridColumn:'1/-1'}}>Nothing matches.</div>}
     </div>
     {pages > 1 && <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:22, alignItems:'center'}}>
-      {page > 1 && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed'}} href={href({ page: page - 1 })}>← Prev</a>}
-      <span style={{fontSize:12.5, color:'#86868b'}}>{page} of {pages} · {Number(matchCount || 0).toLocaleString()} works</span>
-      {page < pages && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed'}} href={href({ page: page + 1 })}>Next →</a>}
+      {page > 1 && <a className="pill" style={{background:'#fff', border:'1px solid #e3e3dd'}} href={href({ page: page - 1 })}>← Prev</a>}
+      <span style={{fontSize:12.5, color:'#73736c'}}>{page} of {pages} · {Number(matchCount || 0).toLocaleString()} works</span>
+      {page < pages && <a className="pill" style={{background:'#fff', border:'1px solid #e3e3dd'}} href={href({ page: page + 1 })}>Next →</a>}
     </div>}
 
     <div className="h1" style={{fontSize:16, marginTop:34}}>Where the value sits</div>
@@ -154,7 +154,7 @@ export default async function Inventory({ searchParams }) {
         <td style={{fontWeight:600}}>{l.location}</td>
         <td>{l.available}</td>
         <td style={{fontVariantNumeric:'tabular-nums', fontWeight:700}}>{usd(l.value_cents)}</td>
-        <td><a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed'}}
+        <td><a className="pill" style={{background:'#fff', border:'1px solid #e3e3dd'}}
           href={`/inventory?view=available&loc=${encodeURIComponent(l.location)}`}>View</a></td>
       </tr>)}
     </tbody></table></div>

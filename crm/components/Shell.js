@@ -16,7 +16,7 @@ export default function Shell({ active, children, counts = {} }) {
               <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
           {emailOpen && <div style={{margin:'0 0 2px', position:'relative'}}>
-            <span style={{position:'absolute', left:14, top:6, bottom:6, width:1, background:'#e8e8ed'}}/>
+            <span style={{position:'absolute', left:14, top:6, bottom:6, width:1, background:'#e3e3dd'}}/>
             {[['audiences','Audiences'],['campaigns','Campaigns']].map(([href, label]) =>
               <a key={href} href={'/' + href} className={active === href ? 'on' : ''}
                 style={{paddingLeft:30, fontSize:13}}>{label}</a>)}

@@ -28,25 +28,25 @@ export default function NewCampaign({ audiences = [] }) {
       title: w.title, artist: w.artist, price_cents: w.cents })),
   });
   const label = { fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase',
-    color:'#86868b', display:'block', marginBottom:6 };
-  const input = { background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, height:36,
+    color:'#73736c', display:'block', marginBottom:6 };
+  const input = { background:'#fff', border:'1px solid #e3e3dd', borderRadius:2, height:36,
     fontFamily:'inherit', fontSize:13.5, padding:'0 11px', width:'100%' };
   return <>
     <button className="btn" onClick={() => setOpen(true)}>New campaign</button>
     {open && <div onClick={() => setOpen(false)} style={{position:'fixed', inset:0, zIndex:80,
       background:'rgba(0,0,0,.42)', backdropFilter:'blur(6px)', display:'flex',
       alignItems:'center', justifyContent:'center', padding:20}}>
-      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:16,
+      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:2,
         width:'min(1060px, 97vw)', height:'min(760px, 94vh)', display:'flex', flexDirection:'column',
         overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,.3)'}}>
-        <div style={{padding:'14px 20px', borderBottom:'1px solid #f0f0f2', display:'flex',
+        <div style={{padding:'14px 20px', borderBottom:'1px solid #eeeee9', display:'flex',
           alignItems:'center', justifyContent:'space-between'}}>
           <div style={{fontSize:15, fontWeight:700}}>New campaign</div>
           <button onClick={() => setOpen(false)} className="btn mini quiet">Close</button>
         </div>
         <div style={{display:'grid', gridTemplateColumns:'minmax(360px, 44%) 1fr', flex:1, minHeight:0}}>
           <form method="POST" action="/api/act" style={{padding:'18px 20px', display:'flex',
-            flexDirection:'column', gap:16, overflowY:'auto', borderRight:'1px solid #f0f0f2'}}>
+            flexDirection:'column', gap:16, overflowY:'auto', borderRight:'1px solid #eeeee9'}}>
             <input type="hidden" name="action" value="campaign_add"/>
             <input type="hidden" name="back" value="/campaigns"/>
             {works.map(w => <input key={w.id} type="hidden" name="artwork_ids" value={w.id}/>)}
@@ -82,13 +82,13 @@ export default function NewCampaign({ audiences = [] }) {
               <WorkPicker name="_ignore" onPick={addWork} placeholder="Add a work from inventory…"/>
               <div style={{display:'flex', flexDirection:'column', gap:6, marginTop:10}}>
                 {works.map(w => <div key={w.id} style={{display:'flex', gap:10, alignItems:'center',
-                  border:'1px solid #f0f0f2', borderRadius:10, padding:'6px 10px'}}>
-                  {w.img ? <img src={w.img} alt="" style={{width:30, height:30, objectFit:'cover', borderRadius:6}}/>
-                    : <span style={{width:30, height:30, borderRadius:6, background:'#f0f0f2'}}/>}
+                  border:'1px solid #eeeee9', borderRadius:2, padding:'6px 10px'}}>
+                  {w.img ? <img src={w.img} alt="" style={{width:30, height:30, objectFit:'cover', borderRadius:2}}/>
+                    : <span style={{width:30, height:30, borderRadius:2, background:'#eeeee9'}}/>}
                   <span style={{flex:1, minWidth:0, fontSize:12.5, fontWeight:600, overflow:'hidden',
-                    textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{w.title} <span style={{color:'#86868b', fontWeight:400}}>· {w.artist}</span></span>
+                    textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{w.title} <span style={{color:'#73736c', fontWeight:400}}>· {w.artist}</span></span>
                   <button type="button" onClick={() => setWorks(ws => ws.filter(x => x.id !== w.id))}
-                    style={{background:'none', border:0, color:'#c7c7cc', fontSize:15, cursor:'pointer'}}>×</button>
+                    style={{background:'none', border:0, color:'#c2c2bb', fontSize:15, cursor:'pointer'}}>×</button>
                 </div>)}
               </div>
             </div>
@@ -96,9 +96,9 @@ export default function NewCampaign({ audiences = [] }) {
               <button className="btn">Save draft</button>
             </div>
           </form>
-          <div style={{background:'#f5f5f7', display:'flex', flexDirection:'column', minHeight:0}}>
+          <div style={{background:'#f2f2ee', display:'flex', flexDirection:'column', minHeight:0}}>
             <div style={{padding:'10px 16px', fontSize:11, fontWeight:650, letterSpacing:'.06em',
-              textTransform:'uppercase', color:'#86868b'}}>Live preview — what lands in the inbox</div>
+              textTransform:'uppercase', color:'#73736c'}}>Live preview — what lands in the inbox</div>
             <iframe srcDoc={html} title="preview" style={{flex:1, border:0, width:'100%', background:'#fff'}}/>
           </div>
         </div>

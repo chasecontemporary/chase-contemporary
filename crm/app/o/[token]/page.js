@@ -85,7 +85,7 @@ export default async function Offer({ params }) {
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em',
               textTransform: 'uppercase' }}>{a.artist}</div>
             <div style={{ fontSize: 13, fontStyle: 'italic', marginTop: 3 }}>{a.title}</div>
-            <div style={{ fontSize: 11.5, letterSpacing: '.02em', color: '#3a3a3c', marginTop: 3 }}>
+            <div style={{ fontSize: 11.5, letterSpacing: '.02em', color: '#3a3a35', marginTop: 3 }}>
               {[a.medium, dims(a), a.edition].filter(Boolean).join(' · ')}</div>
           </div>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.04em', whiteSpace: 'nowrap',
@@ -95,9 +95,9 @@ export default async function Offer({ params }) {
       </div>;
     })}
 
-    <div style={{ textAlign: 'center', borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
+    <div style={{ textAlign: 'center', borderTop: '1px solid #e3e3dd', paddingTop: 36 }}>
       <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.2em' }}>CHASE&nbsp;CONTEMPORARY</div>
-      <div style={{ fontSize: 11, letterSpacing: '.04em', color: '#3a3a3c', marginTop: 10, lineHeight: 1.8 }}>
+      <div style={{ fontSize: 11, letterSpacing: '.04em', color: '#3a3a35', marginTop: 10, lineHeight: 1.8 }}>
         This selection was prepared personally for you{first ? `, ${first}` : ''}.<br/>
         info@chasecontemporary.com</div>
     </div>

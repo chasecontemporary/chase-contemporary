@@ -33,17 +33,17 @@ export default function AudienceBuilder({ artists = [] }) {
       <BrandSelect options={SEGS} value={seg} onValue={setSeg}/>
       <BrandSelect options={[['', 'Any artist interest'], ...artists.map(a => [a, a])]} value={artist} onValue={setArtist}/>
       <BrandSelect options={MINS} value={min} onValue={setMin}/>
-      <label style={{display:'flex', gap:6, alignItems:'center', fontSize:12.5, color:'#3a3a3c'}}>
+      <label style={{display:'flex', gap:6, alignItems:'center', fontSize:12.5, color:'#3a3a35'}}>
         <input type="checkbox" checked={consented} onChange={(e) => setConsented(e.target.checked)}/> Newsletter-consented only
       </label>
     </div>
     <div style={{display:'flex', gap:10, alignItems:'center', marginTop:14, flexWrap:'wrap'}}>
       <div style={{fontSize:13.5}}>
-        Reaches <b style={{fontVariantNumeric:'tabular-nums', color:'#0071e3'}}>{count === null ? '…' : count.toLocaleString()}</b> collectors right now
+        Reaches <b style={{fontVariantNumeric:'tabular-nums', color:'#2257c5'}}>{count === null ? '…' : count.toLocaleString()}</b> collectors right now
       </div>
       <div style={{marginLeft:'auto', display:'flex', gap:8, alignItems:'center'}}>
         <input name="name" placeholder="Name this audience…" required
-          style={{border:'1px solid #e8e8ed', borderRadius:10, height:36, fontFamily:'inherit', fontSize:13, padding:'0 12px', width:220}}/>
+          style={{border:'1px solid #e3e3dd', borderRadius:2, height:36, fontFamily:'inherit', fontSize:13, padding:'0 12px', width:220}}/>
         <button className="btn mini">Save audience</button>
       </div>
     </div>

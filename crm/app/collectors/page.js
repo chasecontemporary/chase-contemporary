@@ -63,7 +63,7 @@ export default async function Collectors({ searchParams }) {
     <div className="card" style={{marginTop:20, padding:'14px 16px'}}>
       <div style={{display:'flex', gap:7, alignItems:'center', flexWrap:'wrap'}}>
         {segs.map(([k, label]) => <a key={k} href={href({ seg: k })} className="pill"
-          style={seg === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#f5f5f7'}}>{label}</a>)}
+          style={seg === k ? {background:'#1a1a18', color:'#fff'} : {background:'#f2f2ee'}}>{label}</a>)}
       </div>
       <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginTop:12}}>
         <form style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
@@ -73,7 +73,7 @@ export default async function Collectors({ searchParams }) {
           <Sel name="min" defaultValue={min} options={MINS}/>
           <input className="search" style={{marginTop:0, width:240}} name="q" defaultValue={q} placeholder="Search name, email, city, company"/>
           <button className="btn mini">Apply</button>
-          {filtered && <a href="/collectors" style={{fontSize:12.5, color:'#86868b'}}>Clear</a>}
+          {filtered && <a href="/collectors" style={{fontSize:12.5, color:'#73736c'}}>Clear</a>}
         </form>
         <form method="POST" action="/api/act" style={{marginLeft:'auto', display:'flex', gap:6, alignItems:'center'}}>
           <input type="hidden" name="action" value="audience_add"/>
@@ -83,14 +83,14 @@ export default async function Collectors({ searchParams }) {
           <input type="hidden" name="min_spend" value={min}/>
           <input type="hidden" name="consented" value="true"/>
           <input name="name" placeholder="Save view as audience…" required
-            style={{border:'1px solid #e8e8ed', borderRadius:10, height:36, fontFamily:'inherit', fontSize:12.5, padding:'0 12px', width:190}}/>
+            style={{border:'1px solid #e3e3dd', borderRadius:2, height:36, fontFamily:'inherit', fontSize:12.5, padding:'0 12px', width:190}}/>
           <button className="btn mini">Save segment</button>
         </form>
       </div>
     </div>
 
     <div className="tblcard" style={{marginTop:14}}>
-      <div style={{padding:'10px 18px', fontSize:12, color:'#86868b', borderBottom:'1px solid #f0f0f2'}}>
+      <div style={{padding:'10px 18px', fontSize:12, color:'#73736c', borderBottom:'1px solid #eeeee9'}}>
         {rows.length} shown{filtered ? ' · filtered' : ' · top of the book'} · the save box turns this exact view into an email audience</div>
       {rows.map(c => {
         const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email;
@@ -102,31 +102,31 @@ export default async function Collectors({ searchParams }) {
         const lastAct = [c.last_buy, c.last_inq].filter(Boolean).sort().pop();
         return <a key={c.id} href={'/collectors/' + c.id} style={{display:'grid',
           gridTemplateColumns:'44px minmax(220px,1.4fr) minmax(180px,1fr) 150px', gap:16, alignItems:'center',
-          padding:'13px 18px', borderBottom:'1px solid #f5f5f7', textDecoration:'none', color:'inherit'}}>
-          <div style={{width:40, height:40, borderRadius:'50%', background:'#f0f0f2', display:'flex',
-            alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#6e6e73'}}>{initials(c)}</div>
+          padding:'13px 18px', borderBottom:'1px solid #f2f2ee', textDecoration:'none', color:'inherit'}}>
+          <div style={{width:40, height:40, borderRadius:'50%', background:'#eeeee9', display:'flex',
+            alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#73736c'}}>{initials(c)}</div>
           <div>
             <div style={{display:'flex', gap:6, alignItems:'center', flexWrap:'wrap'}}>
               <span style={{fontWeight:650, fontSize:14}}>{name}</span>
-              {vip && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1d1d1f', color:'#fff'}}>VIP</span>}
+              {vip && <span className="pill" style={{fontSize:10, fontWeight:700, background:'#1a1a18', color:'#fff'}}>VIP</span>}
               {c.trade && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>TRADE</span>}
               {c.open_inq > 0 && <span className="pill blue" style={{fontSize:10, fontWeight:700}}>{c.open_inq} OPEN</span>}
             </div>
-            <div style={{fontSize:12, color:'#86868b', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+            <div style={{fontSize:12, color:'#73736c', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
               {[[c.city, c.state].filter(Boolean).join(', '), c.company, synthetic ? null : c.email].filter(Boolean).join(' · ') || '—'}
             </div>
           </div>
           <div>
             <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
-              {ints.map(i => <span key={i} className="pill" style={{fontSize:10.5, background:'#f5f5f7'}}>{i}</span>)}
-              {!ints.length && <span style={{fontSize:12, color:'#c7c7cc'}}>no signals yet</span>}
+              {ints.map(i => <span key={i} className="pill" style={{fontSize:10.5, background:'#f2f2ee'}}>{i}</span>)}
+              {!ints.length && <span style={{fontSize:12, color:'#c2c2bb'}}>no signals yet</span>}
             </div>
-            {lastAct && <div style={{fontSize:11.5, color:'#86868b', marginTop:4}}>active {ago(lastAct)}</div>}
+            {lastAct && <div style={{fontSize:11.5, color:'#73736c', marginTop:4}}>active {ago(lastAct)}</div>}
           </div>
           <div style={{textAlign:'right'}}>
             <div style={{fontSize:15, fontWeight:700, fontVariantNumeric:'tabular-nums'}}>
               {c.spend_cents > 0 ? usd(c.spend_cents) : '—'}</div>
-            <div style={{fontSize:11.5, color:'#86868b', marginTop:2}}>
+            <div style={{fontSize:11.5, color:'#73736c', marginTop:2}}>
               {c.works > 0 ? `${c.works} work${c.works > 1 ? 's' : ''}${c.last_buy ? ' · last ' + ago(c.last_buy) : ''}` : 'no purchases'}</div>
           </div>
         </a>; })}

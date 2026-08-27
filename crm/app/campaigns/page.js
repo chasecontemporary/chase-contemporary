@@ -23,8 +23,8 @@ export default async function Campaigns() {
     <div className="h1">Email</div>
     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:4}}>
       {[['/audiences','Audiences'],['/campaigns','Campaigns']].map(([href, label]) => <a key={href} href={href}
-        className="pill" style={ACTIVE === href ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
-      <span style={{fontSize:12, color:'#86868b'}}>Audiences decide who · Campaigns decide what · Klaviyo delivers</span>
+        className="pill" style={ACTIVE === href ? {background:'#1a1a18', color:'#fff'} : {background:'#fff', border:'1px solid #e3e3dd'}}>{label}</a>)}
+      <span style={{fontSize:12, color:'#73736c'}}>Audiences decide who · Campaigns decide what · Klaviyo delivers</span>
     </div>
     <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8}}>
       <div className="h1" style={{fontSize:18}}>Campaigns</div>
@@ -38,19 +38,19 @@ export default async function Campaigns() {
         <div style={{display:'flex', gap:6, marginBottom:10}}>
           {(x.artwork_ids || []).slice(0, 3).map(aid => thumbOf[aid]
             ? <img key={aid} src={thumbOf[aid] + (thumbOf[aid].includes('?') ? '&' : '?') + 'width=200'} alt=""
-                style={{width:'33%', aspectRatio:'1', objectFit:'cover', borderRadius:8, background:'#fafafa'}}/>
-            : <span key={aid} style={{width:'33%', aspectRatio:'1', borderRadius:8, background:'#f0f0f2'}}/>)}
-          {!(x.artwork_ids || []).length && <span style={{width:'100%', aspectRatio:'3', borderRadius:8, background:'#fafafa',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, letterSpacing:'.08em', color:'#c7c7cc'}}>NEWSLETTER</span>}
+                style={{width:'33%', aspectRatio:'1', objectFit:'cover', borderRadius:2, background:'#fafaf7'}}/>
+            : <span key={aid} style={{width:'33%', aspectRatio:'1', borderRadius:2, background:'#eeeee9'}}/>)}
+          {!(x.artwork_ids || []).length && <span style={{width:'100%', aspectRatio:'3', borderRadius:2, background:'#fafaf7',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, letterSpacing:'.08em', color:'#c2c2bb'}}>NEWSLETTER</span>}
         </div>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
           <span style={{fontWeight:650, fontSize:14, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{x.name}</span>
           {x.klaviyo_campaign_id ? <span className="pill green" style={{fontSize:9.5, fontWeight:700}}>IN KLAVIYO</span>
-            : x.status === 'approved' ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:9.5, fontWeight:700}}>APPROVED</span>
+            : x.status === 'approved' ? <span className="pill" style={{background:'#e4f7e9', color:'#2e6b3f', fontSize:9.5, fontWeight:700}}>APPROVED</span>
             : <span className="pill blue" style={{fontSize:9.5, fontWeight:700}}>DRAFT</span>}
         </div>
-        <div style={{fontSize:12, color:'#86868b', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{x.subject}</div>
-        <div style={{fontSize:11.5, color:'#86868b', marginTop:6}}>
+        <div style={{fontSize:12, color:'#73736c', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{x.subject}</div>
+        <div style={{fontSize:11.5, color:'#73736c', marginTop:6}}>
           {KIND[x.kind] || x.kind} · {x.audiences?.name || 'no audience'} · {(x.artwork_ids || []).length || 'no'} works</div>
       </a>)}
       {!(camps || []).length && <div className="empty" style={{gridColumn:'1/-1'}}>No campaigns yet — draft the first drop below.</div>}

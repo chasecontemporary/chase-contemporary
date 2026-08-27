@@ -28,8 +28,8 @@ export default function OfferComposer({ collectorId, collectorName, defaultWork,
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [open]);
   const label = { fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase',
-    color:'#86868b', display:'block', marginBottom:6 };
-  const input = { background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, height:36,
+    color:'#73736c', display:'block', marginBottom:6 };
+  const input = { background:'#fff', border:'1px solid #e3e3dd', borderRadius:2, height:36,
     fontFamily:'inherit', fontSize:13.5, padding:'0 11px', width:'100%', outline:'none' };
   const num = (x) => Number(String(x || '0').replace(/[$,\s]/g, '')) || 0;
 
@@ -56,20 +56,20 @@ export default function OfferComposer({ collectorId, collectorName, defaultWork,
     {open && <div onClick={() => setOpen(false)} style={{position:'fixed', inset:0, zIndex:80,
       background:'rgba(0,0,0,.42)', backdropFilter:'blur(6px)', display:'flex',
       alignItems:'center', justifyContent:'center', padding:24}}>
-      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:16,
+      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:2,
         width:'min(620px, 96vw)', maxHeight:'92vh', overflowY:'auto',
         boxShadow:'0 24px 80px rgba(0,0,0,.3)'}}>
-        <div style={{padding:'16px 20px', borderBottom:'1px solid #f0f0f2', display:'flex',
+        <div style={{padding:'16px 20px', borderBottom:'1px solid #eeeee9', display:'flex',
           alignItems:'center', justifyContent:'space-between'}}>
           <div style={{fontSize:15, fontWeight:700}}>Private selection for {collectorName || 'this collector'}</div>
           <button onClick={() => setOpen(false)} className="btn mini quiet">Close</button>
         </div>
         {link
           ? <div style={{padding:'22px 20px'}}>
-              <div style={{fontSize:13.5, color:'#1d7a3d', fontWeight:650}}>Link copied — paste it into a text or email.</div>
-              <div style={{fontSize:12.5, color:'#0071e3', wordBreak:'break-all', marginTop:8}}>
+              <div style={{fontSize:13.5, color:'#2e6b3f', fontWeight:650}}>Link copied — paste it into a text or email.</div>
+              <div style={{fontSize:12.5, color:'#2257c5', wordBreak:'break-all', marginTop:8}}>
                 <a href={link} target="_blank">{link}</a></div>
-              <div style={{fontSize:12, color:'#86868b', marginTop:12, lineHeight:1.6}}>
+              <div style={{fontSize:12, color:'#73736c', marginTop:12, lineHeight:1.6}}>
                 You&apos;ll see when they open it on Today and on their collector card.
                 If they tap &ldquo;I&apos;m interested&rdquo; on a work, it lands in the Pipeline
                 assigned to you.</div>
@@ -83,12 +83,12 @@ export default function OfferComposer({ collectorId, collectorName, defaultWork,
               <div style={{display:'flex', flexDirection:'column', gap:8}}>
                 {works.map(w => <div key={w.id} style={{display:'grid',
                   gridTemplateColumns:'34px 1fr 150px 28px', gap:10, alignItems:'center'}}>
-                  {w.img ? <img src={w.img} alt="" style={{width:34, height:34, objectFit:'cover', borderRadius:6}}/>
-                    : <span style={{width:34, height:34, borderRadius:6, background:'#f0f0f2'}}/>}
+                  {w.img ? <img src={w.img} alt="" style={{width:34, height:34, objectFit:'cover', borderRadius:2}}/>
+                    : <span style={{width:34, height:34, borderRadius:2, background:'#eeeee9'}}/>}
                   <div style={{minWidth:0}}>
                     <div style={{fontSize:13, fontWeight:650, overflow:'hidden', textOverflow:'ellipsis',
                       whiteSpace:'nowrap'}}>{w.title}</div>
-                    <div style={{fontSize:11.5, color:'#86868b'}}>{w.artist}
+                    <div style={{fontSize:11.5, color:'#73736c'}}>{w.artist}
                       {w.list > 0 ? ` · shows ${usd(w.list / 100)}` : ' · shows Price on request'}</div>
                   </div>
                   <label className="money" style={{width:'100%'}}><span>$</span>
@@ -96,13 +96,13 @@ export default function OfferComposer({ collectorId, collectorName, defaultWork,
                       onChange={(e) => setWorks(ws => ws.map(x => x.id === w.id ? { ...x, price: e.target.value } : x))}
                       style={{width:'100%'}}/></label>
                   <button type="button" onClick={() => setWorks(ws => ws.filter(x => x.id !== w.id))}
-                    style={{background:'none', border:0, color:'#c7c7cc', fontSize:16, cursor:'pointer'}}>×</button>
+                    style={{background:'none', border:0, color:'#c2c2bb', fontSize:16, cursor:'pointer'}}>×</button>
                 </div>)}
                 {works.length < 10 && <WorkPicker onPick={(h) => { if (h && !works.find(w => w.id === h.id))
                   setWorks(ws => [...ws, { id: h.id, title: h.title, artist: h.artist, img: h.img,
                     list: Number(h.cents || 0), price: '' }]); }}/>}
               </div>
-              <div style={{fontSize:12, color:'#86868b', marginTop:8}}>
+              <div style={{fontSize:12, color:'#73736c', marginTop:8}}>
                 Each work shows its list price. Type a special price to show that instead — leave blank to keep the list price.</div>
             </div>
             <div>

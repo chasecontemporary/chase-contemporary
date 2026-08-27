@@ -25,8 +25,8 @@ export default function NewInvoice() {
   const num = (x) => Number(String(x || '0').replace(/[$,\s]/g, '')) || 0;
   const total = lines.reduce((s, l) => s + num(l.amount), 0);
   const label = { fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase',
-    color:'#86868b', display:'block', marginBottom:6 };
-  const input = { background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, height:36,
+    color:'#73736c', display:'block', marginBottom:6 };
+  const input = { background:'#fff', border:'1px solid #e3e3dd', borderRadius:2, height:36,
     fontFamily:'inherit', fontSize:13.5, padding:'0 11px', width:'100%' };
   const KINDN = { work: 'Work', service: 'Service', shipping: 'Shipping', tax: 'Sales tax' };
   return <>
@@ -34,10 +34,10 @@ export default function NewInvoice() {
     {open && <div onClick={() => setOpen(false)} style={{position:'fixed', inset:0, zIndex:80,
       background:'rgba(0,0,0,.42)', backdropFilter:'blur(6px)', display:'flex',
       alignItems:'center', justifyContent:'center', padding:24}}>
-      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:16,
+      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:2,
         width:'min(640px, 96vw)', maxHeight:'92vh', overflowY:'auto',
         boxShadow:'0 24px 80px rgba(0,0,0,.3)'}}>
-        <div style={{padding:'16px 20px', borderBottom:'1px solid #f0f0f2', display:'flex',
+        <div style={{padding:'16px 20px', borderBottom:'1px solid #eeeee9', display:'flex',
           alignItems:'center', justifyContent:'space-between'}}>
           <div style={{fontSize:15, fontWeight:700}}>New invoice</div>
           <button onClick={() => setOpen(false)} className="btn mini quiet">Close</button>
@@ -56,7 +56,7 @@ export default function NewInvoice() {
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
               {lines.map(l => <div key={l.key} style={{display:'grid',
                 gridTemplateColumns:'84px 1fr 130px 28px', gap:8, alignItems:'center'}}>
-                <span className="pill" style={{background:'#f0f0f2', fontWeight:700, fontSize:10.5,
+                <span className="pill" style={{background:'#eeeee9', fontWeight:700, fontSize:10.5,
                   justifyContent:'center', display:'inline-flex', height:24, alignItems:'center'}}>{KINDN[l.kind]}</span>
                 {l.kind === 'work'
                   ? <WorkPicker onPick={(h) => patch(l.key, h
@@ -65,12 +65,12 @@ export default function NewInvoice() {
                   : l.kind === 'service'
                   ? <input style={input} placeholder="Description (framing, installation…)"
                       onChange={(e) => patch(l.key, { title: e.target.value })}/>
-                  : <span style={{fontSize:12.5, color:'#86868b'}}>{l.kind === 'shipping' ? 'Shipping & handling' : 'Sales tax'}</span>}
+                  : <span style={{fontSize:12.5, color:'#73736c'}}>{l.kind === 'shipping' ? 'Shipping & handling' : 'Sales tax'}</span>}
                 <label className="money" style={{width:'100%'}}><span>$</span>
                   <input inputMode="numeric" placeholder="0" value={l.amount || ''}
                     onChange={(e) => patch(l.key, { amount: e.target.value })} style={{width:'100%'}}/></label>
                 <button type="button" onClick={() => remove(l.key)} title="Remove line"
-                  style={{background:'none', border:0, color:'#c7c7cc', fontSize:16, cursor:'pointer'}}>×</button>
+                  style={{background:'none', border:0, color:'#c2c2bb', fontSize:16, cursor:'pointer'}}>×</button>
               </div>)}
             </div>
             <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
@@ -85,7 +85,7 @@ export default function NewInvoice() {
               <div style={{fontSize:20, fontWeight:700, fontVariantNumeric:'tabular-nums'}}>{usd(total)}</div>
             </div>
           </div>
-          {lines.some(l => l.kind === 'work' && l.artwork_id) && <div style={{fontSize:12, color:'#86868b'}}>
+          {lines.some(l => l.kind === 'work' && l.artwork_id) && <div style={{fontSize:12, color:'#73736c'}}>
             Paying this invoice in full marks the selected work{lines.filter(l => l.kind === 'work' && l.artwork_id).length > 1 ? 's' : ''} sold and books them to the collector automatically.</div>}
           <div style={{display:'flex', justifyContent:'flex-end'}}>
             <button className="btn">Create invoice · {usd(total)}</button>

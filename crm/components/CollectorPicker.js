@@ -32,15 +32,15 @@ export default function CollectorPicker({ name = 'collector_id', placeholder = '
       onClick={() => { if (picked) { setPicked(null); setQ(''); load(''); } }}
       placeholder={placeholder} required={required && !picked} style={pickerInput}/>
     <svg width="10" height="6" viewBox="0 0 10 6" style={pickerChevron}>
-      <path d="M1 1l4 4 4-4" fill="none" stroke="#6e6e73" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <path d="M1 1l4 4 4-4" fill="none" stroke="#73736c" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
     {open && !picked && hits.length > 0 && <span style={pickerMenu}>
       {hits.map(h => <button key={h.id} type="button" onClick={() => { setPicked(h); setOpen(false); }}
         style={{display:'block', width:'100%', textAlign:'left', padding:'9px 12px', background:'#fff',
-          border:0, borderBottom:'1px solid #f5f5f7', cursor:'pointer', fontFamily:'inherit'}}>
+          border:0, borderBottom:'1px solid #f2f2ee', cursor:'pointer', fontFamily:'inherit'}}>
         <span style={{fontSize:13, fontWeight:600}}>{h.name}</span>
-        {h.spend > 0 && <span style={{fontSize:11, color:'#1d7a3d', fontWeight:700, marginLeft:8}}>
+        {h.spend > 0 && <span style={{fontSize:11, color:'#2e6b3f', fontWeight:700, marginLeft:8}}>
           ${Math.round(h.spend / 100).toLocaleString()} LTV</span>}
-        <span style={{display:'block', fontSize:11.5, color:'#86868b'}}>{h.sub}</span>
+        <span style={{display:'block', fontSize:11.5, color:'#73736c'}}>{h.sub}</span>
       </button>)}
     </span>}
   </span>;
