@@ -122,15 +122,24 @@ export default async function Inventory({ searchParams }) {
             {a.location || (a.shopify_product_id ? 'Site' : '')}{a.dims_h_in ? ` · ${a.dims_h_in} × ${a.dims_w_in} in` : ''}
           </div>
           {(() => {
+            const chip = {fontSize:10, fontWeight:700, letterSpacing:'.02em', padding:'3px 7px',
+              borderRadius:6, display:'inline-block', whiteSpace:'nowrap'};
             const st = statMap[a.artist];
             const mo = a.acquired_at ? Math.floor((Date.now() - new Date(a.acquired_at)) / 2629800000) : null;
             const bits = [];
-            if (st && st.sold > 0) bits.push(<span key="st">{st.sell_through}% sell-through · {st.sold} sold</span>);
-            if (a.available && mo !== null && mo >= 1) bits.push(
-              <span key="mo" style={mo > 12 ? {color:'#ff9500', fontWeight:600} : {}}>{mo} mo on hand</span>);
-            if (a.available && !a.shopify_product_id) bits.push(<span key="ns">not on site</span>);
-            return bits.length ? <div style={{fontSize:10.5, color:'#86868b', marginTop:4, display:'flex',
-              gap:0, flexWrap:'wrap'}}>{bits.map((b, i) => <span key={i}>{i > 0 && <span style={{margin:'0 5px'}}>·</span>}{b}</span>)}</div> : null;
+            if (st && st.sold > 0) {
+              const pct = Number(st.sell_through);
+              const tone = pct >= 70 ? {background:'#e4f7e9', color:'#1d7a3d'}
+                : pct >= 40 ? {background:'#f0f0f2', color:'#3a3a3c'}
+                : {background:'#ffefdc', color:'#b25a00'};
+              bits.push(<span key="st" style={{...chip, ...tone}}>{pct}% SELLS · {st.sold} SOLD</span>);
+            }
+            if (a.available && mo !== null && mo >= 1) bits.push(<span key="mo"
+              style={{...chip, ...(mo > 12 ? {background:'#ffefdc', color:'#b25a00'} : {background:'#f0f0f2', color:'#6e6e73'})}}>
+              {mo} MO ON HAND</span>);
+            if (a.available && !a.shopify_product_id) bits.push(<span key="ns"
+              style={{...chip, background:'#fff', border:'1px solid #e8e8ed', color:'#86868b'}}>NOT ON SITE</span>);
+            return bits.length ? <div style={{marginTop:6, display:'flex', gap:5, flexWrap:'wrap'}}>{bits}</div> : null;
           })()}
         </div>
       </a>)}
