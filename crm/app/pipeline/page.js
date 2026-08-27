@@ -74,7 +74,7 @@ export default async function Pipeline() {
     competition: competition[r.id] || { others: 0, committed: null } }));
   const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
   return <Shell active="pipeline">
-    <div className="h1">Pipeline</div>
+    <div className="h1">Sales pipeline</div>
     <div className="sub">{leads.length} open · drag between stages · click a lead for the full picture</div>
     <Kanban initial={leads} team={(team || []).map(t => t.name)} />
   </Shell>;

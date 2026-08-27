@@ -17,6 +17,35 @@ export default function SaleWizard({ lead, onClose }) {
   const [tax, setTax] = useState('');
   const [shipping, setShipping] = useState('');
   const [dlink, setDlink] = useState(null);
+  const [selLink, setSelLink] = useState(null);
+  const [docBusy, setDocBusy] = useState(null);
+  // branded paper on demand: generates the PDF and opens it in a new tab
+  const paper = async (workId, kind) => {
+    setDocBusy(workId + kind);
+    const fd = new FormData();
+    fd.set('action', 'artwork_collateral'); fd.set('id', workId);
+    fd.set('kind', kind); fd.set('back', 'json');
+    const r = await fetch('/api/act', { method: 'POST', body: fd }).then(x => x.json()).catch(() => null);
+    setDocBusy(null);
+    if (r?.url) window.open(r.url, '_blank');
+  };
+  // the same deal ticket, as a tracked private-selection page instead of an invoice
+  const asSelection = async () => {
+    setDocBusy('selection');
+    const fd = new FormData();
+    fd.set('action', 'offer_create'); fd.set('id', lead.collector_id);
+    fd.set('inquiry_id', lead.id);
+    fd.set('title', lead.collectors?.first_name ? `A selection for ${lead.collectors.first_name}` : 'A private selection');
+    fd.set('expires_days', '14');
+    fd.set('items', JSON.stringify(works.map(w => ({ id: w.id,
+      price_cents: num(w.amount) > 0 && num(w.amount) * 100 !== w.anchor ? num(w.amount) * 100 : null }))));
+    const r = await fetch('/api/act', { method: 'POST', body: fd }).then(x => x.json()).catch(() => null);
+    setDocBusy(null);
+    if (r?.url) {
+      try { await navigator.clipboard.writeText(r.url); } catch {}
+      setSelLink(r.url);
+    }
+  };
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
@@ -84,6 +113,19 @@ export default function SaleWizard({ lead, onClose }) {
               setWorks(ws => [...ws, { id: h.id, title: h.title, artist: h.artist, img: h.img,
                 anchor: h.cents, est: h.est, amount: h.cents > 0 ? String(h.cents / 100) : '' }]); }}/>
           </div>
+          {works.length > 0 && <div style={{borderTop:'1px solid #eeeee9', paddingTop:12}}>
+            {selLink
+              ? <div style={{fontSize:12.5}}>
+                  <span style={{color:'#2e6b3f', fontWeight:650}}>Selection link copied</span>
+                  <span style={{color:'#73736c'}}> — text or email it. Opens and interest land on their card; your special prices show on the page.</span>
+                  <div style={{color:'#2257c5', wordBreak:'break-all', marginTop:3}}>{selLink}</div>
+                </div>
+              : <div style={{display:'flex', alignItems:'center', gap:10, flexWrap:'wrap'}}>
+                  <button className="btn mini quiet" disabled={docBusy === 'selection'} onClick={asSelection}>
+                    {docBusy === 'selection' ? 'Making the page…' : 'Not ready to invoice? Send these as a private selection'}</button>
+                  <span style={{fontSize:11.5, color:'#73736c'}}>Same works and prices, as a tracked page they browse first</span>
+                </div>}
+          </div>}
         </div>}
 
         {step === 2 && <div>
@@ -108,11 +150,19 @@ export default function SaleWizard({ lead, onClose }) {
         </div>}
 
         {step === 3 && <div>
-          {works.map(w => <div key={w.id} style={{display:'flex', justifyContent:'space-between', padding:'6px 0',
+          {works.map(w => <div key={w.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0',
             borderBottom:'1px solid #f2f2ee', fontSize:13}}>
-            <span>{w.title} <span style={{color:'#73736c'}}>· {w.artist}</span></span>
-            <span style={{fontVariantNumeric:'tabular-nums', fontWeight:650}}>{usd(num(w.amount))}</span>
+            <span style={{flex:1, minWidth:0}}>
+              <span style={{fontSize:10.5, fontWeight:600, letterSpacing:'.06em', textTransform:'uppercase'}}>{w.artist}</span>
+              <span style={{fontStyle:'italic'}}> · {w.title}</span></span>
+            <button className="btn mini quiet" disabled={docBusy === w.id + 'tearsheet'}
+              onClick={() => paper(w.id, 'tearsheet')}>{docBusy === w.id + 'tearsheet' ? '…' : 'Tear sheet'}</button>
+            <button className="btn mini quiet" disabled={docBusy === w.id + 'coa'}
+              onClick={() => paper(w.id, 'coa')}>{docBusy === w.id + 'coa' ? '…' : 'COA'}</button>
+            <span style={{fontVariantNumeric:'tabular-nums', fontWeight:650, width:90, textAlign:'right'}}>{usd(num(w.amount))}</span>
           </div>)}
+          <div style={{fontSize:11.5, color:'#73736c', marginTop:8}}>
+            Tear sheet and certificate open as branded PDFs, ready to send. The invoice PDF is created with the invoice — you&apos;ll find every document together on the invoice in Finance.</div>
           <div style={{display:'flex', gap:10, marginTop:12}}>
             <div><span style={label}>Sales tax</span>
               <label className="money"><span>$</span><input inputMode="numeric" placeholder="0" value={tax}

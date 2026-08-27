@@ -1,7 +1,7 @@
 import RepPicker from './RepPicker';
 export default function Shell({ active, children, counts = {} }) {
   const emailOpen = ['audiences', 'campaigns'].includes(active);
-  const items = [['today','Today'],['pipeline','Pipeline'],['collectors','Collectors'],
+  const items = [['today','Today'],['pipeline','Sales pipeline'],['collectors','Collectors'],
                  ['inventory','Inventory'],['artists','Artists'],['finance','Finance'],['commissions','Commissions'],
                  ['EMAIL_GROUP'],['team','Team']];
   return <div className="shell">

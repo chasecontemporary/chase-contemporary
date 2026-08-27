@@ -79,6 +79,8 @@ export async function POST(req) {
       await db.from('artworks').update(kind === 'coa' ? { coa_url: blob.url } : { tearsheet_url: blob.url }).eq('id', id);
       await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
         kind: kind + '_generated', body: blob.url, actor: rep });
+      if (form.get('back') === 'json')
+        return new Response(JSON.stringify({ ok: true, url: blob.url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
   } else if (action === 'artwork_update') {
     const patch = {};
