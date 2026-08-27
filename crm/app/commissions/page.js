@@ -116,8 +116,8 @@ export default async function Commissions() {
                     <span style={{color:'#86868b', width:78}}>{new Date(r.created_at).toLocaleDateString()}</span>
                     <span style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
                       {i ? <>№{String(i.invoice_number).padStart(4,'0')} · {i.collectors ? [i.collectors.first_name, i.collectors.last_name].filter(Boolean).join(' ') : ''} <span style={{color:'#86868b'}}>· {i.title}</span></> : 'Payment'}</span>
-                    <span style={{color:'#86868b'}}>{r.pct}%</span>
-                    <span style={{fontWeight:700, fontVariantNumeric:'tabular-nums', color:'#1d7a3d'}}>+{usd(r.amount_cents)}</span>
+                    <span style={{color:'#86868b'}}>{Number(r.pct) > 0 ? r.pct + '%' : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:9.5, fontWeight:700}}>RATE PENDING</span>}</span>
+                    <span style={{fontWeight:700, fontVariantNumeric:'tabular-nums', color: Number(r.amount_cents) > 0 ? '#1d7a3d' : '#c7c7cc'}}>+{usd(r.amount_cents)}</span>
                   </div>; })}
               </div>; })}
             {!p.rows.length && <div style={{fontSize:12.5, color:'#86868b', marginTop:10}}>
@@ -144,6 +144,13 @@ export default async function Commissions() {
       </form>
       <div style={{fontSize:12, color:'#86868b', marginTop:8}}>
         The name must match how the salesperson appears on leads and sales — that is how their collections find them.</div>
+      <form method="POST" action="/api/act" style={{marginTop:12}}>
+        <input type="hidden" name="action" value="commissions_recompute"/>
+        <input type="hidden" name="back" value="/commissions"/>
+        <button className="btn mini quiet">Apply current rates to everything not yet paid out</button>
+      </form>
+      <div style={{fontSize:12, color:'#86868b', marginTop:6}}>
+        Use this once the real percentages are set — every unpaid month re-computes at the new rates. Paid-out months never change.</div>
     </details>
   </Shell>;
 }

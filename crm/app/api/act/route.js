@@ -160,6 +160,21 @@ export async function POST(req) {
   } else if (action === 'status') {
     await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: rep });
+  } else if (action === 'commissions_recompute') {
+    // apply current rates to everything not yet paid out — for when the real percentages land
+    const { data: rls } = await db.from('commission_rules').select('*').eq('active', true);
+    for (const r of (rls || [])) {
+      const { data: rowsToFix } = await db.from('commissions').select('id, payment_id')
+        .eq('person', r.person).is('paid_at', null);
+      for (const row of (rowsToFix || [])) {
+        const { data: pay } = await db.from('payments').select('amount_cents').eq('id', row.payment_id).single();
+        if (pay) await db.from('commissions').update({ pct: r.pct,
+          amount_cents: Math.round(pay.amount_cents * Number(r.pct) / 100) }).eq('id', row.id);
+      }
+    }
+    await db.from('activities').insert({ entity_type: 'commission',
+      entity_id: '00000000-0000-0000-0000-000000000000',
+      kind: 'commissions_recomputed', body: 'unpaid rows re-rated', actor: rep });
   } else if (action === 'payout_complete') {
     await db.from('commissions').update({ paid_at: new Date().toISOString() })
       .eq('person', form.get('person')).eq('period', form.get('period')).is('paid_at', null);
