@@ -27,6 +27,20 @@ export default async function Unit({ params, searchParams }) {
     db.from('holds').select('*').eq('artwork_id', a.id).eq('kind', 'approval').eq('status', 'active'),
   ]);
   const out = (appr || [])[0];
+  let compRows = [];
+  if (a.artist) {
+    const { data: cr } = await db.from('purchases')
+      .select('id, amount_cents, purchased_at, artcloud_key, source, collectors(id, first_name, last_name), artworks!inner(id, title, artist, dims_h_in, dims_w_in, medium)')
+      .eq('artworks.artist', a.artist).gt('amount_cents', 50000)
+      .not('artworks.dims_h_in', 'is', null).order('purchased_at', { ascending: false }).limit(400);
+    const withPpsi = (cr || []).filter(r => r.artworks?.dims_h_in > 0 && r.artworks?.dims_w_in > 0)
+      .map(r => ({ ...r, sqin: r.artworks.dims_h_in * r.artworks.dims_w_in,
+        ppsi: r.amount_cents / (r.artworks.dims_h_in * r.artworks.dims_w_in) }));
+    compRows = area
+      ? withPpsi.sort((x, y) => Math.abs(x.sqin - area) - Math.abs(y.sqin - area)).slice(0, 8)
+          .sort((x, y) => new Date(y.purchased_at) - new Date(x.purchased_at))
+      : withPpsi.slice(0, 8);
+  }
   const gaps = a.available && !a.shopify_product_id ? listingGaps(a) : [];
   const back = '/inventory/' + a.id;
   const priced = (a.price_cents || 0) > 0;
@@ -169,6 +183,42 @@ export default async function Unit({ params, searchParams }) {
         </details>}
       </div>
     </div>
+
+    {comps && <>
+    <div className="h1" style={{fontSize:18, marginTop:34}}>Valuation &amp; comparable sales</div>
+    <div className="sub">The gallery&apos;s own realized sales of {a.artist} — every figure cites its invoice, verifiable in the sales records</div>
+    <div className="stats" style={{marginTop:14}}>
+      <div className="stat"><div className="n" style={{fontSize:19}}>{area
+        ? usd(Number(comps.p25_ppsi_cents) * area) + ' – ' + usd(Number(comps.p75_ppsi_cents) * area)
+        : usd(comps.avg_sale_cents)}</div>
+        <div className="l">{area ? 'Comp range at this size (25th–75th pct)' : 'Average realized sale'}</div></div>
+      <div className="stat"><div className="n" style={{fontSize:19}}>${(Number(comps.median_ppsi_cents) / 100).toFixed(0)}/sq in</div>
+        <div className="l">Median realized · {comps.n_comps} sales</div></div>
+      <div className="stat"><div className="n" style={{fontSize:19}}>{comps.recent_ppsi_cents && comps.n_recent >= 3
+        ? (Number(comps.recent_ppsi_cents) >= Number(comps.median_ppsi_cents) ? '+' : '−') +
+          Math.abs(Math.round(100 * (Number(comps.recent_ppsi_cents) - Number(comps.median_ppsi_cents)) / Number(comps.median_ppsi_cents))) + '%'
+        : '—'}</div>
+        <div className="l">Last-3-years vs all-time $/sq in{comps.n_recent >= 3 ? ` · ${comps.n_recent} recent` : ''}</div></div>
+      <div className="stat"><div className="n" style={{fontSize:19}}>{usd(comps.total_revenue_cents)}</div>
+        <div className="l">Lifetime {a.artist} revenue · last sale {comps.last_sale ? new Date(comps.last_sale).toLocaleDateString() : '—'}</div></div>
+    </div>
+    <div className="tblcard"><table className="tbl"><thead><tr>
+      <th>Comparable work{area ? ' (nearest in size)' : ''}</th><th>Size</th><th>Sold</th><th>Price</th><th>$/sq in</th><th>Buyer</th><th>Source</th>
+    </tr></thead><tbody>
+      {compRows.map(r => {
+        const invNo = r.artcloud_key ? r.artcloud_key.split('|')[0] : null;
+        return <tr key={r.id}>
+        <td style={{fontWeight:600}}><a href={'/inventory/' + r.artworks.id}>{r.artworks.title}</a></td>
+        <td style={{color:'#86868b', fontSize:12.5}}>{r.artworks.dims_h_in} × {r.artworks.dims_w_in} in</td>
+        <td style={{fontSize:12.5}}>{new Date(r.purchased_at).toLocaleDateString()}</td>
+        <td style={{fontVariantNumeric:'tabular-nums', fontWeight:650}}>{usd(r.amount_cents)}</td>
+        <td style={{fontVariantNumeric:'tabular-nums'}}>${(r.ppsi / 100).toFixed(0)}</td>
+        <td style={{fontSize:12.5}}>{r.collectors ? <a href={'/collectors/' + r.collectors.id}>{[r.collectors.first_name, r.collectors.last_name].filter(Boolean).join(' ')}</a> : '—'}</td>
+        <td style={{fontSize:12}}><span className="pill" style={{fontSize:10, fontWeight:700}}>{invNo ? 'INV ' + invNo : 'ENGINE'}</span></td>
+      </tr>; })}
+      {!compRows.length && <tr><td colSpan={7} style={{color:'#86868b'}}>No sized comparable sales for this artist yet.</td></tr>}
+    </tbody></table></div>
+    </>}
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Interest history</div>
     <div className="sub">Every inquiry on this work — the demand signal</div>
