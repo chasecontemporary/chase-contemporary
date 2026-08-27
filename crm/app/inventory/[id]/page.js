@@ -24,7 +24,9 @@ export default async function Unit({ params }) {
         <div className="h1">{a.title}</div>
         <div className="sub">{a.artist}</div>
         <div className="stats" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
-          <div className="stat"><div className="n" style={{fontSize:22}}>{(a.price_cents||0) > 0 ? usd(a.price_cents) : 'POR'}</div><div className="l">List price</div></div>
+          <div className="stat"><div className="n" style={{fontSize:22}}>{(a.price_cents||0) > 0 ? usd(a.price_cents)
+            : a.internal_value_cents > 0 ? usd(a.internal_value_cents) : 'POR'}</div>
+            <div className="l">{(a.price_cents||0) > 0 ? 'List price' : a.internal_value_cents > 0 ? 'Internal estimate (POR)' : 'List price'}</div></div>
           <div className="stat"><div className="n" style={{fontSize:22}}>{(inqs||[]).length}</div><div className="l">Total inquiries</div></div>
           <div className="stat"><div className="n" style={{fontSize:17,paddingTop:5}}>{a.available ? 'Available' : 'Sold'}</div><div className="l">Status</div></div>
         </div>
@@ -34,9 +36,29 @@ export default async function Unit({ params }) {
             {a.dims_h_in && <><dt>Size</dt><dd>{a.dims_h_in} × {a.dims_w_in} in</dd></>}
             <dt>Type</dt><dd>{a.product_type || '—'}</dd>
             <dt>Location</dt><dd>{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : '—'))}</dd>
-            {a.handle && <><dt>On site</dt><dd><a style={{color:'#0071e3'}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">View product page ↗</a></dd></>}
+            {a.handle ? <><dt>On site</dt><dd><a style={{color:'#0071e3'}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">View product page ↗</a></dd></>
+              : a.available ? <><dt>On site</dt><dd>
+                <form method="POST" action="/api/act" style={{display:'inline'}}>
+                  <input type="hidden" name="action" value="artwork_push"/>
+                  <input type="hidden" name="id" value={a.id}/>
+                  <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+                  <button className="btn mini">Push to site (draft)</button>
+                </form>
+                <span style={{fontSize:11.5, color:'#86868b', marginLeft:8}}>Creates an unpublished Shopify product — invisible until published</span>
+              </dd></> : null}
           </dl>
         </div>
+        {!(a.price_cents > 0) && <div className="card" style={{marginTop:14}}>
+          <div style={{fontSize:13, fontWeight:650, marginBottom:4}}>Internal estimate</div>
+          <div style={{fontSize:12, color:'#86868b', marginBottom:8}}>What we hold this POR work at. Never shown to collectors — range bids in the pipeline read as a % of this.</div>
+          <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
+            <input type="hidden" name="action" value="artwork_value"/>
+            <input type="hidden" name="id" value={a.id}/>
+            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+            <input name="value" type="number" step="0.01" defaultValue={a.internal_value_cents ? a.internal_value_cents / 100 : ''} placeholder="Estimate $" style={{width:160}}/>
+            <button className="btn mini">Save</button>
+          </form>
+        </div>}
         {a.available && <div className="card" style={{marginTop:14}}>
           <div style={{fontSize:13, fontWeight:650, marginBottom:8}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
           {out ? <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>

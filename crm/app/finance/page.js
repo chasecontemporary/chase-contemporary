@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
 export default async function Finance() {
+  const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
+  const stripeReady = !!process.env.STRIPE_SECRET_KEY;
   const [{ data: invs }, { data: collectors }] = await Promise.all([
     db.from('invoices').select('*, collectors(first_name, last_name)').order('issued_at', { ascending: false }).limit(200),
     db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
@@ -84,6 +86,24 @@ export default async function Finance() {
           </form>
           {i.pdf_url && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed', marginRight:6}}
             href={i.pdf_url} target="_blank">PDF ↗</a>}
+          {i.status === 'open' && (payReady
+            ? <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
+                <input type="hidden" name="action" value="invoice_paylink"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <button className="btn mini">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
+              </form>
+            : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700, marginRight:6}}>PAY LINK · AWAITING SHOPIFY TOKEN</span>)}
+          {i.pay_url && <a className="pill blue" style={{marginRight:6}} href={i.pay_url} target="_blank">Pay ↗</a>}
+          {i.status === 'open' && (stripeReady
+            ? <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
+                <input type="hidden" name="action" value="invoice_paylink"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <button className="btn mini">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
+              </form>
+            : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700, marginRight:6}}>PAY LINK · AWAITING STRIPE</span>)}
+          {i.pay_url && <a className="pill blue" style={{marginRight:6}} href={i.pay_url} target="_blank">Pay ↗</a>}
         </td>
         <td>{i.status === 'open' && <div style={{display:'flex', gap:6}}>
           <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>

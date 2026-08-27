@@ -45,6 +45,15 @@ export default function Kanban({ initial, team = [] }) {
 
   const c = openLead?.collectors || {};
   const a = openLead?.artwork;
+  const anchor = a ? (a.price_cents > 0 ? a.price_cents : a.internal_value_cents || 0) : 0;
+  const anchorIsEst = a && !(a.price_cents > 0) && a.internal_value_cents > 0;
+  const budgetMid = (() => {
+    const s = openLead?.budget_range || '';
+    const nums = (s.match(/[\d,]+/g) || []).map(x => Number(x.replace(/,/g, '')));
+    if (!nums.length) return 0;
+    const scaled = nums.map(n => n < 1000 ? n * 1000 : n);
+    return scaled.length >= 2 ? (scaled[0] + scaled[1]) / 2 : scaled[0];
+  })();
   const sale = openLead?.openSale;
   const saleTotal = sale ? sale.sale_items.reduce((s, i) => s + i.agreed_cents, 0) : 0;
   const inSale = sale && sale.sale_items.some(i => i.inquiry_id === openLead?.id);
@@ -152,7 +161,18 @@ export default function Kanban({ initial, team = [] }) {
           <div className="cap">
             <div><div className="t">{a.title}</div><div className="a">{a.artist}{a.medium ? ' · ' + a.medium : ''}</div></div>
             <div style={{textAlign:'right'}}>
-              <div className="p">{(a.price_cents || 0) > 0 ? usd(a.price_cents) : 'POR'}</div>
+              <div className="p">{(a.price_cents || 0) > 0 ? usd(a.price_cents)
+                : a.internal_value_cents > 0 ? <>POR <span style={{fontSize:11, color:'#86868b', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
+                : 'POR'}</div>
+              {anchor > 0 && budgetMid > 0 && (() => {
+                const pct = Math.round(100 * budgetMid * 100 / anchor);
+                const tone = pct >= 90 ? {background:'#e4f7e9', color:'#1d7a3d'}
+                  : pct >= 65 ? {background:'#f0f0f2', color:'#3a3a3c'}
+                  : {background:'#ffefdc', color:'#b25a00'};
+                return <div style={{marginTop:4}}><span style={{...tone, fontSize:10, fontWeight:700,
+                  padding:'3px 7px', borderRadius:6, letterSpacing:'.02em'}}>
+                  BID ≈ {pct}% OF {anchorIsEst ? 'EST VALUE' : 'LIST'}</span></div>;
+              })()}
               <div className="open">Open in inventory →</div>
             </div>
           </div>
@@ -212,9 +232,9 @@ export default function Kanban({ initial, team = [] }) {
             <span>{i.title}</span><span style={{fontVariantNumeric:'tabular-nums'}}>{usd(i.agreed_cents)}</span>
           </div>)}
           {!inSale && <>
-          {a?.price_cents > 0 && <div style={{display:'flex', gap:6, marginTop:8, flexWrap:'wrap'}}>
-            {[[0, 'List ' + usd(a.price_cents)], [5, '−5%'], [10, '−10%'], [15, '−15%']].map(([pct, label]) =>
-              <button key={pct} onClick={() => setAgreed(String(Math.round(a.price_cents * (100 - pct) / 100) / 100))}
+          {anchor > 0 && <div style={{display:'flex', gap:6, marginTop:8, flexWrap:'wrap'}}>
+            {[[0, (anchorIsEst ? 'Est ' : 'List ') + usd(anchor)], [5, '−5%'], [10, '−10%'], [15, '−15%']].map(([pct, label]) =>
+              <button key={pct} onClick={() => setAgreed(String(Math.round(anchor * (100 - pct) / 100) / 100))}
                 style={{border:'1px solid #e8e8ed', background: '#fff', borderRadius:980, fontFamily:'inherit',
                   fontSize:12, fontWeight:600, padding:'5px 12px', cursor:'pointer'}}>{label}</button>)}
           </div>}
@@ -227,7 +247,7 @@ export default function Kanban({ initial, team = [] }) {
           </div>
           {agreed > 0 && (() => {
             const cents = Math.round(Number(agreed) * 100);
-            const disc = a?.price_cents > 0 ? Math.round((1 - cents / a.price_cents) * 1000) / 10 : null;
+            const disc = anchor > 0 ? Math.round((1 - cents / anchor) * 1000) / 10 : null;
             const col = disc === null ? '#86868b' : disc <= 0 ? '#34c759' : disc <= 10 ? '#86868b' : disc <= 20 ? '#b8860b' : '#ff3b30';
             return <div style={{fontSize:12, marginTop:8, fontWeight:600, color: col}}>
               {usd(cents)}{disc !== null && disc > 0 ? ` · ${disc}% below list` : disc !== null && disc < 0 ? ' · above list' : disc === 0 ? ' · at list' : ''}

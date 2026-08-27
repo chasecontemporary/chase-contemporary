@@ -1,6 +1,8 @@
 import { db } from '../../../lib/db';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
+import { settleInvoice } from '../../../lib/settle';
+import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
 
 export async function POST(req) {
   const form = await req.formData();
@@ -31,6 +33,22 @@ export async function POST(req) {
     await db.from('campaigns').update({ status: 'approved', approved_by: rep }).eq('id', id);
   } else if (action === 'campaign_del') {
     await db.from('campaigns').delete().eq('id', id);
+  } else if (action === 'artwork_push') {
+    if (!shopifyReady())
+      return Response.redirect(new URL((form.get('back') || '/inventory') + '?err=shopify-not-connected', req.url), 303);
+    const { data: art } = await db.from('artworks').select('*').eq('id', id).single();
+    if (art && !art.shopify_product_id) {
+      const { pushProduct } = await import('../../../lib/shopify');
+      const { productId, handle } = await pushProduct(art);
+      await db.from('artworks').update({ shopify_product_id: productId, handle }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+        kind: 'pushed_to_site', body: 'draft product ' + handle, actor: rep });
+    }
+  } else if (action === 'artwork_value') {
+    const cents = Math.round(Number(form.get('value') || 0) * 100);
+    await db.from('artworks').update({ internal_value_cents: cents || null }).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+      kind: 'internal_value_set', body: cents ? '$' + (cents / 100).toLocaleString() : 'cleared', actor: rep });
   } else if (action === 'approval_out') {
     await db.from('holds').insert({ artwork_id: id, kind: 'approval',
       out_to: form.get('out_to'), expires_at: form.get('due') || null });
@@ -190,33 +208,20 @@ export async function POST(req) {
         kind: 'invoice_pdf', body: blob.url, actor: rep });
     }
   } else if (action === 'invoice_paid') {
+    const inv = await settleInvoice(id, form.get('method') || null);
+    if (inv) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
+      kind: 'paid', body: form.get('method') || null, actor: rep });
+  } else if (action === 'invoice_paylink') {
+    if (!shopifyReady())
+      return Response.redirect(new URL('/finance?err=shopify-not-connected', req.url), 303);
     const { data: inv } = await db.from('invoices')
-      .update({ status: 'paid', paid_at: new Date().toISOString(), method: form.get('method') || null })
-      .eq('id', id).select().single();
-    if (inv) {
-      const { data: pay } = await db.from('payments')
-        .insert({ amount_cents: inv.amount_cents + (inv.tax_cents || 0) + (inv.shipping_cents || 0), method: inv.method, status: 'pending' })
-        .select().single();
-      if (pay) await db.from('payments').update({ status: 'settled', settled_at: new Date().toISOString() }).eq('id', pay.id);
-      if (inv.sale_id) {
-        const { data: items } = await db.from('sale_items').select('*').eq('sale_id', inv.sale_id);
-        for (const it of (items || [])) {
-          await db.from('purchases').insert({
-            collector_id: inv.collector_id, artwork_id: it.artwork_id,
-            title: it.title, artist: it.artist, amount_cents: it.agreed_cents, source: 'engine' });
-          if (it.artwork_id) await db.from('artworks').update({ available: false }).eq('id', it.artwork_id);
-        }
-        await db.from('sales').update({ status: 'paid' }).eq('id', inv.sale_id);
-        const inqIds = (items || []).map(i => i.inquiry_id).filter(Boolean);
-        if (inqIds.length) await db.from('inquiries')
-          .update({ status: 'paid', stage_changed_at: new Date().toISOString() }).in('id', inqIds);
-      } else if (inv.collector_id) {
-        await db.from('purchases').insert({
-          collector_id: inv.collector_id, title: inv.title, artist: inv.artist,
-          amount_cents: inv.amount_cents, source: 'engine' });
-        if (inv.inquiry_id) await db.from('inquiries')
-          .update({ status: 'paid', stage_changed_at: new Date().toISOString() }).eq('id', inv.inquiry_id);
-      }
+      .select('*, collectors(email)').eq('id', id).single();
+    if (inv && inv.status === 'open') {
+      await ensureWebhook(new URL(req.url).origin);
+      const { url, draftId } = await createPayLink(inv, inv.collectors);
+      await db.from('invoices').update({ pay_url: url, shopify_draft_id: draftId }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
+        kind: 'paylink_created', body: url, actor: rep });
     }
   } else if (action === 'invoice_void') {
     await db.from('invoices').update({ status: 'void' }).eq('id', id);

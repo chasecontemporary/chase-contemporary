@@ -106,7 +106,9 @@ export default async function Inventory({ searchParams }) {
           <div style={{fontSize:12.5, fontStyle:'italic', color:'#3a3a3c', marginTop:2, overflow:'hidden',
             display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical'}}>{a.title}</div>
           <div style={{fontSize:12, marginTop:4, fontVariantNumeric:'tabular-nums', fontWeight:600}}>
-            {(a.price_cents || 0) > 0 ? usd(a.price_cents) : 'POR'}
+            {(a.price_cents || 0) > 0 ? usd(a.price_cents)
+              : a.internal_value_cents > 0 ? <>POR <span style={{color:'#86868b', fontWeight:500}}>· est {usd(a.internal_value_cents)}</span></>
+              : 'POR'}
             {!a.available && <span className="pill" style={{marginLeft:8}}>Sold</span>}
           </div>
           <div style={{fontSize:11, color:'#86868b', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>

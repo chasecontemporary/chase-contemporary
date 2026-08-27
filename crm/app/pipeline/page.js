@@ -11,7 +11,7 @@ export default async function Pipeline() {
   let artMap = {};
   if (handles.length) {
     const { data: arts } = await db.from('artworks')
-      .select('id, handle, title, artist, price_cents, image_url, medium, dims_h_in, dims_w_in, available')
+      .select('id, handle, title, artist, price_cents, internal_value_cents, image_url, medium, dims_h_in, dims_w_in, available')
       .in('handle', handles);
     (arts || []).forEach(a => { artMap[a.handle] = a; });
   }
@@ -47,7 +47,7 @@ export default async function Pipeline() {
   let titleMap = {};
   if (missingTitles.length) {
     const { data: byTitle } = await db.from('artworks')
-      .select('id, handle, title, artist, price_cents, image_url, medium, dims_h_in, dims_w_in, available')
+      .select('id, handle, title, artist, price_cents, internal_value_cents, image_url, medium, dims_h_in, dims_w_in, available')
       .in('title', missingTitles);
     (byTitle || []).forEach(a => { titleMap[a.title] = a; });
   }
