@@ -6,9 +6,6 @@ export const dynamic = 'force-dynamic';
 const usdM = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 export default async function Today() {
   const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
-  const { data: dueBacks } = await db.from('holds')
-    .select('id, out_to, expires_at, collector_id, artworks(id, title, artist, image_url)')
-    .eq('kind', 'approval').eq('status', 'active').order('expires_at');
   const { data: agingRows } = await db.from('artworks')
     .select('id, title, artist, price_cents, internal_value_cents, image_url, acquired_at, location')
     .eq('available', true).lt('acquired_at', cutoff)
@@ -46,25 +43,6 @@ export default async function Today() {
     </div>
     {!rows?.length && <div className="empty">No open inquiries. The floor is clear.</div>}
   
-    {(dueBacks || []).length > 0 && <>
-    <div className="h1" style={{fontSize:18, marginTop:34}}>Out on approval</div>
-    <div className="sub">Works outside the gallery — chase the due dates</div>
-    <div className="tblcard" style={{marginTop:12}}>
-      {(dueBacks || []).map(h => {
-        const overdue = h.expires_at && new Date(h.expires_at) < new Date();
-        return <a key={h.id} href={'/inventory/' + h.artworks?.id} style={{display:'flex', gap:12, alignItems:'center',
-          padding:'11px 16px', borderBottom:'1px solid #f5f5f7', textDecoration:'none', color:'inherit'}}>
-          {h.artworks?.image_url ? <img src={h.artworks.image_url + (h.artworks.image_url.includes('?') ? '&' : '?') + 'width=72'}
-            alt="" style={{width:36, height:36, objectFit:'cover', borderRadius:6}}/> : <span style={{width:36, height:36, borderRadius:6, background:'#f0f0f2'}}/>}
-          <span style={{flex:1}}>
-            <span style={{fontWeight:600, fontSize:13.5}}>{h.artworks?.title}</span>
-            <span style={{color:'#86868b', fontSize:12.5}}> · {h.artworks?.artist} · with {h.out_to}</span>
-          </span>
-          <span className="pill" style={overdue ? {background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10.5}
-            : {background:'#f0f0f2', fontSize:10.5, fontWeight:700}}>
-            {overdue ? 'OVERDUE · ' : 'DUE '}{h.expires_at ? new Date(h.expires_at).toLocaleDateString() : '—'}</span>
-        </a>; })}
-    </div></>}
     {(agingRows || []).length > 0 && <>
     <div className="h1" style={{fontSize:18, marginTop:34}}>Move list</div>
     <div className="sub">Highest-value works sitting over a year — feature in a drop, reprice, or place</div>
