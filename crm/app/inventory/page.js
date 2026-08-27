@@ -59,8 +59,8 @@ export default async function Inventory({ searchParams }) {
     <div className="h1">Inventory</div>
     <div className="sub">{view === 'available' ? 'What the gallery can sell right now' : view === 'sold' ? 'The sold archive' : 'The full book'}{artist ? ` · ${artist}` : ''}{loc ? ` · at ${loc}` : ''}{q ? ` · "${q}"` : ''}</div>
     <div className="stats">
-      <div className="stat"><div className="n">{Number(availableCount || 0).toLocaleString()}</div><div className="l">Works on hand</div></div>
       <div className="stat"><div className="n">{usd(onHandValue)}</div><div className="l">On-hand value (priced retail)</div></div>
+      <div className="stat"><div className="n">{Number(availableCount || 0).toLocaleString()}</div><div className="l">Works on hand</div></div>
       <div className="stat"><div className="n">{locs.length}</div><div className="l">Locations holding work</div></div>
       <div className="stat"><div className="n">{Number(soldCount || 0).toLocaleString()}</div><div className="l">Sold, all time</div></div>
     </div>

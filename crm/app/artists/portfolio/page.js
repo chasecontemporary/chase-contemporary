@@ -60,10 +60,10 @@ export default async function Portfolio({ searchParams }) {
     </div>
 
     <div className="stats">
-      <div className="stat"><div className="n">{Number(perf.on_hand).toLocaleString()}</div>
-        <div className="l">Units on hand{unpriced ? ` · ${unpriced} unvalued` : ''}</div></div>
       <div className="stat"><div className="n">{usd(portfolioValue)}</div>
         <div className="l">Portfolio value (retail + estimates)</div></div>
+      <div className="stat"><div className="n">{Number(perf.on_hand).toLocaleString()}</div>
+        <div className="l">Units on hand{unpriced ? ` · ${unpriced} unvalued` : ''}</div></div>
       <div className="stat"><div className="n">{supply === null ? (Number(perf.on_hand) > 0 ? '∞' : '—') : supply + ' mo'}</div>
         <div className="l">Supply at current velocity · {perf.sold_12mo} sold last 12 mo</div></div>
       <div className="stat"><div className="n">{perf.sell_through === null ? '—' : perf.sell_through + '%'}</div>

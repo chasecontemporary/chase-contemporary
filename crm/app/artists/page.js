@@ -39,7 +39,7 @@ export default async function Artists({ searchParams }) {
     sellthrough: (r) => r.sell_through === null ? -1 : Number(r.sell_through),
     velocity: (r) => Number(r.sold_12mo || 0),
     supply: (r) => supply(r) === null ? -1 : supply(r),
-    onhand: (r) => Number(r.on_hand || 0) * 1e12 + Number(r.on_hand_value_cents || 0),
+    onhand: (r) => Number(r.on_hand_value_cents || 0) * 1e4 + Number(r.on_hand || 0),
     revenue: (r) => Number(r.revenue_cents || 0),
   };
   const keyFn = KEYS[sort] || KEYS.onhand;
@@ -83,8 +83,8 @@ export default async function Artists({ searchParams }) {
       const rate12 = all.reduce((s, r) => s + Number(r.sold_12mo || 0), 0);
       const bookSupply = rate12 > 0 ? Math.round(units / (rate12 / 12)) : null;
       return <div className="stats">
-        <div className="stat"><div className="n">{units.toLocaleString()}</div><div className="l">Units on hand · {all.length} artists</div></div>
         <div className="stat"><div className="n">{usd(totHold)}</div><div className="l">Capital on hand (priced retail)</div></div>
+        <div className="stat"><div className="n">{units.toLocaleString()}</div><div className="l">Units on hand · {all.length} artists</div></div>
         <div className="stat"><div className="n">{rate12}</div><div className="l">Works sold, last 12 months</div></div>
         <div className="stat"><div className="n">{bookSupply === null ? '—' : bookSupply + ' mo'}</div><div className="l">Months of supply at current velocity</div></div>
       </div>; })()}
@@ -128,8 +128,8 @@ export default async function Artists({ searchParams }) {
             </span>
           </span>
           <span style={{textAlign:'right'}}>
-            <span style={{fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>{r.on_hand > 0 ? Number(r.on_hand).toLocaleString() : '—'}</span>
-            <span style={{display:'block', fontSize:11.5, color:'#86868b'}}>{r.on_hand_value_cents > 0 ? usd(r.on_hand_value_cents) : r.on_hand > 0 ? 'unpriced' : ''}</span>
+            <span style={{fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>{r.on_hand_value_cents > 0 ? usd(r.on_hand_value_cents) : r.on_hand > 0 ? 'unvalued' : '—'}</span>
+            <span style={{display:'block', fontSize:11.5, color:'#86868b'}}>{r.on_hand > 0 ? Number(r.on_hand).toLocaleString() + ' unit' + (r.on_hand > 1 ? 's' : '') : 'none'}</span>
           </span>
           <span style={{textAlign:'right'}}>{sup === null ? <span style={{color:'#c7c7cc'}}>—</span>
             : sup === Infinity ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10}}>NO VELOCITY</span>
