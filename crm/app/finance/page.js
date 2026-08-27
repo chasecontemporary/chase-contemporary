@@ -131,69 +131,104 @@ export default async function Finance({ searchParams }) {
       {VIEWS.map(([k, label]) => <a key={k} href={'/finance?view=' + k} className="pill"
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
     </div>
-    <div className="tblcard" style={{marginTop:12}}><table className="tbl"><thead><tr>
-      <th>№</th><th>Collector</th><th>Work</th><th>Issued</th><th>Age</th><th>Status</th><th>Document</th><th></th><th style={{textAlign:'right'}}>Total</th>
-    </tr></thead><tbody>
+    <div style={{display:'flex', flexDirection:'column', gap:10, marginTop:12}}>
       {shown.map(i => {
         const age = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
-        return <tr key={i.id}>
-        <td style={{fontVariantNumeric:'tabular-nums', color:'#86868b'}}>{String(i.invoice_number).padStart(4,'0')}</td>
-        <td style={{fontWeight:600}}>{i.collectors ? [i.collectors.first_name, i.collectors.last_name].filter(Boolean).join(' ') : '—'}</td>
-        <td style={{maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? <span style={{color:'#86868b'}}> · {i.artist}</span> : null}</td>
-        <td style={{fontSize:12.5}}>{new Date(i.issued_at).toLocaleDateString()}</td>
-        <td style={{fontSize:12.5, color: i.status === 'open' && age > 30 ? '#b8231a' : '#86868b'}}>{age}d</td>
-        <td>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
-          : i.status === 'void' ? <span className="pill">Void</span>
-          : <ArStage id={i.id} value={i.ar_status} promiseDate={i.promise_date}/>}</td>
-        <td style={{whiteSpace:'nowrap'}}>
-          <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
-            <input type="hidden" name="action" value="invoice_pdf"/>
-            <input type="hidden" name="id" value={i.id}/>
-            <input type="hidden" name="back" value="/finance"/>
-            <button className="btn mini quiet">{i.pdf_url ? 'Re-issue' : 'PDF'}</button>
-          </form>
-          {i.pdf_url && <span style={{marginRight:6, display:'inline-block'}}>
-            <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/></span>}
-          {i.status === 'open' && (payReady
-            ? <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
-                <input type="hidden" name="action" value="invoice_paylink"/>
+        const c = i.collectors;
+        const hist = payHist[i.id] || [];
+        const isOpen = i.status === 'open';
+        const overdueRow = isOpen && (age > 30 || (i.promise_date && new Date(i.promise_date) < new Date()));
+        return <details key={i.id} className="edit" style={{padding:0, overflow:'hidden'}}>
+          <summary style={{padding:'13px 18px', display:'grid',
+            gridTemplateColumns:'52px minmax(160px,1fr) minmax(140px,1.2fr) 110px 90px 130px', gap:14, alignItems:'center'}}>
+            <span style={{fontSize:12, color:'#86868b', fontVariantNumeric:'tabular-nums'}}>№{String(i.invoice_number).padStart(4,'0')}</span>
+            <span style={{minWidth:0}}>
+              <span style={{fontWeight:650, fontSize:13.5, display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : 'No collector'}</span>
+              <span style={{fontSize:11.5, color:'#86868b'}}>{new Date(i.issued_at).toLocaleDateString()} · {age}d{overdueRow ? ' · OVERDUE' : ''}</span>
+            </span>
+            <span style={{fontSize:12.5, color:'#3a3a3c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? ' · ' + i.artist : ''}</span>
+            <span>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
+              : i.status === 'void' ? <span className="pill">Void</span>
+              : <span className="pill" style={overdueRow ? {background:'#ffefdc', color:'#b25a00', fontWeight:700} : {background:'#f0f0f2', fontWeight:700}}>
+                  {(i.ar_status || 'issued').toUpperCase()}{i.ar_status === 'promised' && i.promise_date ? ' ' + new Date(i.promise_date).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</span>}</span>
+            <span style={{fontSize:11.5, color:'#86868b'}}>{isOpen && paidIn[i.id] ? usd(paidIn[i.id]) + ' in' : ''}</span>
+            <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
+              {isOpen ? usd(balance(i)) : usd(tot(i))}
+              {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#86868b', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>
+          </summary>
+          <div style={{padding:'4px 18px 16px', borderTop:'1px solid #f5f5f7'}}>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:18, marginTop:12}}>
+              <div>
+                <div className="cardtitle" style={{marginBottom:6}}>Collector</div>
+                {c ? <div style={{fontSize:13}}>
+                  <a style={{fontWeight:650}} href={'/collectors/' + c.id}>{[c.first_name, c.last_name].filter(Boolean).join(' ')}</a>
+                  {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#86868b', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
+                  {c.phone && <div style={{marginTop:4}}><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
+                  {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
+                </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
+              </div>
+              <div>
+                <div className="cardtitle" style={{marginBottom:6}}>Money</div>
+                <div style={{fontSize:12.5, lineHeight:1.8}}>
+                  <div>Total {usd(tot(i))}{(i.tax_cents || i.shipping_cents) ? <span style={{color:'#86868b'}}> ({usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''})</span> : null}</div>
+                  {hist.map((p, ix) => <div key={ix} style={{color:'#1d7a3d'}}>
+                    + {usd(p.amount_cents)} received {p.settled_at ? new Date(p.settled_at).toLocaleDateString() : ''}{p.method ? ' · ' + p.method : ''}</div>)}
+                  {isOpen && <div style={{fontWeight:700}}>Balance {usd(balance(i))}</div>}
+                  {i.promise_date && <div style={{color:'#b25a00'}}>Promised by {new Date(i.promise_date).toLocaleDateString()}</div>}
+                  {i.last_nudge_at && <div style={{color:'#86868b'}}>Last nudged {new Date(i.last_nudge_at).toLocaleDateString()}</div>}
+                </div>
+              </div>
+              <div>
+                <div className="cardtitle" style={{marginBottom:6}}>Documents &amp; chase</div>
+                <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+                  {isOpen && <ArStage id={i.id} value={i.ar_status} promiseDate={i.promise_date}/>}
+                  <form method="POST" action="/api/act" style={{display:'inline-block'}}>
+                    <input type="hidden" name="action" value="invoice_pdf"/>
+                    <input type="hidden" name="id" value={i.id}/>
+                    <input type="hidden" name="back" value="/finance"/>
+                    <button className="btn mini quiet">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
+                  </form>
+                  {i.pdf_url && <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>}
+                  {isOpen && (payReady
+                    ? <form method="POST" action="/api/act" style={{display:'inline-block'}}>
+                        <input type="hidden" name="action" value="invoice_paylink"/>
+                        <input type="hidden" name="id" value={i.id}/>
+                        <input type="hidden" name="back" value="/finance"/>
+                        <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
+                      </form>
+                    : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700}}>PAY LINK · AWAITING SHOPIFY</span>)}
+                  {i.pay_url && <a className="pill blue" href={i.pay_url} target="_blank">Pay ↗</a>}
+                </div>
+              </div>
+            </div>
+            {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', marginTop:14, flexWrap:'wrap'}}>
+              <form method="POST" action="/api/act" style={{display:'flex', gap:6}}>
+                <input type="hidden" name="action" value="invoice_payment"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
+                <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Received"/></label>
+                <input name="method" placeholder="wire / card…" style={{width:100, fontSize:12.5, border:'1px solid #e8e8ed', borderRadius:10, height:36, padding:'0 10px', fontFamily:'inherit'}}/>
+                <button className="btn mini quiet">Record payment</button>
               </form>
-            : <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontSize:10, fontWeight:700, marginRight:6}}>PAY LINK · AWAITING SHOPIFY</span>)}
-          {i.pay_url && <a className="pill blue" style={{marginRight:6}} href={i.pay_url} target="_blank">Pay ↗</a>}
-        </td>
-        <td>{i.status === 'open' && <div style={{display:'flex', gap:6, alignItems:'center'}}>
-          <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
-            <input type="hidden" name="action" value="invoice_payment"/>
-            <input type="hidden" name="id" value={i.id}/>
-            <input type="hidden" name="back" value="/finance"/>
-            <input name="amount" placeholder="$ received" style={{width:88, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
-            <input name="method" placeholder="wire…" style={{width:64, fontSize:12, border:'1px solid #e8e8ed', borderRadius:8, padding:'4px 8px'}}/>
-            <button className="btn mini quiet">Record</button></form>
-          <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
-            <input type="hidden" name="action" value="invoice_paid"/>
-            <input type="hidden" name="id" value={i.id}/>
-            <input type="hidden" name="back" value="/finance"/>
-            <button className="btn mini">Settle balance</button></form>
-          <form method="POST" action="/api/act">
-            <input type="hidden" name="action" value="invoice_void"/>
-            <input type="hidden" name="id" value={i.id}/>
-            <input type="hidden" name="back" value="/finance"/>
-            <button className="btn mini quiet" style={{color:'#b8231a'}}>Void</button></form>
-        </div>}</td>
-        <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700}}>
-          {i.status === 'open' && paidIn[i.id] ? <>
-            {usd(balance(i))} <span style={{fontSize:11, fontWeight:600, color:'#1d7a3d'}}>due</span>
-            <div style={{fontSize:11, color:'#86868b', fontWeight:400}}>{usd(paidIn[i.id])} received of {usd(tot(i))}</div>
-          </> : <>{usd(tot(i))}
-          {(i.tax_cents || i.shipping_cents) ? <div style={{fontSize:11, color:'#86868b', fontWeight:400}}>
-            {usd(i.amount_cents)} art{i.tax_cents ? ' + ' + usd(i.tax_cents) + ' tax' : ''}{i.shipping_cents ? ' + ' + usd(i.shipping_cents) + ' ship' : ''}</div> : null}</>}</td>
-      </tr>; })}
-      {!shown.length && <tr><td colSpan={9} style={{color:'#86868b'}}>
-        {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</td></tr>}
-    </tbody></table></div>
+              <form method="POST" action="/api/act">
+                <input type="hidden" name="action" value="invoice_paid"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <button className="btn mini">Settle balance · {usd(balance(i))}</button>
+              </form>
+              <form method="POST" action="/api/act" style={{marginLeft:'auto'}}>
+                <input type="hidden" name="action" value="invoice_void"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <button className="btn mini quiet" style={{color:'#b8231a'}}>Void</button>
+              </form>
+            </div>}
+          </div>
+        </details>; })}
+      {!shown.length && <div className="empty">
+        {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</div>}
+    </div>
 
     <details className="edit" style={{marginTop:16}}>
       <summary>Manual invoice — walk-in or off-pipeline sale</summary>
