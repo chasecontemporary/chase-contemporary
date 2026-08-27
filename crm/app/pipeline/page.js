@@ -73,9 +73,31 @@ export default async function Pipeline() {
     journey: journeyMap[r.collector_id] || null,
     competition: competition[r.id] || { others: 0, committed: null } }));
   const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
+
+  // the owner's read of the board, in four numbers
+  const BUDGET_MID = { 'Under $10,000': 500000, '$10,000-25,000': 1750000, '$25,000-50,000': 3750000,
+    '$50,000-100,000': 7500000, '$100,000+': 10000000 };
+  const worth = (l) => (l.artwork?.price_cents > 0 ? l.artwork.price_cents
+    : l.artwork?.internal_value_cents > 0 ? l.artwork.internal_value_cents : (BUDGET_MID[l.budget_range] || 0));
+  const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
+  const ACTIVE = ['new', 'contacted', 'in_conversation', 'hold'];
+  const inPlay = leads.filter(l => ACTIVE.includes(l.status));
+  const invoiced = leads.filter(l => l.status === 'invoice');
+  const awaiting = leads.filter(l => l.status === 'new').length;
+
   return <Shell active="pipeline">
     <div className="h1">Sales pipeline</div>
     <div className="sub">{leads.length} open · drag between stages · click a lead for the full picture</div>
+    <div className="stats" style={{marginTop:18}}>
+      <div className="stat"><div className="n">{usd(inPlay.reduce((s, l) => s + worth(l), 0))}</div>
+        <div className="l">Value in play</div></div>
+      <div className="stat"><div className="n">{inPlay.length}</div>
+        <div className="l">Conversations in motion</div></div>
+      <div className="stat"><div className="n" style={awaiting > 0 ? {color:'#c02d23'} : {}}>{awaiting}</div>
+        <div className="l">Awaiting first response</div></div>
+      <div className="stat"><div className="n">{usd(invoiced.reduce((s, l) => s + worth(l), 0))}</div>
+        <div className="l">Invoiced · awaiting payment</div></div>
+    </div>
     <Kanban initial={leads} team={(team || []).map(t => t.name)} />
   </Shell>;
 }
