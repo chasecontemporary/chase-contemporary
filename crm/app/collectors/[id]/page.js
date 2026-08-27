@@ -4,8 +4,9 @@ import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
-export default async function Card({ params }) {
+export default async function Card({ params, searchParams }) {
   const { id } = await params;
+  const dlink = (await searchParams)?.dlink;
   const { data: c } = await db.from('collectors').select('*').eq('id', id).single();
   if (!c) return <Shell active="collectors"><div className="empty">Not found</div></Shell>;
   const [{ data: inqs }, { data: acts }, { data: buys }, { data: pins }] = await Promise.all([
@@ -153,6 +154,23 @@ export default async function Card({ params }) {
       </div>
       <button className="btn mini" style={{marginTop:12}}>Save details</button>
     </form>
+    <div style={{display:'flex', gap:10, alignItems:'center', marginTop:10, flexWrap:'wrap'}}>
+      <form method="POST" action="/api/act">
+        <input type="hidden" name="action" value="details_link"/>
+        <input type="hidden" name="id" value={c.id}/>
+        <input type="hidden" name="back" value={'/collectors/' + c.id}/>
+        <button className="btn mini">{c.details_token ? 'Mint a fresh details link' : 'Create details link'}</button>
+      </form>
+      <span style={{fontSize:12, color:'#86868b'}}>
+        {c.details_completed_at ? 'Collector completed their details ' + new Date(c.details_completed_at).toLocaleDateString()
+          : c.details_requested_at ? 'Link created ' + new Date(c.details_requested_at).toLocaleDateString() + ' · awaiting the collector'
+          : 'Send the collector a branded page to fill these in themselves'}</span>
+    </div>
+    {dlink && <div className="card" style={{marginTop:10, padding:'10px 14px', display:'flex', gap:10, alignItems:'center'}}>
+      <span style={{fontSize:12, fontWeight:650}}>Send this to the collector:</span>
+      <input readOnly defaultValue={dlink} onFocus={undefined} style={{flex:1, fontSize:12, border:'1px solid #e8e8ed',
+        borderRadius:8, padding:'6px 10px', fontFamily:'inherit', color:'#0071e3'}}/>
+    </div>}
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Collection</div>
     <div className="sub">What they own — the heart of the record</div>

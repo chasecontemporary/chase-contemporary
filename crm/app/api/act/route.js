@@ -41,6 +41,16 @@ export async function POST(req) {
     await db.from('holds').update({ status: outcome }).eq('id', form.get('hold_id'));
     await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
       kind: 'on_approval_' + outcome, actor: rep });
+  } else if (action === 'details_link') {
+    const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    await db.from('collectors').update({ details_token: token,
+      details_requested_at: new Date().toISOString(), details_completed_at: null }).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
+      kind: 'details_link_sent', actor: rep });
+    const url = new URL(req.url).origin + '/d/' + token;
+    if (form.get('back') === 'json')
+      return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return Response.redirect(new URL((form.get('back') || '/collectors/' + id) + '?dlink=' + encodeURIComponent(url), req.url), 303);
   } else if (action === 'collector_update') {
     const fields = ['salutation','first_name','last_name','company','phone','email',
       'address_line1','address_line2','city','state','zip','country',

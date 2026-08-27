@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith('/api/inquiry') || pathname.startsWith('/login') ||
+  if (pathname.startsWith('/d/') || pathname.startsWith('/api/details') ||
+      pathname.startsWith('/api/inquiry') || pathname.startsWith('/login') ||
       pathname.startsWith('/api/login') || pathname.startsWith('/fonts') ||
       pathname === '/') return NextResponse.next();
   const ok = req.cookies.get('cc_crm')?.value === process.env.CRM_ACCESS_CODE;

@@ -19,6 +19,7 @@ const holdLeft = (l) => {
 };
 
 export default function Kanban({ initial, team = [] }) {
+  const [dlink, setDlink] = useState(null);
   const [leads, setLeads] = useState(initial);
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
@@ -169,9 +170,21 @@ export default function Kanban({ initial, team = [] }) {
             const miss = [!col.address_line1 && 'billing address', !col.phone && 'phone',
               (!col.email || col.email.endsWith?.('import.chasecontemporary.com')) && 'email'].filter(Boolean);
             return miss.length
-              ? <a href={'/collectors/' + col.id} style={{color:'#b25a00', fontWeight:600}}>Missing: {miss.join(' · ')} →</a>
+              ? <span style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                  <a href={'/collectors/' + col.id} style={{color:'#b25a00', fontWeight:600}}>Missing: {miss.join(' · ')} →</a>
+                  <button className="btn mini" onClick={async () => {
+                    const fd = new FormData();
+                    fd.set('action','details_link'); fd.set('id', col.id); fd.set('back','json');
+                    const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json());
+                    try { await navigator.clipboard.writeText(r.url); } catch {}
+                    setDlink(r.url);
+                  }}>Details link</button>
+                </span>
               : <span style={{color:'#1d7a3d', fontWeight:600}}>Yes — all details on file</span>;
-          })()}</dd>
+          })()}
+          {dlink && <div style={{marginTop:6, fontSize:12}}>Copied — send to the collector:{' '}
+            <a href={dlink} target="_blank" style={{color:'#0071e3', wordBreak:'break-all'}}>{dlink}</a></div>}
+          </dd>
           <dt>Owner</dt><dd>
             <select value={openLead.owner || ''} onChange={async e => {
               const owner = e.target.value;
