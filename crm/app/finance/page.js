@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import DocPreview from '../../components/DocPreview';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -84,8 +85,8 @@ export default async function Finance() {
             <input type="hidden" name="back" value="/finance"/>
             <button className="btn mini">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
           </form>
-          {i.pdf_url && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed', marginRight:6}}
-            href={i.pdf_url} target="_blank">PDF ↗</a>}
+          {i.pdf_url && <span style={{marginRight:6, display:'inline-block'}}>
+            <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/></span>}
           {i.status === 'open' && (payReady
             ? <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
                 <input type="hidden" name="action" value="invoice_paylink"/>

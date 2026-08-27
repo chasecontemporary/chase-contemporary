@@ -1,6 +1,7 @@
 import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
 import { listingGaps } from '../../../lib/readiness';
+import DocPreview from '../../../components/DocPreview';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
@@ -93,16 +94,20 @@ export default async function Unit({ params, searchParams }) {
           <Row k="Location">{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : null))}</Row>
           <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
           <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>
-          <Row k="Collateral"><span style={{display:'inline-flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-            {[['tearsheet','Tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
-              <input type="hidden" name="action" value="artwork_collateral"/>
-              <input type="hidden" name="id" value={a.id}/>
-              <input type="hidden" name="kind" value={kind}/>
-              <input type="hidden" name="back" value={back}/>
-              <button className="btn mini">{(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Re-issue ' + label.toLowerCase() : label + ' PDF'}</button>
-            </form>)}
-            {a.tearsheet_url && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed'}} href={a.tearsheet_url} target="_blank">Tear sheet ↗</a>}
-            {a.coa_url && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed'}} href={a.coa_url} target="_blank">COA ↗</a>}
+          <Row k="Collateral"><span style={{display:'inline-flex', gap:12, alignItems:'flex-start', flexWrap:'wrap'}}>
+            {a.tearsheet_url && <DocPreview url={a.tearsheet_url} label="Tear sheet"/>}
+            {a.coa_url && <DocPreview url={a.coa_url} label="Certificate of Authenticity"/>}
+            <span style={{display:'inline-flex', gap:8, flexWrap:'wrap', paddingTop:a.tearsheet_url || a.coa_url ? 4 : 0}}>
+              {[['tearsheet','tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
+                <input type="hidden" name="action" value="artwork_collateral"/>
+                <input type="hidden" name="id" value={a.id}/>
+                <input type="hidden" name="kind" value={kind}/>
+                <input type="hidden" name="back" value={back}/>
+                <button className="btn mini" style={(kind === 'coa' ? a.coa_url : a.tearsheet_url)
+                  ? {background:'#f0f0f2', color:'#1d1d1f'} : {}}>
+                  {(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Re-issue ' + label : 'Generate ' + label}</button>
+              </form>)}
+            </span>
           </span></Row>
           <Row k="Website">{a.handle
             ? <a style={{color:'#0071e3', fontWeight:500}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">On the site — view product ↗</a>
