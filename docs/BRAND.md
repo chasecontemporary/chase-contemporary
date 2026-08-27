@@ -49,6 +49,10 @@ that isn't on the live site.
 - `.card`, `.tblcard`, `.tbl` — surfaces and tables; rows separated by `#f5f5f7` hairlines
 - `.btn` / `.btn.mini` — black primary, small variants
 - `.search` — rounded search input
+- **Action discipline (8/27):** blue is the ONE primary action of a surface; every other
+  button is `.btn.quiet` (gray ground, ink label). A screen full of blue is a screen with
+  no hierarchy. Card section headers use `.cardtitle` (11px tracked caps, gray) — editorial,
+  not bold-shouting. Cards carry a hairline (`#ececf0`) + whisper shadow, not heavy elevation.
 - **Control law (8/27):** everything you touch is ONE shape — 10px radius, 36px height:
   buttons (`.btn`, `.btn.mini` differ only in label density), text inputs, selects, date
   fields, search, the `$`-prefixed `.money` group. Pills are for STATUS and TABS only,

@@ -94,21 +94,6 @@ export default async function Unit({ params, searchParams }) {
           <Row k="Location">{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : null))}</Row>
           <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
           <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>
-          <Row k="Collateral"><span style={{display:'inline-flex', gap:12, alignItems:'flex-start', flexWrap:'wrap'}}>
-            {a.tearsheet_url && <DocPreview url={a.tearsheet_url} label="Tear sheet"/>}
-            {a.coa_url && <DocPreview url={a.coa_url} label="Certificate of Authenticity"/>}
-            <span style={{display:'inline-flex', gap:8, flexWrap:'wrap', paddingTop:a.tearsheet_url || a.coa_url ? 4 : 0}}>
-              {[['tearsheet','tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
-                <input type="hidden" name="action" value="artwork_collateral"/>
-                <input type="hidden" name="id" value={a.id}/>
-                <input type="hidden" name="kind" value={kind}/>
-                <input type="hidden" name="back" value={back}/>
-                <button className="btn mini" style={(kind === 'coa' ? a.coa_url : a.tearsheet_url)
-                  ? {background:'#f0f0f2', color:'#1d1d1f'} : {}}>
-                  {(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Re-issue ' + label : 'Generate ' + label}</button>
-              </form>)}
-            </span>
-          </span></Row>
           <Row k="Website">{a.handle
             ? <a style={{color:'#0071e3', fontWeight:500}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">On the site — view product ↗</a>
             : a.available
@@ -119,7 +104,7 @@ export default async function Unit({ params, searchParams }) {
                       <input type="hidden" name="action" value="artwork_push"/>
                       <input type="hidden" name="id" value={a.id}/>
                       <input type="hidden" name="back" value={back}/>
-                      <button className="btn mini">Push to site as draft</button>
+                      <button className="btn mini quiet">Push to site as draft</button>
                     </form>
                     <span style={{fontSize:11.5, color:'#86868b'}}>Lands unpublished · resolution checked at push</span>
                   </span>
@@ -133,7 +118,7 @@ export default async function Unit({ params, searchParams }) {
           const residue = d.replace(m, '').replace(size, '').trim();
           const useful = a.description && residue.length > 24;
           return (useful || a.provenance) ? <div className="card">
-            <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>About this work</div>
+            <div className="cardtitle">About this work</div>
             {useful && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
             {a.provenance && <div style={{marginTop:useful ? 12 : 0}}>
               <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#86868b', marginBottom:4}}>Provenance</div>
@@ -153,9 +138,25 @@ export default async function Unit({ params, searchParams }) {
           <summary>About {a.artist}</summary>
           <div style={{fontSize:13.5, lineHeight:1.7, whiteSpace:'pre-line', marginTop:12, color:'#1d1d1f'}}>{bio.bio}</div>
         </details>}
+        <div className="card">
+          <div className="cardtitle">Documents</div>
+          <div style={{display:'flex', gap:12, alignItems:'flex-start', flexWrap:'wrap'}}>
+            {a.tearsheet_url && <DocPreview url={a.tearsheet_url} label="Tear sheet"/>}
+            {a.coa_url && <DocPreview url={a.coa_url} label="Certificate of Authenticity"/>}
+            <span style={{display:'inline-flex', gap:8, flexWrap:'wrap', alignItems:'center', minHeight:36}}>
+              {[['tearsheet','tear sheet'],['coa','COA']].map(([kind, label]) => <form key={kind} method="POST" action="/api/act" style={{display:'inline'}}>
+                <input type="hidden" name="action" value="artwork_collateral"/>
+                <input type="hidden" name="id" value={a.id}/>
+                <input type="hidden" name="kind" value={kind}/>
+                <input type="hidden" name="back" value={back}/>
+                <button className="btn mini quiet">{(kind === 'coa' ? a.coa_url : a.tearsheet_url) ? 'Re-issue ' + label : 'Generate ' + label}</button>
+              </form>)}
+            </span>
+          </div>
+        </div>
         {!priced && <div className="card">
-          <div style={{fontSize:13.5, fontWeight:650}}>Internal estimate</div>
-          <div style={{fontSize:12, color:'#86868b', marginTop:3, marginBottom:12}}>
+          <div className="cardtitle">Internal estimate</div>
+          <div style={{fontSize:12, color:'#86868b', marginTop:-4, marginBottom:12}}>
             What the gallery holds this work at — never shown to collectors. Range bids in the pipeline read as a percentage of this.</div>
           {suggested > 0 && <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap',
             background:'#f5f5f7', borderRadius:10, padding:'10px 12px', marginBottom:12}}>
@@ -169,7 +170,7 @@ export default async function Unit({ params, searchParams }) {
               <input type="hidden" name="id" value={a.id}/>
               <input type="hidden" name="value" value={suggested}/>
               <input type="hidden" name="back" value={back}/>
-              <button className="btn mini">Use suggestion</button>
+              <button className="btn mini quiet">Use suggestion</button>
             </form>
           </div>}
           <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
@@ -179,12 +180,12 @@ export default async function Unit({ params, searchParams }) {
             <label className="money"><span>$</span>
               <input name="value" inputMode="numeric" defaultValue={a.internal_value_cents ? (a.internal_value_cents / 100).toLocaleString() : ''} placeholder="Estimate"/>
             </label>
-            <button className="btn mini">Save</button>
+            <button className="btn mini quiet">Save</button>
           </form>
         </div>}
 
         {a.available && <div className="card">
-          <div style={{fontSize:13.5, fontWeight:650, marginBottom:out ? 10 : 3}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
+          <div className="cardtitle" style={{marginBottom:out ? 10 : 4}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
           {!out && <div style={{fontSize:12, color:'#86868b', marginBottom:12}}>Release the work to a client, designer, or partner with a return date.</div>}
           {out ? <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
             <span>With <b>{out.out_to}</b>{out.expires_at ? ` · due back ${new Date(out.expires_at).toLocaleDateString()}` : ''}</span>
@@ -202,12 +203,12 @@ export default async function Unit({ params, searchParams }) {
             <input type="hidden" name="back" value={back}/>
             <input name="out_to" placeholder="With whom" required style={{flex:1, minWidth:180}}/>
             <input name="due" type="date" style={{width:150}}/>
-            <button className="btn mini">Send out</button>
+            <button className="btn mini quiet">Send out</button>
           </form>}
         </div>}
 
         {(buys||[]).length > 0 && <div className="card">
-          <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>Sold to</div>
+          <div className="cardtitle">Sold to</div>
           {(buys||[]).map(b => <div key={b.id} style={{fontSize:13.5, padding:'4px 0'}}>
             <a style={{fontWeight:600}} href={'/collectors/' + b.collectors?.id}>{b.collectors?.first_name} {b.collectors?.last_name}</a>
             <span style={{color:'#86868b'}}> · {usd(b.amount_cents)} · {new Date(b.purchased_at).toLocaleDateString()}</span></div>)}
