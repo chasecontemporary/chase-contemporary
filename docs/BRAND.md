@@ -86,3 +86,7 @@ inherits it.
 - 2026-08-26 · Inventory → gallery chip grid; KPI chips color-coded; money right-aligned
   on collector rows; `.sel` unified every dropdown, filter selects auto-submit.
 - 2026-08-26 · Email design language established in `crm/lib/email.js`.
+- 2026-08-26 · Paper surface: invoice PDF (`crm/lib/invoicePdf.js`) — US Letter, 64pt
+  margins, embedded Nimbus (regular/medium/semibold), stacked logo 46pt, hand-tracked caps
+  (pdf-lib has no letterspacing; drawn per-glyph), wall-label line items, hairline rules,
+  centered tracked wordmark footer. All future paper (COA, agreements) uses this pipeline.
