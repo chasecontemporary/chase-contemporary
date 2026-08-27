@@ -23,11 +23,10 @@ export default async function Inventory({ searchParams }) {
     .order('price_cents', { ascending: false, nullsFirst: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
 
-  const [{ data: rows, count: matchCount }, { count: availableCount }, { count: soldCount }, { data: valAgg }, { data: byLoc }, { data: allArtists }] = await Promise.all([
+  const [{ data: rows, count: matchCount }, { count: availableCount }, { count: soldCount }, { data: byLoc }, { data: allArtists }] = await Promise.all([
     query,
     db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true),
     db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', false),
-    db.from('artworks').select('price_cents.sum()').eq('available', true),
     db.from('inventory_by_location').select('*').order('value_cents', { ascending: false }),
     db.from('artist_stats').select('artist, works').order('artist'),
   ]);
@@ -44,7 +43,7 @@ export default async function Inventory({ searchParams }) {
   const holdMap = {}; (activeHolds || []).forEach(h => holdMap[h.artwork_id] = h);
   const inqMap = {}; (openInqs || []).forEach(i => inqMap[i.artwork_handle] = (inqMap[i.artwork_handle] || 0) + 1);
   const statMap = {}; (aStats || []).forEach(s => statMap[s.artist] = s);
-  const onHandValue = valAgg?.[0]?.sum || 0;
+  const onHandValue = (byLoc || []).reduce((s, l) => s + Number(l.value_cents || 0), 0);
   const locs = (byLoc || []).filter(l => l.available > 0);
   const pages = Math.max(1, Math.ceil((matchCount || 0) / PAGE));
   const href = (over) => {
