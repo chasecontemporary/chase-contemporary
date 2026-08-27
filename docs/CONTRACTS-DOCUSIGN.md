@@ -64,6 +64,19 @@ a lawyer's read before first use (we assemble, counsel blesses).
 5. DocuSign account (Devyn/Wyatt) → JWT app + Connect webhook → envelope send + status
    tracking + executed-copy storage.
 
+## The details link (built 8/26 — the customer-facing gathering system)
+
+The clerical half of the close is self-serve: rep taps "Details link" in the pipeline drawer
+(or on the collector page) -> engine mints a tokenized URL (`/d/<token>`, public, brand
+register of the SITE: Nimbus, optic white, underline fields, CONFIRM DETAILS) -> collector
+fills email/phone/billing/delivery (same-as-billing default) on their own device -> record
+updates, INVOICE-READY flips, activity logged, link becomes a thank-you page. On the call
+the script is one line: "I'm sending you a secure link now to confirm delivery and billing."
+
+Automation end-state (when Resend + Stripe land): stage -> Invoiced auto-emails the details
+link -> completion auto-generates the branded invoice PDF -> payment link -> paid -> commissions
+split. The sales call keeps the price and the relationship; the system does the paperwork.
+
 ## Needed from the gallery side
 - Wire instructions text for the invoice payment block (env var `WIRE_INSTRUCTIONS` —
   currently prints "provided under separate cover").

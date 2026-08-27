@@ -67,6 +67,12 @@ that isn't on the live site.
 Subtitles under every H1 say what the page is for in plain words. Empty states explain
 what will fill them.
 
+## Surface 2.5 — Collector-facing engine pages (/d details link)
+
+Site register, not CRM register: optic white, Nimbus via next/font/local, tracked-caps
+wordmark, underline-only fields (no boxes), black full-width CONFIRM button, one quiet
+privacy line. Any page a collector ever sees speaks Chase Contemporary.
+
 ## Surface 3 — Email (campaigns/drops)
 
 The site's language, email-safe: tables + inline styles, Helvetica Neue/Arial stack
