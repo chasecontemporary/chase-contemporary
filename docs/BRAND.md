@@ -56,7 +56,10 @@ that isn't on the live site.
 - **Control law (8/27):** everything you touch is ONE shape — 10px radius, 36px height:
   buttons (`.btn`, `.btn.mini` differ only in label density), text inputs, selects, date
   fields, search, the `$`-prefixed `.money` group. Pills are for STATUS and TABS only,
-  never for controls. Money inputs always carry the $ inside the control and format with
+  never for controls — with ONE sanctioned hybrid: a status that is directly editable in
+  place (chase stage) renders as a colored pill-select: 24px pill, white 10.5px tracked
+  caps, stage color ground, white chevron. Anything sharing a row with it (DEPOSIT IN,
+  PAID) matches that exact 24px pill scale. Money inputs always carry the $ inside the control and format with
   thousands separators.
 - `.sel` — THE select. Every dropdown in the engine uses it: appearance none, white,
   hairline border, pill radius (`.rect` for 10px in forms), custom gray chevron

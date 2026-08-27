@@ -191,10 +191,11 @@ export default async function Finance({ searchParams }) {
               <span style={{fontSize:11.5, color:'#86868b'}}>{new Date(i.issued_at).toLocaleDateString()} · {age}d{overdueRow ? ' · OVERDUE' : ''}</span>
             </span>
             <span style={{fontSize:12.5, color:'#3a3a3c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{i.title}{i.artist ? ' · ' + i.artist : ''}</span>
-            <span>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
+            <span>{i.status === 'paid' ? <span className="pill green" style={{display:'inline-flex', alignItems:'center', height:24, fontSize:10.5, fontWeight:700, letterSpacing:'.04em', whiteSpace:'nowrap'}}>PAID{i.method ? ' · ' + i.method.toUpperCase() : ''}</span>
               : i.status === 'void' ? <span className="pill">Void</span>
               : <ArStage id={i.id} value={i.ar_status}/>}</span>
-            <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10, fontWeight:700}}>DEPOSIT IN · {usd(paidIn[i.id])}</span> : ''}</span>
+            <span>{isOpen && paidIn[i.id] ? <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontSize:10.5, fontWeight:700,
+                display:'inline-flex', alignItems:'center', height:24, whiteSpace:'nowrap', letterSpacing:'.04em'}}>DEPOSIT IN · {usd(paidIn[i.id])}</span> : ''}</span>
             <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>
               {isOpen ? usd(balance(i)) : usd(tot(i))}
               {isOpen && paidIn[i.id] ? <span style={{display:'block', fontSize:10.5, color:'#86868b', fontWeight:400}}>of {usd(tot(i))}</span> : null}</span>

@@ -14,9 +14,10 @@ export default function ArStage({ id, value }) {
   return <select value={v} onChange={(e) => post(e.target.value)}
     onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
     style={{appearance:'none', WebkitAppearance:'none', background: COLOR[v] +
-      " url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") no-repeat right 10px center",
-      color:'#fff', border:0, borderRadius:8, height:30, padding:'0 26px 0 12px',
-      fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer', letterSpacing:'.02em'}}>
-    {STAGES.map(([k, l]) => <option key={k} value={k} style={{background:'#fff', color:'#1d1d1f'}}>{l}</option>)}
+      " url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") no-repeat right 9px center",
+      color:'#fff', border:0, borderRadius:99, height:24, padding:'0 22px 0 11px',
+      fontFamily:'inherit', fontSize:10.5, fontWeight:700, cursor:'pointer',
+      letterSpacing:'.04em', textTransform:'uppercase', whiteSpace:'nowrap'}}>
+    {STAGES.map(([k, l]) => <option key={k} value={k} style={{background:'#fff', color:'#1d1d1f', textTransform:'none'}}>{l}</option>)}
   </select>;
 }
