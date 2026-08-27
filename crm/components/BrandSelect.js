@@ -8,8 +8,9 @@ import { useEffect, useRef, useState } from 'react';
 // Props: name (form field) · options [[value, label]] · defaultValue · value (controlled)
 // onValue(v) · submit (auto-submit owning form on pick) · placeholder
 // pill (compact colored-pill trigger) · pillColor(v) => css color · width
+// control (button-shaped colored trigger — same 36px/10px geometry as .btn, for sitting beside buttons)
 export default function BrandSelect({ name, options = [], defaultValue = '', value, onValue,
-  submit = false, placeholder, pill = false, pillColor, width }) {
+  submit = false, placeholder, pill = false, control = false, pillColor, width }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState(value !== undefined ? value : defaultValue);
   const [pos, setPos] = useState(null);
@@ -44,7 +45,13 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
   };
   const current = options.find(o => String(o[0]) === String(val));
   const label = current ? current[1] : (placeholder || 'Choose…');
-  const trigStyle = pill
+  const trigStyle = control
+    ? { appearance:'none', border:0, borderRadius:10, height:36, padding:'0 14px',
+        background: (pillColor ? pillColor(val) : '#8e8e93'), color:'#fff', fontFamily:'inherit',
+        fontSize:12.5, fontWeight:600, cursor:'pointer', display:'inline-flex',
+        alignItems:'center', justifyContent:'center', gap:8, whiteSpace:'nowrap',
+        transition:'filter .15s ease' }
+    : pill
     ? { appearance:'none', border:0, borderRadius:99, height:24, padding:'0 9px 0 11px',
         background: (pillColor ? pillColor(val) : '#8e8e93'), color:'#fff', fontFamily:'inherit',
         fontSize:10.5, fontWeight:700, letterSpacing:'.04em', textTransform:'uppercase',
@@ -54,7 +61,7 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
         cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, whiteSpace:'nowrap',
         width: width || 'auto', justifyContent:'space-between' };
   const chev = <svg width="9" height="6" viewBox="0 0 10 6" style={{flex:'0 0 auto'}}>
-    <path d="M1 1l4 4 4-4" fill="none" stroke={pill ? '#fff' : '#6e6e73'} strokeWidth="1.6"
+    <path d="M1 1l4 4 4-4" fill="none" stroke={pill || control ? '#fff' : '#6e6e73'} strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round"/></svg>;
   return <>
     {name && <input ref={inputRef} type="hidden" name={name} value={val}/>}

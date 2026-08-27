@@ -317,6 +317,12 @@ export async function POST(req) {
           await db.from('invoice_lines').insert({ invoice_id: inv.id, kind: l.kind,
             artwork_id: l.artwork_id || null, title: l.title || null, artist: l.artist || null,
             amount_cents: cents(l.amount), sort: sort++ });
+        if (form.get('inquiry_id')) {
+          await db.from('inquiries').update({ status: 'invoice', stage_changed_at: new Date().toISOString() })
+            .eq('id', form.get('inquiry_id'));
+          await db.from('activities').insert({ entity_type: 'inquiry', entity_id: form.get('inquiry_id'),
+            kind: 'invoice_generated', body: `#${String(inv.invoice_number).padStart(4,'0')}`, actor: rep });
+        }
       }
     }
   } else if (action === 'invoice_add') {
