@@ -1,6 +1,7 @@
 import Shell from '../../components/Shell';
 import DocPreview from '../../components/DocPreview';
 import ArStage from '../../components/ArStage';
+import FollowUp from '../../components/FollowUp';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const fmtPhone = (p) => {
@@ -253,6 +254,11 @@ export default async function Finance({ searchParams }) {
           </div>
           {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
             borderTop:'1px solid #f0f0f2', background:'#fbfbfd'}}>
+            <FollowUp id={i.id} stage={i.ar_status} email={c && !c.email?.endsWith('import.chasecontemporary.com') ? c.email : ''}
+              name={c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : ''}
+              num={String(i.invoice_number).padStart(4,'0')} balance={usd(balance(i))}
+              pdf={i.pdf_url} docs={docsBySale[i.sale_id] || []}/>
+            <span style={{width:1, height:22, background:'#e8e8ed'}}/>
             <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center'}}>
               <input type="hidden" name="action" value="invoice_payment"/>
               <input type="hidden" name="id" value={i.id}/>
