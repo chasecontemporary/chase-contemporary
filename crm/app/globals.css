@@ -154,3 +154,19 @@ padding:7px 30px 7px 13px;line-height:1.2;cursor:pointer;max-width:220px;text-ov
 form.card input{background:#fff;border:1px solid #e8e8ed;border-radius:10px;font-family:inherit;
 font-size:13px;padding:8px 11px;width:100%}
 form.card input:focus{outline:none;border-color:#0071e3;box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+
+/* unit page catalogue rows */
+.kv2row{display:grid;grid-template-columns:118px 1fr;gap:14px;padding:11px 0;border-bottom:1px solid #f0f0f2;align-items:baseline}
+.kv2row:last-child{border-bottom:0}
+.kv2k{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#86868b;padding-top:1px}
+.kv2v{font-size:13.5px;font-weight:500;line-height:1.5}
+/* disclosure editor */
+details.edit{background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+details.edit summary{cursor:pointer;font-size:13px;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px}
+details.edit summary::before{content:'';width:7px;height:7px;border-right:1.5px solid #86868b;border-bottom:1.5px solid #86868b;transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
+details.edit[open] summary::before{transform:rotate(45deg)}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fgrid label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#86868b}
+.fgrid input{background:#fff;border:1px solid #e8e8ed;border-radius:10px;font-family:inherit;font-size:13.5px;padding:8px 11px;color:#1d1d1f}
+.fgrid input:focus{outline:none;border-color:#0071e3;box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+.inline-form input[type=date]{background:#fff;border:1px solid #e8e8ed;border-radius:10px;font-family:inherit;font-size:13px;padding:7px 11px;color:#1d1d1f}

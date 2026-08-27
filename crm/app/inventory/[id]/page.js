@@ -4,12 +4,18 @@ import { listingGaps } from '../../../lib/readiness';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
+const Row = ({ k, children }) => children ? <div className="kv2row">
+  <div className="kv2k">{k}</div><div className="kv2v">{children}</div>
+</div> : null;
+
 export default async function Unit({ params, searchParams }) {
   const { id } = await params;
   const pusherr = (await searchParams)?.pusherr;
   const { data: a } = await db.from('artworks').select('*').eq('id', id).single();
   if (!a) return <Shell active="inventory"><div className="empty">Not found</div></Shell>;
   const { data: comps } = a.artist ? await db.from('artist_comps').select('*').eq('artist', a.artist).single()
+    .then(r => r) : { data: null };
+  const { data: astat } = a.artist ? await db.from('artist_stats').select('*').eq('artist', a.artist).single()
     .then(r => r) : { data: null };
   const area = a.dims_h_in > 0 && a.dims_w_in > 0 ? a.dims_h_in * a.dims_w_in : 0;
   const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
@@ -21,116 +27,150 @@ export default async function Unit({ params, searchParams }) {
     db.from('holds').select('*').eq('artwork_id', a.id).eq('kind', 'approval').eq('status', 'active'),
   ]);
   const out = (appr || [])[0];
+  const gaps = a.available && !a.shopify_product_id ? listingGaps(a) : [];
+  const back = '/inventory/' + a.id;
+  const priced = (a.price_cents || 0) > 0;
+
   return <Shell active="inventory">
-    <div style={{display:'grid', gridTemplateColumns:'minmax(0,480px) 1fr', gap:28, alignItems:'start'}}>
-      <div className="card" style={{padding:12}}>
-        {a.image_url && <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=1200'}
-          alt="" style={{width:'100%', borderRadius:8}}/>}
-      </div>
-      <div>
-        {pusherr && <div style={{gridColumn:'1/-1', background:'#ffefdc', color:'#b25a00', borderRadius:12,
-      padding:'10px 14px', fontSize:13, fontWeight:600}}>Push blocked — missing: {pusherr}</div>}
-    <div className="h1">{a.title}</div>
-        <div className="sub">{a.artist}</div>
-        <div className="stats" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
-          <div className="stat"><div className="n" style={{fontSize:22}}>{(a.price_cents||0) > 0 ? usd(a.price_cents)
-            : a.internal_value_cents > 0 ? usd(a.internal_value_cents) : 'POR'}</div>
-            <div className="l">{(a.price_cents||0) > 0 ? 'List price' : a.internal_value_cents > 0 ? 'Internal estimate (POR)' : 'List price'}</div></div>
-          <div className="stat"><div className="n" style={{fontSize:22}}>{(inqs||[]).length}</div><div className="l">Total inquiries</div></div>
-          <div className="stat"><div className="n" style={{fontSize:17,paddingTop:5}}>{a.available ? 'Available' : 'Sold'}</div><div className="l">Status</div></div>
+    {pusherr && <div style={{background:'#ffefdc', color:'#b25a00', borderRadius:12, marginBottom:16,
+      padding:'11px 16px', fontSize:13, fontWeight:600}}>Push blocked — still missing: {pusherr}</div>}
+    <div style={{display:'grid', gridTemplateColumns:'minmax(0,460px) 1fr', gap:32, alignItems:'start'}}>
+
+      <div style={{position:'sticky', top:24}}>
+        <div className="card" style={{padding:14}}>
+          {a.image_url
+            ? <img src={a.image_url + (a.image_url.includes('?') ? '&' : '?') + 'width=1200'}
+                alt="" style={{width:'100%', borderRadius:8, display:'block'}}/>
+            : <div style={{aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center',
+                background:'#fafafa', borderRadius:8, fontSize:11, letterSpacing:'.08em', color:'#c7c7cc'}}>NO IMAGE</div>}
         </div>
-        <div className="card" style={{marginTop:14}}>
-          <dl className="kv" style={{marginTop:0}}>
-            {a.medium && <><dt>Medium</dt><dd>{a.medium}</dd></>}
-            {a.dims_h_in && <><dt>Size</dt><dd>{a.dims_h_in} × {a.dims_w_in} in</dd></>}
-            <dt>Type</dt><dd>{a.product_type || '—'}</dd>
-            <dt>Location</dt><dd>{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : '—'))}</dd>
-            {a.handle ? <><dt>On site</dt><dd><a style={{color:'#0071e3'}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">View product page ↗</a></dd></>
-              : a.available ? <><dt>On site</dt><dd>{(() => {
-                const gaps = listingGaps(a);
-                return gaps.length
-                  ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10.5}}>NOT READY: {gaps.join(' · ').toUpperCase()}</span>
-                  : <>
+      </div>
+
+      <div style={{display:'flex', flexDirection:'column', gap:14}}>
+        <div>
+          <div style={{display:'flex', gap:10, alignItems:'center'}}>
+            <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</span>
+            {out ? <span className="pill" style={{background:'#ff9500', color:'#fff', fontSize:10, fontWeight:700}}>ON APPROVAL</span>
+              : a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
+              : <span className="pill" style={{fontSize:10, fontWeight:700}}>SOLD</span>}
+          </div>
+          <div className="h1" style={{fontSize:27, marginTop:4, letterSpacing:'-.02em'}}>{a.title}</div>
+          <div style={{fontSize:13, color:'#86868b', marginTop:5}}>
+            {[a.medium, a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null].filter(Boolean).join(' · ') || 'Details incomplete'}
+          </div>
+        </div>
+
+        <div className="stats" style={{gridTemplateColumns:'repeat(3,1fr)', marginTop:2}}>
+          <div className="stat"><div className="n" style={{fontSize:21}}>{priced ? usd(a.price_cents)
+            : a.internal_value_cents > 0 ? usd(a.internal_value_cents) : 'POR'}</div>
+            <div className="l">{priced ? 'List price' : a.internal_value_cents > 0 ? 'Internal estimate' : 'Price on request'}</div></div>
+          <div className="stat"><div className="n" style={{fontSize:21}}>{(inqs||[]).length}</div><div className="l">Inquiries on this work</div></div>
+          <div className="stat"><div className="n" style={{fontSize:21}}>{astat?.sold > 0 ? astat.sell_through + '%' : '—'}</div>
+            <div className="l">{astat?.sold > 0 ? `Artist sell-through · ${astat.sold} sold` : 'Artist sell-through'}</div></div>
+        </div>
+
+        <div className="card" style={{padding:'4px 18px'}}>
+          <Row k="Medium">{a.medium}</Row>
+          <Row k="Size">{a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null}</Row>
+          <Row k="Type">{a.product_type}</Row>
+          <Row k="Location">{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : null))}</Row>
+          <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
+          <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>
+          <Row k="Website">{a.handle
+            ? <a style={{color:'#0071e3', fontWeight:500}} href={'https://www.chasecontemporary.com/products/' + a.handle} target="_blank">On the site — view product ↗</a>
+            : a.available
+              ? gaps.length
+                ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10.5}}>NOT READY · {gaps.join(' · ').toUpperCase()}</span>
+                : <span style={{display:'inline-flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
                     <form method="POST" action="/api/act" style={{display:'inline'}}>
                       <input type="hidden" name="action" value="artwork_push"/>
                       <input type="hidden" name="id" value={a.id}/>
-                      <input type="hidden" name="back" value={'/inventory/' + a.id}/>
-                      <button className="btn mini">Push to site (draft)</button>
+                      <input type="hidden" name="back" value={back}/>
+                      <button className="btn mini">Push to site as draft</button>
                     </form>
-                    <span style={{fontSize:11.5, color:'#86868b', marginLeft:8}}>Ready · image resolution checked at push · lands unpublished</span>
-                  </>;
-              })()}</dd></> : null}
-          </dl>
+                    <span style={{fontSize:11.5, color:'#86868b'}}>Lands unpublished · resolution checked at push</span>
+                  </span>
+              : <span style={{color:'#86868b'}}>Not listed</span>}</Row>
         </div>
-        {!a.shopify_product_id && a.available && <div className="card" style={{marginTop:14}}>
-          <div style={{fontSize:13, fontWeight:650, marginBottom:8}}>Work details <span style={{fontWeight:400, color:'#86868b', fontSize:12}}>· close listing gaps here</span></div>
-          <form method="POST" action="/api/act" className="inline-form" style={{margin:0, flexWrap:'wrap'}}>
-            <input type="hidden" name="action" value="artwork_update"/>
-            <input type="hidden" name="id" value={a.id}/>
-            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
-            <input name="title" defaultValue={a.title || ''} placeholder="Title" style={{flex:1, minWidth:180}}/>
-            <input name="artist" defaultValue={a.artist || ''} placeholder="Artist" style={{width:150}}/>
-            <input name="medium" defaultValue={a.medium || ''} placeholder="Medium" style={{width:170}}/>
-            <input name="h" type="number" step="0.01" defaultValue={a.dims_h_in || ''} placeholder="H in" style={{width:70}}/>
-            <input name="w" type="number" step="0.01" defaultValue={a.dims_w_in || ''} placeholder="W in" style={{width:70}}/>
-            <button className="btn mini">Save</button>
-          </form>
-        </div>}
-        {!(a.price_cents > 0) && <div className="card" style={{marginTop:14}}>
-          <div style={{fontSize:13, fontWeight:650, marginBottom:4}}>Internal estimate</div>
-          <div style={{fontSize:12, color:'#86868b', marginBottom:8}}>What we hold this POR work at. Never shown to collectors — range bids in the pipeline read as a % of this.</div>
-          {suggested > 0 && <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:10, flexWrap:'wrap'}}>
-            <span className="pill" style={{background:'#f0f0f2', fontSize:11, fontWeight:700}}>
-              SUGGESTED {usd(suggested * 100)}</span>
-            <span style={{fontSize:11.5, color:'#86868b'}}>
-              from {comps.n_comps} realized sales of {a.artist} · median ${(ppsi / 100).toFixed(0)}/sq in
-              {comps.n_recent >= 5 ? ' (recency-weighted)' : ''} · {a.dims_h_in} × {a.dims_w_in} in</span>
-            <form method="POST" action="/api/act" style={{display:'inline'}}>
+
+        {!priced && <div className="card">
+          <div style={{fontSize:13.5, fontWeight:650}}>Internal estimate</div>
+          <div style={{fontSize:12, color:'#86868b', marginTop:3, marginBottom:12}}>
+            What the gallery holds this work at — never shown to collectors. Range bids in the pipeline read as a percentage of this.</div>
+          {suggested > 0 && <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap',
+            background:'#f5f5f7', borderRadius:10, padding:'10px 12px', marginBottom:12}}>
+            <div style={{flex:1, minWidth:220}}>
+              <div style={{fontSize:13, fontWeight:700, fontVariantNumeric:'tabular-nums'}}>{usd(suggested * 100)} suggested</div>
+              <div style={{fontSize:11.5, color:'#86868b', marginTop:2}}>
+                {comps.n_comps} realized {a.artist} sales · median ${(ppsi / 100).toFixed(0)}/sq in{comps.n_recent >= 5 ? ', recency-weighted' : ''}</div>
+            </div>
+            <form method="POST" action="/api/act">
               <input type="hidden" name="action" value="artwork_value"/>
               <input type="hidden" name="id" value={a.id}/>
               <input type="hidden" name="value" value={suggested}/>
-              <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+              <input type="hidden" name="back" value={back}/>
               <button className="btn mini">Use suggestion</button>
             </form>
           </div>}
           <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
             <input type="hidden" name="action" value="artwork_value"/>
             <input type="hidden" name="id" value={a.id}/>
-            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+            <input type="hidden" name="back" value={back}/>
             <input name="value" type="number" step="0.01" defaultValue={a.internal_value_cents ? a.internal_value_cents / 100 : ''} placeholder="Estimate $" style={{width:160}}/>
             <button className="btn mini">Save</button>
           </form>
         </div>}
-        {a.available && <div className="card" style={{marginTop:14}}>
-          <div style={{fontSize:13, fontWeight:650, marginBottom:8}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
-          {out ? <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
+
+        {a.available && <div className="card">
+          <div style={{fontSize:13.5, fontWeight:650, marginBottom:out ? 10 : 3}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
+          {!out && <div style={{fontSize:12, color:'#86868b', marginBottom:12}}>Release the work to a client, designer, or partner with a return date.</div>}
+          {out ? <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
             <span>With <b>{out.out_to}</b>{out.expires_at ? ` · due back ${new Date(out.expires_at).toLocaleDateString()}` : ''}</span>
             {['returned','converted'].map(o => <form key={o} method="POST" action="/api/act">
               <input type="hidden" name="action" value="approval_close"/>
               <input type="hidden" name="id" value={a.id}/>
               <input type="hidden" name="hold_id" value={out.id}/>
               <input type="hidden" name="outcome" value={o}/>
-              <input type="hidden" name="back" value={'/inventory/' + a.id}/>
+              <input type="hidden" name="back" value={back}/>
               <button className="btn mini">{o === 'returned' ? 'Mark returned' : 'Converted to sale'}</button>
             </form>)}
           </div> : <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
             <input type="hidden" name="action" value="approval_out"/>
             <input type="hidden" name="id" value={a.id}/>
-            <input type="hidden" name="back" value={'/inventory/' + a.id}/>
-            <input name="out_to" placeholder="With whom (client, designer, partner)" required style={{flex:1, minWidth:200}}/>
+            <input type="hidden" name="back" value={back}/>
+            <input name="out_to" placeholder="With whom" required style={{flex:1, minWidth:180}}/>
             <input name="due" type="date" style={{width:150}}/>
             <button className="btn mini">Send out</button>
           </form>}
         </div>}
-        {(buys||[]).length > 0 && <div className="card" style={{marginTop:14}}>
-          <div style={{fontSize:13, fontWeight:650, marginBottom:6}}>Sold to</div>
-          {(buys||[]).map(b => <div key={b.id} style={{fontSize:13.5}}>
+
+        {(buys||[]).length > 0 && <div className="card">
+          <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>Sold to</div>
+          {(buys||[]).map(b => <div key={b.id} style={{fontSize:13.5, padding:'4px 0'}}>
             <a style={{fontWeight:600}} href={'/collectors/' + b.collectors?.id}>{b.collectors?.first_name} {b.collectors?.last_name}</a>
-            {' · '}{usd(b.amount_cents)} · {new Date(b.purchased_at).toLocaleDateString()}</div>)}
+            <span style={{color:'#86868b'}}> · {usd(b.amount_cents)} · {new Date(b.purchased_at).toLocaleDateString()}</span></div>)}
         </div>}
+
+        {!a.shopify_product_id && a.available && <details className="edit">
+          <summary>Edit work details{gaps.length ? ` — ${gaps.length} listing gap${gaps.length > 1 ? 's' : ''} to close` : ''}</summary>
+          <form method="POST" action="/api/act" style={{marginTop:14}}>
+            <input type="hidden" name="action" value="artwork_update"/>
+            <input type="hidden" name="id" value={a.id}/>
+            <input type="hidden" name="back" value={back}/>
+            <div className="fgrid">
+              <label>Title<input name="title" defaultValue={a.title || ''}/></label>
+              <label>Artist<input name="artist" defaultValue={a.artist || ''}/></label>
+              <label>Medium<input name="medium" defaultValue={a.medium || ''}/></label>
+              <label>Height (in)<input name="h" type="number" step="0.01" defaultValue={a.dims_h_in || ''}/></label>
+              <label>Width (in)<input name="w" type="number" step="0.01" defaultValue={a.dims_w_in || ''}/></label>
+            </div>
+            <button className="btn mini" style={{marginTop:12}}>Save details</button>
+          </form>
+        </details>}
       </div>
     </div>
-    <div className="h1" style={{fontSize:18, marginTop:30}}>Interest history</div>
+
+    <div className="h1" style={{fontSize:18, marginTop:34}}>Interest history</div>
     <div className="sub">Every inquiry on this work — the demand signal</div>
     <div className="tblcard"><table className="tbl"><thead><tr>
       <th>When</th><th>Collector</th><th>Budget</th><th>Status</th><th>Owner</th></tr></thead><tbody>
