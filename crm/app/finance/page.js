@@ -3,6 +3,11 @@ import DocPreview from '../../components/DocPreview';
 import ArStage from '../../components/ArStage';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
+const fmtPhone = (p) => {
+  const d = String(p || '').replace(/\D/g, '');
+  const n = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  return n.length === 10 ? `(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}` : p;
+};
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const usdK = (c) => {
   const d = Math.round((c || 0) / 100);
@@ -200,7 +205,7 @@ export default async function Finance({ searchParams }) {
               {c ? <div style={{fontSize:13, lineHeight:1.7}}>
                 <a style={{fontWeight:650}} href={'/collectors/' + c.id}>{[c.first_name, c.last_name].filter(Boolean).join(' ')}</a>
                 {[c.city, c.state].filter(Boolean).length ? <div style={{color:'#86868b', fontSize:12}}>{[c.city, c.state].filter(Boolean).join(', ')}</div> : null}
-                {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{c.phone}</a></div>}
+                {c.phone && <div><a href={'tel:' + c.phone} style={{color:'#0071e3'}}>{fmtPhone(c.phone)}</a></div>}
                 {c.email && !c.email.endsWith('import.chasecontemporary.com') && <div><a href={'mailto:' + c.email} style={{color:'#0071e3'}}>{c.email}</a></div>}
               </div> : <div style={{fontSize:12.5, color:'#86868b'}}>No collector attached</div>}
             </div>

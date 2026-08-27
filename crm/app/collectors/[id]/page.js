@@ -2,6 +2,11 @@ import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
+const fmtPhone = (p) => {
+  const d = String(p || '').replace(/\D/g, '');
+  const n = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  return n.length === 10 ? `(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}` : p;
+};
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
 export default async function Card({ params, searchParams }) {
@@ -36,7 +41,7 @@ export default async function Card({ params, searchParams }) {
 
   return <Shell active="collectors">
     <div className="h1">{[c.salutation, c.first_name, c.last_name].filter(Boolean).join(' ')}{c.trade ? ' · Trade' : ''}</div>
-    <div className="sub">{[c.email, c.phone, c.company].filter(Boolean).join(' · ')}</div>
+    <div className="sub">{[c.email, fmtPhone(c.phone), c.company].filter(Boolean).join(' · ')}</div>
 
     <div className="stats">
       <div className="stat"><div className="n">{usd(lifetime)}</div><div className="l">Lifetime spend</div></div>
