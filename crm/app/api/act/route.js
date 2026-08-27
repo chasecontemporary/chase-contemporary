@@ -41,6 +41,16 @@ export async function POST(req) {
     await db.from('holds').update({ status: outcome }).eq('id', form.get('hold_id'));
     await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
       kind: 'on_approval_' + outcome, actor: rep });
+  } else if (action === 'collector_update') {
+    const fields = ['salutation','first_name','last_name','company','phone','email',
+      'address_line1','address_line2','city','state','zip','country',
+      'shipping_line1','shipping_line2','shipping_city','shipping_state','shipping_zip','shipping_country'];
+    const patch = {};
+    fields.forEach(f => { if (form.has(f)) patch[f] = form.get(f) || null; });
+    if (patch.email) patch.email = patch.email.trim().toLowerCase();
+    await db.from('collectors').update(patch).eq('id', id);
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
+      kind: 'details_updated', actor: rep });
   } else if (action === 'interest_add') {
     const label = (form.get('label') || '').trim();
     if (label) await db.from('collector_interests').upsert(

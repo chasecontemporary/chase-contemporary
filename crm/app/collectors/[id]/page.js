@@ -110,6 +110,50 @@ export default async function Card({ params }) {
       <tr><td style={{color:'#86868b'}}>Flags</td><td>{[c.trade && 'Trade', c.newsletter && 'Newsletter'].filter(Boolean).join(' · ') || '—'}</td></tr>
     </tbody></table></div>
 
+    <div className="h1" style={{fontSize:18, marginTop:34}}>Invoice &amp; shipping details</div>
+    <div className="sub">Everything an invoice needs — gathered on the details call, not the inquiry form</div>
+    {(() => {
+      const missing = [
+        !c.address_line1 && 'billing address',
+        !(c.city && c.state) && 'city / state',
+        !c.phone && 'phone',
+        (!c.email || c.email.endsWith('import.chasecontemporary.com')) && 'email',
+      ].filter(Boolean);
+      return <div style={{marginTop:8}}>{missing.length
+        ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:11}}>MISSING FOR INVOICE: {missing.join(' · ').toUpperCase()}</span>
+        : <span className="pill" style={{background:'#e4f7e9', color:'#1d7a3d', fontWeight:700, fontSize:11}}>INVOICE-READY</span>}</div>;
+    })()}
+    <form method="POST" action="/api/act" className="card" style={{marginTop:12, padding:16}}>
+      <input type="hidden" name="action" value="collector_update"/>
+      <input type="hidden" name="id" value={c.id}/>
+      <input type="hidden" name="back" value={'/collectors/' + c.id}/>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8}}>
+        <input name="salutation" defaultValue={c.salutation || ''} placeholder="Salutation"/>
+        <input name="company" defaultValue={c.company || ''} placeholder="Company"/>
+        <input name="email" defaultValue={c.email?.endsWith('import.chasecontemporary.com') ? '' : (c.email || '')} placeholder="Email" type="email"/>
+        <input name="phone" defaultValue={c.phone || ''} placeholder="Phone"/>
+      </div>
+      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#86868b', margin:'12px 0 6px'}}>BILLING</div>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8}}>
+        <input name="address_line1" defaultValue={c.address_line1 || ''} placeholder="Address line 1"/>
+        <input name="address_line2" defaultValue={c.address_line2 || ''} placeholder="Address line 2"/>
+        <input name="city" defaultValue={c.city || ''} placeholder="City"/>
+        <input name="state" defaultValue={c.state || ''} placeholder="State"/>
+        <input name="zip" defaultValue={c.zip || ''} placeholder="Zip"/>
+        <input name="country" defaultValue={c.country || ''} placeholder="Country"/>
+      </div>
+      <div style={{fontSize:11.5, fontWeight:650, letterSpacing:'.03em', color:'#86868b', margin:'12px 0 6px'}}>SHIPPING (drives sales tax + logistics; blank = same as billing)</div>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8}}>
+        <input name="shipping_line1" defaultValue={c.shipping_line1 || ''} placeholder="Address line 1"/>
+        <input name="shipping_line2" defaultValue={c.shipping_line2 || ''} placeholder="Address line 2"/>
+        <input name="shipping_city" defaultValue={c.shipping_city || ''} placeholder="City"/>
+        <input name="shipping_state" defaultValue={c.shipping_state || ''} placeholder="State"/>
+        <input name="shipping_zip" defaultValue={c.shipping_zip || ''} placeholder="Zip"/>
+        <input name="shipping_country" defaultValue={c.shipping_country || ''} placeholder="Country"/>
+      </div>
+      <button className="btn mini" style={{marginTop:12}}>Save details</button>
+    </form>
+
     <div className="h1" style={{fontSize:18, marginTop:34}}>Collection</div>
     <div className="sub">What they own — the heart of the record</div>
     <div className="tblcard"><table className="tbl"><thead><tr>

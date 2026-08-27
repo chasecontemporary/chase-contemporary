@@ -164,6 +164,14 @@ export default function Kanban({ initial, team = [] }) {
           <dt>Found us via</dt><dd>{openLead.source || c.source || '—'}</dd>
           <dt>Device</dt><dd>{openLead.device || '—'}</dd>
           <dt>Time on page</dt><dd>{openLead.seconds_on_page ? openLead.seconds_on_page + 's' : '—'}</dd>
+          <dt>Invoice-ready</dt><dd>{(() => {
+            const col = openLead.collectors || {};
+            const miss = [!col.address_line1 && 'billing address', !col.phone && 'phone',
+              (!col.email || col.email.endsWith?.('import.chasecontemporary.com')) && 'email'].filter(Boolean);
+            return miss.length
+              ? <a href={'/collectors/' + col.id} style={{color:'#b25a00', fontWeight:600}}>Missing: {miss.join(' · ')} →</a>
+              : <span style={{color:'#1d7a3d', fontWeight:600}}>Yes — all details on file</span>;
+          })()}</dd>
           <dt>Owner</dt><dd>
             <select value={openLead.owner || ''} onChange={async e => {
               const owner = e.target.value;

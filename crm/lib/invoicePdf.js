@@ -54,6 +54,7 @@ export async function buildInvoicePdf({ invoice, collector, items }) {
   y -= 26;
 
   // billed to
+  const blockTop = y;
   tracked(page, 'BILLED TO', { x: M, y, size: 7.5, font: semibold, color: GRAY, spacing: 1.8 });
   y -= 15;
   const name = [collector?.salutation, collector?.first_name, collector?.last_name].filter(Boolean).join(' ') || 'Client';
@@ -65,9 +66,23 @@ export async function buildInvoicePdf({ invoice, collector, items }) {
     collector?.country,
     collector?.email && !collector.email.endsWith('import.chasecontemporary.com') ? collector.email : null,
   ].filter(Boolean);
+  let sy = blockTop;
   for (const line of addr) {
     page.drawText(String(line), { x: M, y, size: 9, font: regular, color: GRAY });
     y -= 12;
+  }
+  if (collector?.shipping_line1) {
+    const sx = M + 230;
+    tracked(page, 'SHIP TO', { x: sx, y: sy, size: 7.5, font: semibold, color: GRAY, spacing: 1.8 });
+    sy -= 15 + 14;
+    const ship = [collector.shipping_line1, collector.shipping_line2,
+      [collector.shipping_city, collector.shipping_state, collector.shipping_zip].filter(Boolean).join(', '),
+      collector.shipping_country].filter(Boolean);
+    for (const line of ship) {
+      page.drawText(String(line), { x: sx, y: sy, size: 9, font: regular, color: GRAY });
+      sy -= 12;
+    }
+    y = Math.min(y, sy);
   }
   y -= 18;
 

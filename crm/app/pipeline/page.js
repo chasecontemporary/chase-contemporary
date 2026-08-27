@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Pipeline() {
   const { data: rows } = await db.from('inquiries')
-    .select('*, collectors(id, first_name, last_name, email, phone, city, timezone, budget_range, trade, source)')
+    .select('*, collectors(id, first_name, last_name, email, phone, city, timezone, budget_range, trade, source, address_line1, state)')
     .neq('status', 'closed').order('created_at', { ascending: false }).limit(300);
   const handles = [...new Set((rows || []).map(r => r.artwork_handle).filter(Boolean))];
   let artMap = {};
