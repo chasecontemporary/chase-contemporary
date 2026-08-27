@@ -2,6 +2,14 @@ import Shell from '../../components/Shell';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
+const supplyChip = (m) => m == null ? null
+  : m <= 24 ? { label: Math.round(m) + ' MO', tone: m <= 12 ? 'g' : 'n' }
+  : m <= 120 ? { label: (m / 12).toFixed(m <= 36 ? 1 : 0) + ' YR', tone: 'a' }
+  : { label: '10+ YR', tone: 'a' };
+const trendLabel = (tr) => tr == null ? null
+  : tr >= 100 ? { label: ((1 + tr / 100).toFixed(tr >= 400 ? 0 : 1)) + '\u00d7', up: true }
+  : { label: (tr >= 0 ? '+' : '\u2212') + Math.abs(tr) + '%', up: tr >= 0 };
+const TONE = { g: {background:'#e4f7e9', color:'#1d7a3d'}, n: {background:'#f0f0f2'}, a: {background:'#ffefdc', color:'#b25a00'} };
 const ago = (d) => {
   if (!d) return null;
   const days = Math.floor((Date.now() - new Date(d)) / 86400000);
@@ -86,7 +94,9 @@ export default async function Artists({ searchParams }) {
         <div className="stat"><div className="n">{usd(totHold)}</div><div className="l">Capital on hand (priced retail)</div></div>
         <div className="stat"><div className="n">{units.toLocaleString()}</div><div className="l">Units on hand · {all.length} artists</div></div>
         <div className="stat"><div className="n">{rate12}</div><div className="l">Works sold, last 12 months</div></div>
-        <div className="stat"><div className="n">{bookSupply === null ? '—' : bookSupply + ' mo'}</div><div className="l">Months of supply at current velocity</div></div>
+        <div className="stat"><div className="n">{bookSupply === null ? '—'
+          : bookSupply <= 24 ? bookSupply + ' mo' : Math.round(bookSupply / 12) + ' yr'}</div>
+          <div className="l">Supply on hand at current velocity</div></div>
       </div>; })()}
 
     <div style={{display:'flex', gap:8, marginTop:20, alignItems:'center', flexWrap:'wrap'}}>
@@ -131,11 +141,17 @@ export default async function Artists({ searchParams }) {
             <span style={{fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>{r.on_hand_value_cents > 0 ? usd(r.on_hand_value_cents) : r.on_hand > 0 ? 'unvalued' : '—'}</span>
             <span style={{display:'block', fontSize:11.5, color:'#86868b'}}>{r.on_hand > 0 ? Number(r.on_hand).toLocaleString() + ' unit' + (r.on_hand > 1 ? 's' : '') : 'none'}</span>
           </span>
-          <span style={{textAlign:'right'}}>{sup === null ? <span style={{color:'#c7c7cc'}}>—</span>
-            : sup === Infinity ? <span className="pill" style={{background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10}}>NO VELOCITY</span>
-            : <span className="pill" style={{fontSize:10.5, fontWeight:700, fontVariantNumeric:'tabular-nums',
-                ...(sup <= 12 ? {background:'#e4f7e9', color:'#1d7a3d'} : sup <= 24 ? {background:'#f0f0f2'}
-                  : {background:'#ffefdc', color:'#b25a00'})}}>{Math.round(sup)} MO</span>}</span>
+          <span style={{textAlign:'right'}}>{(() => {
+            if (sup === null) return <span style={{color:'#c7c7cc'}}>—</span>;
+            if (sup === Infinity) {
+              const material = Number(r.on_hand_value_cents) >= 5000000 || Number(r.on_hand) >= 10;
+              return material
+                ? <span className="pill" style={{...TONE.a, fontWeight:700, fontSize:10}}>NO VELOCITY</span>
+                : <span style={{fontSize:11.5, color:'#86868b'}}>no recent sales</span>;
+            }
+            const c = supplyChip(sup);
+            return <span className="pill" style={{fontSize:10.5, fontWeight:700, fontVariantNumeric:'tabular-nums', ...TONE[c.tone]}}>{c.label}</span>;
+          })()}</span>
           <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums'}}>{Number(r.sold_12mo) > 0 ? r.sold_12mo : '—'}</span>
           <span>{st === null ? <span style={{color:'#c7c7cc'}}>—</span>
             : <span className="pill" style={{fontSize:10.5, fontWeight:700,
@@ -143,7 +159,7 @@ export default async function Artists({ searchParams }) {
                   : {background:'#ffefdc', color:'#b25a00'})}}>{st}%</span>}</span>
           <span style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:600,
             color: tr === undefined ? '#c7c7cc' : tr >= 0 ? '#1d7a3d' : '#b25a00'}}>
-            {tr === undefined ? '—' : (tr >= 0 ? '+' : '') + tr + '%'}</span>
+            {tr === undefined ? '—' : trendLabel(tr).label}</span>
           <span style={{textAlign:'right'}}>
             <span style={{fontVariantNumeric:'tabular-nums', fontWeight:700, fontSize:14}}>{r.revenue_cents > 0 ? usd(r.revenue_cents) : '—'}</span>
             <span className="meter" style={{marginTop:5, marginLeft:'auto', width:'100%'}}>

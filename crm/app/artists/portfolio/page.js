@@ -64,7 +64,9 @@ export default async function Portfolio({ searchParams }) {
         <div className="l">Portfolio value (retail + estimates)</div></div>
       <div className="stat"><div className="n">{Number(perf.on_hand).toLocaleString()}</div>
         <div className="l">Units on hand{unpriced ? ` · ${unpriced} unvalued` : ''}</div></div>
-      <div className="stat"><div className="n">{supply === null ? (Number(perf.on_hand) > 0 ? '∞' : '—') : supply + ' mo'}</div>
+      <div className="stat"><div className="n">{supply === null
+          ? (Number(perf.on_hand) > 0 ? 'No velocity' : '—')
+          : supply <= 24 ? supply + ' mo' : (supply / 12).toFixed(supply <= 36 ? 1 : 0) + ' yr'}</div>
         <div className="l">Supply at current velocity · {perf.sold_12mo} sold last 12 mo</div></div>
       <div className="stat"><div className="n">{perf.sell_through === null ? '—' : perf.sell_through + '%'}</div>
         <div className="l">Sell-through · {perf.sold} sold all time</div></div>
@@ -77,7 +79,7 @@ export default async function Portfolio({ searchParams }) {
       <div className="stat"><div className="n" style={{fontSize:19}}>{comps ? '$' + (Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) / 100).toFixed(0) + '/sq in' : '—'}</div>
         <div className="l">Realized price per square inch</div></div>
       <div className="stat"><div className="n" style={{fontSize:19, color: trend === null ? undefined : trend >= 0 ? '#1d7a3d' : '#b25a00'}}>
-        {trend === null ? '—' : (trend >= 0 ? '+' : '') + trend + '%'}</div>
+        {trend === null ? '—' : trend >= 100 ? ((1 + trend / 100).toFixed(trend >= 400 ? 0 : 1)) + '\u00d7' : (trend >= 0 ? '+' : '\u2212') + Math.abs(trend) + '%'}</div>
         <div className="l">Price trend · last 3 years vs all time</div></div>
     </div>
 
