@@ -1,31 +1,40 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { pickerInput, pickerChevron, pickerMenu } from './pickerShared';
 
-// Search-as-you-type collector picker: sets a hidden collector_id for the form.
-export default function CollectorPicker({ name = 'collector_id', placeholder = 'Collector…', required = false }) {
+// Collector dropdown-search: opens on click with the top of the book, filters as you type.
+export default function CollectorPicker({ name = 'collector_id', placeholder = 'Choose a collector…', required = false }) {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState([]);
+  const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState(null);
   const t = useRef();
-  const search = (v) => {
-    setQ(v); setPicked(null);
+  const rootRef = useRef(null);
+  useEffect(() => {
+    const away = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const key = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('mousedown', away);
+    window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('mousedown', away); window.removeEventListener('keydown', key); };
+  }, []);
+  const load = (v) => {
     clearTimeout(t.current);
-    if (v.length < 2) { setHits([]); return; }
     t.current = setTimeout(async () => {
       const r = await fetch('/api/collectors?q=' + encodeURIComponent(v)).then(x => x.json());
-      setHits(r);
-    }, 180);
+      setHits(r); setOpen(true);
+    }, v ? 160 : 0);
   };
-  return <span style={{position:'relative', display:'inline-block', minWidth:230, flex:1}}>
+  const search = (v) => { setQ(v); setPicked(null); load(v); };
+  const focus = () => { if (!picked) load(q); };
+  return <span ref={rootRef} style={{position:'relative', display:'block'}}>
     <input type="hidden" name={name} value={picked?.id || ''} required={required}/>
-    <input value={picked ? picked.name : q} onChange={e => search(e.target.value)}
-      placeholder={placeholder} required={required && !picked}
-      style={{width:'100%', background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, height:36,
-        fontFamily:'inherit', fontSize:13.5, padding:'0 11px'}}/>
-    {!picked && hits.length > 0 && <span style={{position:'absolute', top:40, left:0, right:0, zIndex:40,
-      background:'#fff', border:'1px solid #e8e8ed', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,.12)',
-      overflow:'hidden', display:'block'}}>
-      {hits.map(h => <button key={h.id} type="button" onClick={() => { setPicked(h); setHits([]); }}
+    <input value={picked ? picked.name : q} onChange={e => search(e.target.value)} onFocus={focus}
+      onClick={() => { if (picked) { setPicked(null); setQ(''); load(''); } }}
+      placeholder={placeholder} required={required && !picked} style={pickerInput}/>
+    <svg width="10" height="6" viewBox="0 0 10 6" style={pickerChevron}>
+      <path d="M1 1l4 4 4-4" fill="none" stroke="#6e6e73" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    {open && !picked && hits.length > 0 && <span style={pickerMenu}>
+      {hits.map(h => <button key={h.id} type="button" onClick={() => { setPicked(h); setOpen(false); }}
         style={{display:'block', width:'100%', textAlign:'left', padding:'9px 12px', background:'#fff',
           border:0, borderBottom:'1px solid #f5f5f7', cursor:'pointer', fontFamily:'inherit'}}>
         <span style={{fontSize:13, fontWeight:600}}>{h.name}</span>

@@ -1,31 +1,41 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { pickerInput, pickerChevron, pickerMenu } from './pickerShared';
 
-// Search-as-you-type work picker over available inventory. Sets hidden artwork_id.
-export default function WorkPicker({ name = 'artwork_id', placeholder = 'Search title or artist…', onPick }) {
+// Work dropdown-search over ON-HAND inventory only: opens on click with the most
+// valuable available works, filters by title or artist as you type.
+export default function WorkPicker({ name = 'artwork_id', placeholder = 'Choose a work on hand…', onPick }) {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState([]);
+  const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState(null);
   const t = useRef();
-  const search = (v) => {
-    setQ(v); setPicked(null); onPick?.(null);
+  const rootRef = useRef(null);
+  useEffect(() => {
+    const away = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const key = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('mousedown', away);
+    window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('mousedown', away); window.removeEventListener('keydown', key); };
+  }, []);
+  const load = (v) => {
     clearTimeout(t.current);
-    if (v.length < 2) { setHits([]); return; }
     t.current = setTimeout(async () => {
       const r = await fetch('/api/works?q=' + encodeURIComponent(v)).then(x => x.json());
-      setHits(r);
-    }, 180);
+      setHits(r); setOpen(true);
+    }, v ? 160 : 0);
   };
-  const choose = (h) => { setPicked(h); setHits([]); onPick?.(h); };
-  return <span style={{position:'relative', display:'block'}}>
+  const search = (v) => { setQ(v); setPicked(null); onPick?.(null); load(v); };
+  const focus = () => { if (!picked) load(q); };
+  const choose = (h) => { setPicked(h); setOpen(false); onPick?.(h); };
+  return <span ref={rootRef} style={{position:'relative', display:'block'}}>
     <input type="hidden" name={name} value={picked?.id || ''}/>
     <input value={picked ? `${picked.title} — ${picked.artist}` : q} onChange={e => search(e.target.value)}
-      placeholder={placeholder}
-      style={{width:'100%', background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, height:36,
-        fontFamily:'inherit', fontSize:13.5, padding:'0 11px'}}/>
-    {!picked && hits.length > 0 && <span style={{position:'absolute', top:40, left:0, right:0, zIndex:95,
-      background:'#fff', border:'1px solid #ececf0', borderRadius:12, boxShadow:'0 12px 40px rgba(0,0,0,.14)',
-      overflow:'hidden', display:'block'}}>
+      onFocus={focus} onClick={() => { if (picked) { setPicked(null); onPick?.(null); setQ(''); load(''); } }}
+      placeholder={placeholder} style={pickerInput}/>
+    <svg width="10" height="6" viewBox="0 0 10 6" style={pickerChevron}>
+      <path d="M1 1l4 4 4-4" fill="none" stroke="#6e6e73" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    {open && !picked && hits.length > 0 && <span style={pickerMenu}>
       {hits.map(h => <button key={h.id} type="button" onClick={() => choose(h)}
         style={{display:'flex', width:'100%', gap:10, alignItems:'center', textAlign:'left',
           padding:'8px 10px', background:'#fff', border:0, borderBottom:'1px solid #f5f5f7',
