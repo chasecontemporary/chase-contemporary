@@ -14,7 +14,7 @@ export default async function Finance({ searchParams }) {
   const view = sp.view || 'open';
   const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
   const since = new Date(); since.setMonth(since.getMonth() - 36);
-  const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }] = await Promise.all([
+  const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }, { data: saleItemDocs }] = await Promise.all([
     db.from('invoices').select('*, collectors(id, first_name, last_name, phone, email, city, state)').order('issued_at', { ascending: false }).limit(200),
     db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
     db.from('finance_monthly').select('*').gte('month', since.toISOString().slice(0, 10)).order('month'),
@@ -22,6 +22,7 @@ export default async function Finance({ searchParams }) {
     db.from('sales').select('id, created_at, owner, collectors(id, first_name, last_name), sale_items(agreed_cents, title)')
       .eq('status', 'open').order('created_at').limit(50),
     db.from('payments').select('invoice_id, amount_cents, method, settled_at').eq('status', 'settled').not('invoice_id', 'is', null).order('settled_at').limit(1000),
+    db.from('sale_items').select('sale_id, title, artworks(tearsheet_url, coa_url, title)').not('sale_id', 'is', null).limit(400),
   ]);
   const all = invs || [];
   const open = all.filter(i => i.status === 'open');
@@ -58,6 +59,14 @@ export default async function Finance({ searchParams }) {
     value: (s.sale_items || []).reduce((a, it) => a + Number(it.agreed_cents || 0), 0),
     titles: (s.sale_items || []).map(it => it.title).join(', ') })).filter(s => s.value > 0 || (s.sale_items || []).length);
 
+  const docsBySale = {};
+  (saleItemDocs || []).forEach(it => {
+    const a = it.artworks;
+    if (!a) return;
+    const list = docsBySale[it.sale_id] = docsBySale[it.sale_id] || [];
+    if (a.tearsheet_url) list.push({ label: 'Tear sheet · ' + (a.title || it.title), url: a.tearsheet_url });
+    if (a.coa_url) list.push({ label: 'COA · ' + (a.title || it.title), url: a.coa_url });
+  });
   const shown = view === 'paid' ? paid : view === 'all' ? all : [...open].sort((a, b) => new Date(a.issued_at) - new Date(b.issued_at));
   const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['all', 'All']];
   return <Shell active="finance">
@@ -140,7 +149,10 @@ export default async function Finance({ searchParams }) {
         const overdueRow = isOpen && (age > 30 || (i.promise_date && new Date(i.promise_date) < new Date()));
         return <details key={i.id} className="edit" style={{padding:0, overflow:'hidden'}}>
           <summary style={{padding:'13px 18px', display:'grid',
-            gridTemplateColumns:'52px minmax(160px,1fr) minmax(140px,1.2fr) 110px 90px 130px', gap:14, alignItems:'center'}}>
+            gridTemplateColumns:'14px 46px 52px minmax(150px,1fr) minmax(130px,1.1fr) 110px 90px 130px', gap:12, alignItems:'center'}}>
+            <span>{i.pdf_url
+              ? <DocPreview thumb url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>
+              : <span style={{display:'block', width:42, height:54, borderRadius:6, border:'1px dashed #e8e8ed'}}/>}</span>
             <span style={{fontSize:12, color:'#86868b', fontVariantNumeric:'tabular-nums'}}>№{String(i.invoice_number).padStart(4,'0')}</span>
             <span style={{minWidth:0}}>
               <span style={{fontWeight:650, fontSize:13.5, display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
@@ -181,6 +193,13 @@ export default async function Finance({ searchParams }) {
               </div>
               <div>
                 <div className="cardtitle" style={{marginBottom:6}}>Documents &amp; chase</div>
+                <div style={{display:'flex', flexDirection:'column', gap:6, marginBottom:8}}>
+                  {i.pdf_url && <span><DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/></span>}
+                  {(docsBySale[i.sale_id] || []).map((doc, ix) => <span key={ix}>
+                    <DocPreview compact url={doc.url} label={doc.label}/></span>)}
+                  {!i.pdf_url && !(docsBySale[i.sale_id] || []).length &&
+                    <span style={{fontSize:12, color:'#86868b'}}>No documents yet — generate the invoice PDF below.</span>}
+                </div>
                 <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
                   {isOpen && <ArStage id={i.id} value={i.ar_status} promiseDate={i.promise_date}/>}
                   <form method="POST" action="/api/act" style={{display:'inline-block'}}>
@@ -189,7 +208,6 @@ export default async function Finance({ searchParams }) {
                     <input type="hidden" name="back" value="/finance"/>
                     <button className="btn mini quiet">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
                   </form>
-                  {i.pdf_url && <DocPreview compact url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>}
                   {isOpen && (payReady
                     ? <form method="POST" action="/api/act" style={{display:'inline-block'}}>
                         <input type="hidden" name="action" value="invoice_paylink"/>

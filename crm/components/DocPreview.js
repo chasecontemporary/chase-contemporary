@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 // Document preview: thumbnail card in the page -> modal with the full document,
 // download, and email-send. Signature via DocuSign wires in here later.
-export default function DocPreview({ url, label, compact = false }) {
+export default function DocPreview({ url, label, compact = false, thumb = false }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -15,8 +15,15 @@ export default function DocPreview({ url, label, compact = false }) {
   const dl = url + (url.includes('?') ? '&' : '?') + 'download=1';
   const mail = 'mailto:?subject=' + encodeURIComponent(label + ' — Chase Contemporary')
     + '&body=' + encodeURIComponent('Please find the ' + label.toLowerCase() + ' linked here:\n\n' + url + '\n\nChase Contemporary\ninfo@chasecontemporary.com');
+  const openModal = (e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); };
   return <>
-    {compact
+    {thumb
+      ? <button onClick={openModal} title={label} style={{width:42, height:54, padding:0, overflow:'hidden',
+          borderRadius:6, border:'1px solid #e8e8ed', background:'#fff', cursor:'zoom-in', position:'relative', display:'block'}}>
+          <iframe src={url + '#toolbar=0&navpanes=0&scrollbar=0'} title={label} tabIndex={-1}
+            style={{width:612, height:792, transform:'scale(0.066)', transformOrigin:'0 0', border:0, pointerEvents:'none'}}/>
+        </button>
+      : compact
       ? <button onClick={() => setOpen(true)} className="pill" style={{background:'#fff',
           border:'1px solid #e8e8ed', cursor:'pointer', fontFamily:'inherit', fontSize:12}}>{label}</button>
       : <button onClick={() => setOpen(true)} style={{background:'#fff', border:'1px solid #e8e8ed',
