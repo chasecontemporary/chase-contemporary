@@ -34,6 +34,9 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - Campaign sends: Resend account + DNS + CAN-SPAM address — Wyatt/Kristine
 - Stripe ACH lane: parked account, revisit when mid-band online closes are frequent
 
+## Housekeeping
+- PURGE DEMO DATA before go-live: collectors/inquiries/invoices/payments where collector email like 'demo-%@import.chasecontemporary.com' (created 8/27 to exercise the full workflow)
+
 ## Parked decisions
 - Site go-live over live Shopify theme — Bernie
 - artcloud.market seat: keep during transition or sunset — Bernie
