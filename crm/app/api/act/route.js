@@ -4,6 +4,7 @@ import { put } from '@vercel/blob';
 import { settleInvoice } from '../../../lib/settle';
 import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
+import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
 
 export async function POST(req) {
   const form = await req.formData();
@@ -34,6 +35,18 @@ export async function POST(req) {
     await db.from('campaigns').update({ status: 'approved', approved_by: rep }).eq('id', id);
   } else if (action === 'campaign_del') {
     await db.from('campaigns').delete().eq('id', id);
+  } else if (action === 'artwork_collateral') {
+    const kind = form.get('kind');   // tearsheet | coa
+    const { data: art } = await db.from('artworks').select('*').eq('id', id).single();
+    if (art) {
+      const bytes = kind === 'coa' ? await buildCoa(art) : await buildTearSheet(art);
+      const slug = (art.title || 'work').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
+      const blob = await put(`collateral/${kind}-${slug}.pdf`, Buffer.from(bytes),
+        { access: 'public', contentType: 'application/pdf', addRandomSuffix: true, allowOverwrite: true });
+      await db.from('artworks').update(kind === 'coa' ? { coa_url: blob.url } : { tearsheet_url: blob.url }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+        kind: kind + '_generated', body: blob.url, actor: rep });
+    }
   } else if (action === 'artwork_update') {
     const patch = {};
     for (const f of ['title','artist','medium']) if (form.has(f)) patch[f] = form.get(f) || null;
