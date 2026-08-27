@@ -15,6 +15,7 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - (nothing — awaiting Shopify token + wire paragraph)
 
 ## Queued
+- Full-journey attribution (Devyn 8/27): today's "path through the site" is one session only (sessionStorage breadcrumb + referrer + UTM + time on page). Upgrade = first-party anonymous visitor id cookie + a visits/events table; link the id to the collector at identity moments (inquiry submit, email click, checkout) so every past visit from that browser stitches into their record. Klaviyo UTMs then tie campaigns -> return visits -> inquiries -> invoices. All first-party in our Supabase; Safari caps JS cookies at 7 days so set it server-side.
 - COA generator: per-work certificate PDF from the invoice brand pipeline
 - Bulk push to site: stage all READY TO LIST works as Shopify drafts (after token proves out on 5-10 works)
 - Image-quality scoring for Artcloud CDN photos (extend the sharpness gate before bulk publish)
@@ -25,7 +26,7 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - Details-link auto-send on stage -> Invoiced (needs Resend)
 - Invoice auto-generate on details completion (chain rule)
 - documents table + Documents surfaces (per CONTRACTS-DOCUSIGN.md)
-- DocuSign envelopes: purchase agreements + on-approval paper (needs account + counsel-blessed templates)
+- DocuSign envelopes: purchase agreements (needs account + counsel-blessed templates)
 - v2 CRM backlog (docs/CRM-OVERHAUL.md): business-hours call metric, next-action cadence, loss reasons, hold-lapse notifications, per-user auth/roles
 
 - Quicklists / viewing-room links: build ONLY if Sara confirms she actually uses Artcloud quicklists (usage unverifiable from exports); Devyn 8/27
