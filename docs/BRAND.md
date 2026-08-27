@@ -85,6 +85,18 @@ full" — never accounting or CRM jargon (AR, accrued, settle, nudge). If a labe
 explaining, it is the wrong label. One quiet helper sentence per complex surface telling
 the user what clicking does.
 
+Tightened 8/27 (Devyn): every label must say WHAT the thing is, not gesture at it.
+"Money picture / lifetime / ≈170% of list / secure form" all failed this test. The fix
+pattern: full sentences or full phrases — "Bought from us before", "Budget they gave us —
+covers the $22,000 price", "Send them a form to fill in" + a helper line saying exactly
+what the form is and where the data goes. Empty values read "Not given" / "Nothing yet —
+new collector", never a bare dash. Info lists are aligned hairline row cards
+(150px gray label column + value), not loose dl pairs with buttons jammed in.
+
+**Business rule (8/27):** the gallery does NOT do take-home / on-approval trials.
+No approval UI anywhere (drawer, Today, inventory). The approval_out/approval_close
+actions stay dormant in the act route — do not resurface them.
+
 **Writing style:** sentence case everywhere except chip labels (caps, 10px, tracked).
 Subtitles under every H1 say what the page is for in plain words. Empty states explain
 what will fill them.
