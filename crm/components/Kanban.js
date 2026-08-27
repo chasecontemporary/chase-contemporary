@@ -2,6 +2,7 @@
 import BrandSelect from './BrandSelect';
 import SaleWizard from './SaleWizard';
 import OfferComposer from './OfferComposer';
+import DocPreview from './DocPreview';
 import { useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
@@ -142,21 +143,6 @@ export default function Kanban({ initial, team = [] }) {
           <div style={{marginTop:12, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
             <BrandSelect options={STAGES.map(s => [s, LABEL[s]])} value={openLead.status}
               control pillColor={(v) => COLOR[v] || '#82827b'} onValue={(v) => move(openLead.id, v)}/>
-            <button className="btn mini quiet" onClick={async () => {
-              const fd = new FormData(); fd.set('action','called'); fd.set('id', openLead.id);
-              await fetch('/api/act', { method:'POST', body: fd });
-              setOpenLead(o => ({ ...o, first_called_at: o.first_called_at || new Date().toISOString(),
-                contacted_at: o.contacted_at || new Date().toISOString(),
-                status: o.status === 'new' ? 'contacted' : o.status }));
-              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l,
-                first_called_at: l.first_called_at || new Date().toISOString(),
-                status: l.status === 'new' ? 'contacted' : l.status } : l));
-            }}>{openLead.first_called_at ? '✓ Called' : 'Log call'}</button>
-            {!['invoice','paid'].includes(openLead.status) &&
-              <button className="btn mini" onClick={() => setWizard(true)}>Start sale</button>}
-            <OfferComposer key={openLead.id} quiet collectorId={openLead.collector_id}
-              collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
-              defaultWork={a && a.available ? a : null}/>
             {!openLead.contacted_at && <span style={{fontSize:12, color:'#c02d23', fontWeight:600}}>
               Awaiting first response</span>}
           </div>
@@ -219,8 +205,12 @@ export default function Kanban({ initial, team = [] }) {
                 <span style={{color:'#73736c'}}> · first visit {days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago'}</span></span>]);
           }
           if (openLead.openInvoice) rows.push(['Open invoice',
-            <a href="/finance" style={{color:'#2257c5', fontWeight:650}}>
-              №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} for {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} — open in Finance →</a>]);
+            <span style={{display:'flex', gap:10, alignItems:'center'}}>
+              {openLead.openInvoice.pdf_url && <DocPreview thumb url={openLead.openInvoice.pdf_url}
+                label={'Invoice No. ' + String(openLead.openInvoice.invoice_number).padStart(4,'0')}/>}
+              <a href="/finance" style={{color:'#2257c5', fontWeight:650}}>
+                №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} for {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} — open in Finance →</a>
+            </span>]);
           if (openLead.openSale && !openLead.openInvoice) rows.push(['Sale in progress',
             <span style={{color:'#73736c'}}>{openLead.openSale.sale_items.length} work{openLead.openSale.sale_items.length > 1 ? 's' : ''} at {usd(openLead.openSale.sale_items.reduce((s, i) => s + i.agreed_cents, 0))} — finish it with Start sale above</span>]);
           return <div style={{border:'1px solid #e3e3dd', borderRadius:3, background:'#fff',
@@ -304,6 +294,23 @@ export default function Kanban({ initial, team = [] }) {
         <div style={{display:'flex', justifyContent:'flex-end', marginTop:8}}>
           <button className="btn mini quiet" onClick={saveNote}>Save note</button>
         </div>
+        </div>
+        <div className="ld-foot">
+          <button className="btn mini quiet" onClick={async () => {
+            const fd = new FormData(); fd.set('action','called'); fd.set('id', openLead.id);
+            await fetch('/api/act', { method:'POST', body: fd });
+            setOpenLead(o => ({ ...o, first_called_at: o.first_called_at || new Date().toISOString(),
+              contacted_at: o.contacted_at || new Date().toISOString(),
+              status: o.status === 'new' ? 'contacted' : o.status }));
+            setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l,
+              first_called_at: l.first_called_at || new Date().toISOString(),
+              status: l.status === 'new' ? 'contacted' : l.status } : l));
+          }}>{openLead.first_called_at ? '✓ Called' : 'Log call'}</button>
+          <OfferComposer key={openLead.id} quiet collectorId={openLead.collector_id}
+            collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
+            defaultWork={a && a.available ? a : null}/>
+          {!['invoice','paid'].includes(openLead.status) &&
+            <button className="btn mini" style={{marginLeft:'auto'}} onClick={() => setWizard(true)}>Start sale</button>}
         </div>
       </>}
     </div>

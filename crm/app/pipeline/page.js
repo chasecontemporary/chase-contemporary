@@ -31,7 +31,7 @@ export default async function Pipeline() {
       .select('*').in('collector_id', collectorIds);
     (jn || []).forEach(j => journeyMap[j.collector_id] = j);
     const { data: openInv } = await db.from('invoices')
-      .select('id, invoice_number, amount_cents, tax_cents, shipping_cents, collector_id')
+      .select('id, invoice_number, amount_cents, tax_cents, shipping_cents, collector_id, pdf_url')
       .eq('status', 'open').in('collector_id', collectorIds);
     (openInv || []).forEach(i => invoiceMap[i.collector_id] = i);
   }

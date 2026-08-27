@@ -120,8 +120,9 @@ table.tbl { width:100%; border-collapse:collapse; }
 .ldrawer { position: fixed; top: 10px; right: 10px; bottom: 10px; width: 420px; max-width: 94vw;
   background: #fff; border-radius: 4px; border:1px solid var(--hair); box-shadow: 0 24px 80px rgba(15,15,10,.28); z-index: 70;
   transform: translateX(calc(100% + 20px)); transition: transform .35s cubic-bezier(.2,.7,.2,1);
-  overflow-y: auto; padding: 0; }
+  overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
 .ldrawer.open { transform: none; }
+.ldrawer .ld-body { flex: 1; }
 .ldrawer .close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px;
   border-radius: 50%; border: 0; background: #efefea; font-size: 14px; cursor: pointer;
   color: var(--ink); line-height: 1; }
@@ -136,6 +137,10 @@ table.tbl { width:100%; border-collapse:collapse; }
 .ld-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--hair); position: sticky; top: 0;
   background: rgba(255,255,255,.94); backdrop-filter: blur(12px); z-index: 3; }
 .ld-body { padding: 18px 24px 28px; }
+/* the drawer's action bar: what you can DO lives at the bottom, always visible */
+.ld-foot { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center;
+  padding: 12px 24px; border-top: 1px solid var(--hair);
+  background: rgba(255,255,255,.94); backdrop-filter: blur(12px); z-index: 3; }
 .ld-artwork { display: block; border: 1px solid var(--hair); border-radius: var(--r); overflow: hidden;
   transition: box-shadow .18s ease, transform .18s ease; background:#fff; }
 .ld-artwork:hover { box-shadow: 0 6px 22px rgba(15,15,10,.12); transform: translateY(-1px); }

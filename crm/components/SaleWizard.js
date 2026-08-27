@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import WorkPicker from './WorkPicker';
 
 // The sale, step by step: works & prices -> billing details -> review & invoice.
@@ -19,16 +19,28 @@ export default function SaleWizard({ lead, onClose }) {
   const [dlink, setDlink] = useState(null);
   const [selLink, setSelLink] = useState(null);
   const [docBusy, setDocBusy] = useState(null);
-  // branded paper on demand: generates the PDF and opens it in a new tab
-  const paper = async (workId, kind) => {
-    setDocBusy(workId + kind);
+  // the paper step: docs[workId] = { tearsheet: url|'busy'|'failed', coa: ... }
+  const [docs, setDocs] = useState({});
+  const paperRun = useRef(false);
+  const makeDoc = async (workId, kind) => {
+    setDocs(d => ({ ...d, [workId]: { ...d[workId], [kind]: 'busy' } }));
     const fd = new FormData();
     fd.set('action', 'artwork_collateral'); fd.set('id', workId);
     fd.set('kind', kind); fd.set('back', 'json');
     const r = await fetch('/api/act', { method: 'POST', body: fd }).then(x => x.json()).catch(() => null);
-    setDocBusy(null);
-    if (r?.url) window.open(r.url, '_blank');
+    setDocs(d => ({ ...d, [workId]: { ...d[workId], [kind]: r?.url || 'failed' } }));
   };
+  // entering the paper step generates everything that's missing — nobody can forget the paperwork
+  useEffect(() => {
+    if (step !== 3 || paperRun.current) return;
+    paperRun.current = true;
+    works.forEach(w => { ['tearsheet', 'coa'].forEach(k => {
+      const cur = docs[w.id]?.[k];
+      if (!cur || cur === 'failed') makeDoc(w.id, k);
+    }); });
+  }, [step]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const isUrl = (v) => typeof v === 'string' && v.startsWith('http');
+  const paperDone = works.length > 0 && works.every(w => isUrl(docs[w.id]?.tearsheet) && isUrl(docs[w.id]?.coa));
   // the same deal ticket, as a tracked private-selection page instead of an invoice
   const asSelection = async () => {
     setDocBusy('selection');
@@ -62,7 +74,7 @@ export default function SaleWizard({ lead, onClose }) {
     color:'#73736c', display:'block', marginBottom:6 };
   const input = { background:'#fff', border:'1px solid #e3e3dd', borderRadius:2, height:36,
     fontFamily:'inherit', fontSize:13.5, padding:'0 11px' };
-  const STEPS = ['Works & price', 'Billing details', 'Review & invoice'];
+  const STEPS = ['Works & price', 'Billing details', 'The paper', 'Review & invoice'];
   return <div onClick={onClose} style={{position:'fixed', inset:0, zIndex:85, background:'rgba(0,0,0,.42)',
     backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20}}>
     <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:2,
@@ -150,19 +162,38 @@ export default function SaleWizard({ lead, onClose }) {
         </div>}
 
         {step === 3 && <div>
+          <div style={{fontSize:13.5, lineHeight:1.7, marginBottom:12}}>
+            The paper makes itself — a tear sheet and a certificate of authenticity for every work.
+            Open each one and give it a glance before you invoice.</div>
+          {works.map(w => <div key={w.id} style={{display:'flex', alignItems:'center', gap:10, padding:'10px 0',
+            borderBottom:'1px solid #f2f2ee', fontSize:13}}>
+            <span style={{flex:1, minWidth:0}}>
+              <span style={{fontSize:10.5, fontWeight:600, letterSpacing:'.06em', textTransform:'uppercase'}}>{w.artist}</span>
+              <span style={{fontStyle:'italic'}}> · {w.title}</span></span>
+            {[['tearsheet','Tear sheet'],['coa','Certificate']].map(([k, lbl]) => {
+              const v = docs[w.id]?.[k];
+              return isUrl(v)
+                ? <a key={k} href={v} target="_blank" className="btn mini quiet"
+                    style={{textDecoration:'none', color:'#2e6b3f'}}>✓ {lbl}</a>
+                : v === 'failed'
+                ? <button key={k} className="btn mini quiet" style={{color:'#c02d23'}}
+                    onClick={() => makeDoc(w.id, k)}>Retry {lbl.toLowerCase()}</button>
+                : <span key={k} className="btn mini quiet" style={{opacity:.55, cursor:'default'}}>Making {lbl.toLowerCase()}…</span>;
+            })}
+          </div>)}
+          <div style={{fontSize:11.5, color:'#73736c', marginTop:10}}>
+            Both documents attach to this work&apos;s record and sit with the invoice in Finance. You can&apos;t continue until they exist.</div>
+        </div>}
+
+        {step === 4 && <div>
           {works.map(w => <div key={w.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0',
             borderBottom:'1px solid #f2f2ee', fontSize:13}}>
             <span style={{flex:1, minWidth:0}}>
               <span style={{fontSize:10.5, fontWeight:600, letterSpacing:'.06em', textTransform:'uppercase'}}>{w.artist}</span>
               <span style={{fontStyle:'italic'}}> · {w.title}</span></span>
-            <button className="btn mini quiet" disabled={docBusy === w.id + 'tearsheet'}
-              onClick={() => paper(w.id, 'tearsheet')}>{docBusy === w.id + 'tearsheet' ? '…' : 'Tear sheet'}</button>
-            <button className="btn mini quiet" disabled={docBusy === w.id + 'coa'}
-              onClick={() => paper(w.id, 'coa')}>{docBusy === w.id + 'coa' ? '…' : 'COA'}</button>
+            <span style={{fontSize:11.5, color:'#2e6b3f', fontWeight:650}}>paper ready ✓</span>
             <span style={{fontVariantNumeric:'tabular-nums', fontWeight:650, width:90, textAlign:'right'}}>{usd(num(w.amount))}</span>
           </div>)}
-          <div style={{fontSize:11.5, color:'#73736c', marginTop:8}}>
-            Tear sheet and certificate open as branded PDFs, ready to send. The invoice PDF is created with the invoice — you&apos;ll find every document together on the invoice in Finance.</div>
           <div style={{display:'flex', gap:10, marginTop:12}}>
             <div><span style={label}>Sales tax</span>
               <label className="money"><span>$</span><input inputMode="numeric" placeholder="0" value={tax}
@@ -183,10 +214,12 @@ export default function SaleWizard({ lead, onClose }) {
         background:'#fbfbfd'}}>
         {step > 1 && <button className="btn mini quiet" onClick={() => setStep(s => s - 1)}>Back</button>}
         <div style={{marginLeft:'auto'}}>
-          {step < 3
-            ? <button className="btn" disabled={step === 1 && (!works.length || works.some(w => !num(w.amount)))}
-                style={step === 1 && (!works.length || works.some(w => !num(w.amount))) ? {opacity:.4} : {}}
-                onClick={() => setStep(s => s + 1)}>Continue</button>
+          {step < 4
+            ? (() => { const blocked = (step === 1 && (!works.length || works.some(w => !num(w.amount))))
+                  || (step === 3 && !paperDone);
+                return <button className="btn" disabled={blocked} style={blocked ? {opacity:.4} : {}}
+                  onClick={() => setStep(s => s + 1)}>
+                  {step === 3 && !paperDone ? 'Preparing the paper…' : 'Continue'}</button>; })()
             : <button className="btn" onClick={async () => {
                 const fd = new FormData();
                 fd.set('action', 'invoice_manual');
