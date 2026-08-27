@@ -95,6 +95,7 @@ for i, r in enumerate(inventory):
     artist = ' '.join(x for x in (r.get('Artist First Name'), r.get('Artist Last Name')) if x) or None
     art_rows.append({
         'artcloud_id': aid, 'title': r.get('Title') or 'Untitled', 'artist': artist,
+        'edition': (r.get('Edition') or '').strip() or None,
         'description': __import__('re').sub(r'<[^>]+>', ' ', r.get('Notes') or '').strip() or None,
         'price_cents': cents(r.get('Price')) or None, 'medium': r.get('Medium') or None,
         'image_url': r.get('Image') or None, 'available': r.get('Active') == 'Yes',

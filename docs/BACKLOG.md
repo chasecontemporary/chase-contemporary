@@ -28,6 +28,9 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - DocuSign envelopes: purchase agreements + on-approval paper (needs account + counsel-blessed templates)
 - v2 CRM backlog (docs/CRM-OVERHAUL.md): business-hours call metric, next-action cadence, loss reasons, hold-lapse notifications, per-user auth/roles
 
+- Quicklists / viewing-room links: build ONLY if Sara confirms she actually uses Artcloud quicklists (usage unverifiable from exports); Devyn 8/27
+- DECLINED 8/27: bulk-image request to Artcloud support (sold works stay imageless)
+
 ## Needs key (built, waiting)
 - Shopify pay links + product push: custom app token (scopes: write_products, read_products, write_draft_orders, read_draft_orders, read_orders) + API secret key — Devyn
 - Wire instructions paragraph for invoice PDFs — Kristine

@@ -92,6 +92,7 @@ export default async function Unit({ params, searchParams }) {
           <Row k="Medium">{a.medium}</Row>
           <Row k="Size">{a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null}</Row>
           <Row k="Type">{a.product_type}</Row>
+          <Row k="Edition">{a.edition}</Row>
           <Row k="Location">{out ? `On approval with ${out.out_to}` : (a.location || (a.shopify_product_id ? 'Site' : null))}</Row>
           <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
           <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>

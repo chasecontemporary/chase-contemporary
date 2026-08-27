@@ -52,7 +52,7 @@ function wallLabel(page, a, { M, medium, semibold, regular }, y, opts = {}) {
   y -= 16;
   page.drawText(String(a.title || 'Untitled'), { x: M, y, size: 12, font: medium });
   y -= 15;
-  const lines = [a.medium, a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null,
+  const lines = [a.medium, a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null, a.edition ? 'Edition ' + a.edition : null,
     opts.price ? ((a.price_cents || 0) > 0 ? usd(a.price_cents) : 'Price on request') : null].filter(Boolean);
   for (const line of lines) {
     page.drawText(String(line), { x: M, y, size: 9.5, font: regular, color: GRAY, maxWidth: 612 - M * 2, lineHeight: 13 });
@@ -102,6 +102,7 @@ export async function buildCoa(a) {
   const rows = [
     ['ARTIST', a.artist], ['TITLE', a.title],
     ['MEDIUM', a.medium], ['DIMENSIONS', a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null],
+    ['EDITION', a.edition],
     ['INVENTORY №', a.artcloud_id && !String(a.artcloud_id).includes(':') ? a.artcloud_id : null],
   ].filter(r => r[1]);
   for (const [k, v] of rows) {
