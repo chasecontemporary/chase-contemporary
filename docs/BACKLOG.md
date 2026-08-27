@@ -45,7 +45,7 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - Stripe ACH lane: parked account, revisit when mid-band online closes are frequent
 
 ## Housekeeping
-- PURGE DEMO DATA before go-live: collectors/inquiries/invoices/payments where collector email like 'demo-%@import.chasecontemporary.com' (created 8/27 to exercise the full workflow)
+- PURGE DEMO DATA before go-live: full cascade on collectors where email like 'demo-%@import.chasecontemporary.com' (Bernie-demo cast seeded 8/28: Ellison/Fontaine/Park/Reyes/Petrov/Cho/Voss/Shah, invoices 0009-0011, Sara commissions $14,880 Aug, offer + site_events for Ellison). ALSO: restore artworks marked sold by demo settlements (Elena Voss 'bought' the already-sold McCrow AK47 - delete the dup purchase row) and re-set inquiries/holds. The 8/27 purge SQL pattern is in the session log.
 
 ## Deliberately LAST
 - "What Bernie Sees" owner dashboard: killed the placeholder Board page (8/27). Build only after launch, composed from the data every other page is accumulating (Finance collections, Artists velocity, Commissions, campaign attribution, response speed). Not before.
