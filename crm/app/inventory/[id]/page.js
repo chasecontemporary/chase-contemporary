@@ -19,7 +19,7 @@ export default async function Unit({ params, searchParams }) {
     .then(r => r) : { data: null };
   const area = a.dims_h_in > 0 && a.dims_w_in > 0 ? a.dims_h_in * a.dims_w_in : 0;
   const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
-  const suggested = area && ppsi ? Math.round(ppsi * area / 100) * 100 : 0;
+  const suggested = area && ppsi ? Math.round((ppsi * area) / 10000) * 100 : 0;   // dollars, nearest $100
   const [{ data: inqs }, { data: buys }, { data: appr }] = await Promise.all([
     a.handle ? db.from('inquiries').select('*, collectors(id, first_name, last_name, budget_range)')
       .eq('artwork_handle', a.handle).order('created_at', { ascending: false }) : { data: [] },
