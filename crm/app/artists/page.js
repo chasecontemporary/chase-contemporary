@@ -109,7 +109,7 @@ export default async function Artists({ searchParams }) {
         const share = Number(r.revenue_cents || 0) / maxRev;
         const sup = supply(r);
         const tr = trend[r.artist];
-        return <a key={r.artist} href={'/inventory?view=all&artist=' + encodeURIComponent(r.artist)}
+        return <a key={r.artist} href={'/artists/portfolio?name=' + encodeURIComponent(r.artist)}
           style={{display:'grid', gridTemplateColumns:'minmax(220px,1.4fr) 120px 105px 95px 100px 80px 145px', gap:14,
             alignItems:'center', padding:'12px 18px', borderBottom:'1px solid #f5f5f7',
             textDecoration:'none', color:'inherit'}}>
