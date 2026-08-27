@@ -71,7 +71,7 @@ export default async function Finance({ searchParams }) {
   const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['payments', 'Payments received'], ['all', 'All']];
   return <Shell active="finance">
     <div className="h1">Finance</div>
-    <div className="sub">Cash reality: what came in, what is owed, what is waiting to be asked for</div>
+    <div className="sub">Money in, money owed, and who to follow up with — invoices are made from sales, then you send, follow up, and record money as it arrives</div>
 
     {(() => {
       const thisMonth = new Date(); thisMonth.setDate(1);
@@ -81,10 +81,10 @@ export default async function Finance({ searchParams }) {
       const collThis = M.filter(m => String(m.month).slice(0, 7) === mKey).reduce((s, m) => s + Number(m.collected_cents), 0);
       const collLast = M.filter(m => String(m.month).slice(0, 7) === lKey).reduce((s, m) => s + Number(m.collected_cents), 0);
       return <div className="stats">
-        <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Outstanding AR · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
-        <div className="stat"><div className="n">{usd(collThis)}</div><div className="l">Closed {new Date().toLocaleDateString('en-US', { month: 'long' })}</div></div>
-        <div className="stat"><div className="n">{usd(collLast)}</div><div className="l">Closed {lastM.toLocaleDateString('en-US', { month: 'long' })}</div></div>
-        <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commission pool accrued, unsettled</div></div>
+        <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Owed to the gallery · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
+        <div className="stat"><div className="n">{usd(collThis)}</div><div className="l">Collected in {new Date().toLocaleDateString('en-US', { month: 'long' })}</div></div>
+        <div className="stat"><div className="n">{usd(collLast)}</div><div className="l">Collected in {lastM.toLocaleDateString('en-US', { month: 'long' })}</div></div>
+        <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commissions owed to the team</div></div>
       </div>; })()}
 
     {(() => {
@@ -94,7 +94,7 @@ export default async function Finance({ searchParams }) {
       const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
        );
       return <div className="card" style={{marginTop:16}}>
-        <div className="cardtitle">AR pipeline · where every open dollar sits in the chase</div>
+        <div className="cardtitle">Collections · every open invoice, by stage</div>
         <div style={{display:'flex', gap:6, marginTop:4}}>
           {ORDER.map(([k, label, color]) => {
             const rows = by[k] || [];
@@ -113,7 +113,7 @@ export default async function Finance({ searchParams }) {
       </div>; })()}
 
     {waiting.length > 0 && <div className="card" style={{marginTop:16}}>
-      <div className="cardtitle">Waiting on an invoice · the cash gap</div>
+      <div className="cardtitle">Sales waiting for an invoice</div>
       {waiting.map(s => <div key={s.id} style={{display:'flex', gap:12, alignItems:'center', padding:'9px 0',
         borderBottom:'1px solid #f5f5f7', fontSize:13.5}}>
         <span style={{flex:1, minWidth:0}}>
@@ -136,9 +136,10 @@ export default async function Finance({ searchParams }) {
         <div className="l">Aging {k} days</div></div>)}
     </div>}
 
-    <div style={{display:'flex', gap:8, marginTop:22, alignItems:'center'}}>
+    <div style={{display:'flex', gap:8, marginTop:22, alignItems:'center', flexWrap:'wrap'}}>
       {VIEWS.map(([k, label]) => <a key={k} href={'/finance?view=' + k} className="pill"
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
+      <span style={{fontSize:12, color:'#86868b'}}>Click any invoice to open everything about it: contact, money received, documents, actions.</span>
     </div>
     {view === 'payments' && (() => {
       const invByI = {}; all.forEach(i => invByI[i.id] = i);
@@ -224,7 +225,9 @@ export default async function Finance({ searchParams }) {
                     <span style={{fontSize:12, color:'#86868b'}}>No documents yet — generate the invoice PDF below.</span>}
                 </div>
                 <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
-                  {isOpen && <ArStage id={i.id} value={i.ar_status}/>}
+                  {isOpen && <span style={{display:'inline-flex', gap:6, alignItems:'center'}}>
+                    <span style={{fontSize:11.5, color:'#86868b'}}>Where is it in the chase?</span>
+                    <ArStage id={i.id} value={i.ar_status}/></span>}
                   <form method="POST" action="/api/act" style={{display:'inline-block'}}>
                     <input type="hidden" name="action" value="invoice_pdf"/>
                     <input type="hidden" name="id" value={i.id}/>
@@ -257,7 +260,7 @@ export default async function Finance({ searchParams }) {
                 <input type="hidden" name="action" value="invoice_paid"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button className="btn mini">Settle balance · {usd(balance(i))}</button>
+                <button className="btn mini">{paidIn[i.id] ? <>Record final {usd(balance(i))} · paid in full</> : <>Mark paid in full · {usd(balance(i))}</>}</button>
               </form>
               <form method="POST" action="/api/act" style={{marginLeft:'auto'}}>
                 <input type="hidden" name="action" value="invoice_void"/>

@@ -72,6 +72,12 @@ that isn't on the live site.
 - Collector rows: initials avatar (40px circle `#f0f0f2`), name + flag chips, quiet
   meta line, interests center, **money right-aligned**
 
+**Plain-speech law (8/27):** money and workflow surfaces use words a first-time user
+already knows — "owed to the gallery", "collected in August", "follow up 1", "mark paid in
+full" — never accounting or CRM jargon (AR, accrued, settle, nudge). If a label needs
+explaining, it is the wrong label. One quiet helper sentence per complex surface telling
+the user what clicking does.
+
 **Writing style:** sentence case everywhere except chip labels (caps, 10px, tracked).
 Subtitles under every H1 say what the page is for in plain words. Empty states explain
 what will fill them.
