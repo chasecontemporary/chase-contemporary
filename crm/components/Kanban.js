@@ -186,75 +186,97 @@ export default function Kanban({ initial, team = [] }) {
           </div>
         </a>}
 
-        <div style={secTitle}>Money picture</div>
-        <div style={{background:'#f5f5f7', borderRadius:12, padding:'12px 14px', fontSize:13}}>
-          <div style={{display:'flex', gap:16, flexWrap:'wrap'}}>
-            <span><b style={{fontVariantNumeric:'tabular-nums'}}>{openLead.ltv > 0 ? usd(openLead.ltv) : '—'}</b>
-              <span style={{color:'#86868b'}}> lifetime{openLead.worksOwned ? ` · ${openLead.worksOwned} works owned` : ''}</span></span>
-            <span><b>{openLead.budget_range || c.budget_range || 'No stated budget'}</b>
-              {anchor > 0 && budgetMid > 0 && (() => {
-                const pct = Math.round(100 * budgetMid * 100 / anchor);
-                const col = pct >= 90 ? '#1d7a3d' : pct >= 65 ? '#3a3a3c' : '#b25a00';
-                return <span style={{color:col, fontWeight:700}}> · ≈{pct}% of {anchorIsEst ? 'estimate' : 'list'}</span>;
-              })()}</span>
-          </div>
-          {openLead.openInvoice && <div style={{marginTop:8, fontSize:12.5}}>
+        <div style={secTitle}>This collector</div>
+        {(() => {
+          const price = anchor > 0 ? usd(anchor) : null;
+          const budgetStr = openLead.budget_range || c.budget_range || null;
+          const rows = [];
+          rows.push(['Bought from us before', openLead.ltv > 0
+            ? <span><b style={{fontVariantNumeric:'tabular-nums'}}>{usd(openLead.ltv)}</b>
+                <span style={{color:'#86868b'}}> across {openLead.worksOwned} work{openLead.worksOwned === 1 ? '' : 's'}</span></span>
+            : <span style={{color:'#86868b'}}>Nothing yet — new collector</span>]);
+          rows.push(['Budget they gave us', budgetStr
+            ? <span><b>{budgetStr}</b>
+                {price && budgetMid > 0 && (() => {
+                  const pct = Math.round(100 * budgetMid * 100 / anchor);
+                  const [txt, col] = pct >= 100 ? [`covers the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#1d7a3d']
+                    : pct >= 65 ? [`close to the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#3a3a3c']
+                    : [`well below the ${price} ${anchorIsEst ? 'estimate' : 'price'}`, '#b25a00'];
+                  return <span style={{color:col, fontWeight:650}}> — {txt}</span>;
+                })()}</span>
+            : <span style={{color:'#86868b'}}>Not given</span>]);
+          if (openLead.openInvoice) rows.push(['Open invoice',
             <a href="/finance" style={{color:'#0071e3', fontWeight:650}}>
-              Open invoice №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} · {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} →</a>
-          </div>}
-          {openLead.openSale && !openLead.openInvoice && <div style={{marginTop:8, fontSize:12.5, color:'#86868b'}}>
-            Open sale · {openLead.openSale.sale_items.length} work{openLead.openSale.sale_items.length > 1 ? 's' : ''} · {usd(openLead.openSale.sale_items.reduce((s, i) => s + i.agreed_cents, 0))} — finish it with Start sale above</div>}
-        </div>
+              №{String(openLead.openInvoice.invoice_number).padStart(4,'0')} for {usd(openLead.openInvoice.amount_cents + (openLead.openInvoice.tax_cents || 0) + (openLead.openInvoice.shipping_cents || 0))} — open in Finance →</a>]);
+          if (openLead.openSale && !openLead.openInvoice) rows.push(['Sale in progress',
+            <span style={{color:'#86868b'}}>{openLead.openSale.sale_items.length} work{openLead.openSale.sale_items.length > 1 ? 's' : ''} at {usd(openLead.openSale.sale_items.reduce((s, i) => s + i.agreed_cents, 0))} — finish it with Start sale above</span>]);
+          return <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+            boxShadow:'0 1px 2px rgba(0,0,0,.03)'}}>
+            {rows.map(([lb, node], i) => <div key={lb} style={{display:'grid',
+              gridTemplateColumns:'150px 1fr', gap:12, alignItems:'center', padding:'11px 16px',
+              borderTop: i ? '1px solid #f4f4f6' : 'none'}}>
+              <div style={{fontSize:12.5, color:'#86868b'}}>{lb}</div>
+              <div style={{fontSize:13.5, minWidth:0}}>{node}</div>
+            </div>)}
+          </div>;
+        })()}
 
-        <div style={secTitle}>The inquiry</div>
-        <dl className="kv" style={{marginTop:0}}>
-          {!a && <><dt>Inquiring about</dt><dd>{openLead.artwork_title || openLead.purpose}</dd></>}
-          <dt>Timeframe</dt><dd>{openLead.timeframe || '—'}</dd>
-          <dt>City</dt><dd>{[c.city, c.timezone].filter(Boolean).join(' · ') || '—'}</dd>
-          <dt>Found us via</dt><dd>{openLead.source || c.source || '—'}</dd>
-          <dt>Owner</dt><dd>
-            <BrandSelect options={[['', 'Unassigned'], ...team.map(t => [t, t])]} value={openLead.owner || ''}
-              onValue={async (owner) => {
-                const fd = new FormData();
-                fd.set('action','assign'); fd.set('id', openLead.id); fd.set('owner', owner); fd.set('back','json');
-                await fetch('/api/act', { method:'POST', body: fd });
-                setOpenLead(o => ({ ...o, owner }));
-                setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
-              }}/></dd>
-          <dt>Billing details</dt><dd>{missing.length
-            ? <span style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                <span style={{color:'#b25a00', fontWeight:600}}>Missing {missing.join(', ')}</span>
+        <div style={secTitle}>This inquiry</div>
+        {(() => {
+          const rows = [];
+          if (!a) rows.push(['Asking about', openLead.artwork_title || openLead.purpose || <span style={{color:'#86868b'}}>Not given</span>]);
+          rows.push(['When they want to buy', openLead.timeframe || <span style={{color:'#86868b'}}>Not given</span>]);
+          rows.push(['Where they are', [c.city, c.timezone].filter(Boolean).join(' · ') || <span style={{color:'#86868b'}}>Not given</span>]);
+          rows.push(['How they found us', openLead.source || c.source || <span style={{color:'#86868b'}}>Not given</span>]);
+          rows.push(['Salesperson', <BrandSelect options={[['', 'Unassigned'], ...team.map(t => [t, t])]} value={openLead.owner || ''}
+            onValue={async (owner) => {
+              const fd = new FormData();
+              fd.set('action','assign'); fd.set('id', openLead.id); fd.set('owner', owner); fd.set('back','json');
+              await fetch('/api/act', { method:'POST', body: fd });
+              setOpenLead(o => ({ ...o, owner }));
+              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
+            }}/>]);
+          return <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+            boxShadow:'0 1px 2px rgba(0,0,0,.03)'}}>
+            {rows.map(([lb, node], i) => <div key={lb} style={{display:'grid',
+              gridTemplateColumns:'150px 1fr', gap:12, alignItems:'center', padding:'11px 16px',
+              borderTop: i ? '1px solid #f4f4f6' : 'none'}}>
+              <div style={{fontSize:12.5, color:'#86868b'}}>{lb}</div>
+              <div style={{fontSize:13.5, minWidth:0}}>{node}</div>
+            </div>)}
+          </div>;
+        })()}
+
+        <div style={secTitle}>Billing details for the invoice</div>
+        <div style={{border:'1px solid #ececf0', borderRadius:12, background:'#fff',
+          boxShadow:'0 1px 2px rgba(0,0,0,.03)', padding:'13px 16px', fontSize:13.5}}>
+          {missing.length === 0
+            ? <span style={{color:'#1d7a3d', fontWeight:650}}>Everything needed to invoice them is on file.</span>
+            : <>
+              <div>Still missing their <b>{missing.length > 1
+                ? missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1]
+                : missing[0]}</b>.</div>
+              <div style={{display:'flex', gap:10, alignItems:'center', marginTop:10, flexWrap:'wrap'}}>
                 <button className="btn mini quiet" onClick={async () => {
                   const fd = new FormData();
                   fd.set('action','details_link'); fd.set('id', c.id); fd.set('back','json');
                   const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json());
                   try { await navigator.clipboard.writeText(r.url); } catch {}
                   setDlink(r.url);
-                }}>Text them a secure form</button>
-              </span>
-            : <span style={{color:'#1d7a3d', fontWeight:600}}>All on file — ready to invoice</span>}
-            {dlink && <div style={{marginTop:6, fontSize:12}}>Link copied — send it to the collector:{' '}
-              <a href={dlink} target="_blank" style={{color:'#0071e3', wordBreak:'break-all'}}>{dlink}</a></div>}
-          </dd>
-          {a?.available && <><dt>Take-home trial</dt><dd>
-            {openLead._approval
-              ? <span style={{fontSize:12.5, color:'#1d7a3d', fontWeight:600}}>
-                  Out with {openLead._approval.out_to} · due back {openLead._approval.due}</span>
-              : <span style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                  <button className="btn mini quiet" onClick={async () => {
-                    if (!a?.id || !c.id) return;
-                    const fd = new FormData();
-                    fd.set('action','approval_out'); fd.set('id', a.id);
-                    fd.set('collector_id', c.id);
-                    fd.set('inquiry_id', openLead.id); fd.set('back','json');
-                    const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json());
-                    setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, status: 'hold' } : l));
-                    setOpenLead(o => ({ ...o, status: 'hold', _approval: r }));
-                  }}>Send the work home with them</button>
-                  <span style={{fontSize:11.5, color:'#86868b'}}>7-day trial · tracked on Today</span>
-                </span>}
-          </dd></>}
-        </dl>
+                }}>Send them a form to fill in</button>
+                <a href={'/collectors/' + c.id} style={{fontSize:12.5, color:'#0071e3'}}>Or type the details in yourself →</a>
+              </div>
+              {dlink
+                ? <div style={{marginTop:10, fontSize:12}}>
+                    <span style={{color:'#1d7a3d', fontWeight:650}}>Link copied.</span> Paste it into a text or email —
+                    what they enter saves to this collector automatically.
+                    <div style={{color:'#0071e3', wordBreak:'break-all', marginTop:3}}>{dlink}</div>
+                  </div>
+                : <div style={{marginTop:8, fontSize:12, color:'#86868b'}}>
+                    Makes a private page where they type in their own billing address and contact info.
+                  </div>}
+            </>}
+        </div>
 
         {openLead.message && <><div style={secTitle}>Their message</div>
           <div className="msg" style={{marginTop:0}}>{openLead.message}</div></>}

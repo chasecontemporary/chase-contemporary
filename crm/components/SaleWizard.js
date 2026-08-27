@@ -99,8 +99,8 @@ export default function SaleWizard({ lead, onClose }) {
               const r = await fetch('/api/act', { method: 'POST', body: fd }).then(x => x.json());
               try { await navigator.clipboard.writeText(r.url); } catch {}
               setDlink(r.url);
-            }}>Text them a secure form — link copies to clipboard</button>
-            {dlink && <div style={{fontSize:12, color:'#1d7a3d'}}>Copied. They confirm billing and delivery on their phone in under a minute:
+            }}>Send them a form to fill in — link copies to clipboard</button>
+            {dlink && <div style={{fontSize:12, color:'#1d7a3d'}}>Link copied. Paste it into a text or email — what they enter saves to this collector automatically:
               <div style={{color:'#0071e3', wordBreak:'break-all', marginTop:3}}>{dlink}</div></div>}
             <a href={'/collectors/' + c.id} style={{fontSize:12.5, color:'#0071e3'}}>Or type the details in yourself →</a>
             <div style={{fontSize:12, color:'#86868b'}}>You can also continue now and add details before sending the invoice.</div>
