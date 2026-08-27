@@ -24,8 +24,7 @@ export default async function Finance({ searchParams }) {
   const since = new Date(); since.setMonth(since.getMonth() - 36);
   const [{ data: invs }, { data: availWorks }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }, { data: saleItemDocs }] = await Promise.all([
     db.from('invoices').select('*, collectors(id, first_name, last_name, phone, email, city, state)').order('issued_at', { ascending: false }).limit(200),
-    db.from('artworks').select('id, title, artist, price_cents, internal_value_cents')
-      .eq('available', true).order('artist').order('title').limit(300),
+    Promise.resolve({ data: null }),
     db.from('finance_monthly').select('*').gte('month', since.toISOString().slice(0, 10)).order('month'),
     db.from('commissions').select('amount_cents').eq('settled', false).limit(1000),
     db.from('sales').select('id, created_at, owner, collectors(id, first_name, last_name), sale_items(agreed_cents, title)')
@@ -85,8 +84,7 @@ export default async function Finance({ searchParams }) {
         <div className="sub">Money in, money owed, and who to follow up with — invoices are made from sales, then you send, follow up, and record money as it arrives</div>
       </div>
       <div style={{paddingTop:6}}>
-        <NewInvoice works={(availWorks || []).map(w => ({ id: w.id, title: w.title, artist: w.artist || '',
-          cents: Number(w.price_cents || w.internal_value_cents || 0) }))}/>
+        <NewInvoice/>
       </div>
     </div>
 

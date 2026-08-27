@@ -15,16 +15,18 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
   const [pos, setPos] = useState(null);
   const btnRef = useRef(null);
   const inputRef = useRef(null);
+  const menuRef = useRef(null);
   useEffect(() => { if (value !== undefined) setVal(value); }, [value]);
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
     const key = (e) => e.key === 'Escape' && setOpen(false);
+    const scroll = (e) => { if (!menuRef.current || !menuRef.current.contains(e.target)) setOpen(false); };
     window.addEventListener('click', close);
     window.addEventListener('keydown', key);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', scroll, true);
     return () => { window.removeEventListener('click', close);
-      window.removeEventListener('keydown', key); window.removeEventListener('scroll', close, true); };
+      window.removeEventListener('keydown', key); window.removeEventListener('scroll', scroll, true); };
   }, [open]);
   const toggle = (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -59,7 +61,7 @@ export default function BrandSelect({ name, options = [], defaultValue = '', val
     <button type="button" ref={btnRef} onClick={toggle} style={trigStyle}>
       <span style={{overflow:'hidden', textOverflow:'ellipsis'}}>{label}</span>{chev}
     </button>
-    {open && pos && <div onClick={(e) => e.stopPropagation()} style={{position:'fixed', top:pos.top, left:pos.left,
+    {open && pos && <div ref={menuRef} onClick={(e) => e.stopPropagation()} style={{position:'fixed', top:pos.top, left:pos.left,
       minWidth:pos.width, zIndex:90, background:'#fff', border:'1px solid #ececf0', borderRadius:12,
       boxShadow:'0 12px 40px rgba(0,0,0,.14)', padding:6, maxHeight:320, overflowY:'auto'}}>
       {options.map(([v, l]) => {

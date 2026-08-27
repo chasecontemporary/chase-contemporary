@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import BrandSelect from './BrandSelect';
 import CollectorPicker from './CollectorPicker';
+import WorkPicker from './WorkPicker';
 
 // New invoice modal: pick the collector, pick the work (or free-form), money, done.
-export default function NewInvoice({ works = [] }) {
+export default function NewInvoice() {
   const [open, setOpen] = useState(false);
-  const [workId, setWorkId] = useState('');
+  const [work, setWork] = useState(null);
   const [amount, setAmount] = useState('');
   useEffect(() => {
     if (!open) return;
@@ -15,11 +15,9 @@ export default function NewInvoice({ works = [] }) {
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [open]);
-  const w = works.find(x => x.id === workId);
-  const pickWork = (v) => {
-    setWorkId(v);
-    const sel = works.find(x => x.id === v);
-    if (sel && sel.cents > 0) setAmount((sel.cents / 100).toLocaleString());
+  const pickWork = (h) => {
+    setWork(h);
+    if (h && h.cents > 0) setAmount((h.cents / 100).toLocaleString());
   };
   const label = { fontSize:11, fontWeight:650, letterSpacing:'.05em', textTransform:'uppercase',
     color:'#86868b', display:'block', marginBottom:6 };
@@ -48,12 +46,10 @@ export default function NewInvoice({ works = [] }) {
           </div>
           <div>
             <span style={label}>Work</span>
-            <BrandSelect name="artwork_id" placeholder="Choose from inventory, or leave empty for a free-form line"
-              width="100%" options={[['', 'No work — free-form line'],
-                ...works.map(x => [x.id, `${x.title} — ${x.artist}${x.cents > 0 ? ' · $' + Math.round(x.cents / 100).toLocaleString() : ''}`])]}
-              onValue={pickWork}/>
+            <WorkPicker onPick={pickWork}/>
+            <span style={{fontSize:11.5, color:'#86868b', display:'block', marginTop:5}}>Search inventory, or leave empty for a free-form line</span>
           </div>
-          {!workId && <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+          {!work && <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
             <div><span style={label}>Description</span><input style={input} name="title" placeholder="What is being billed"/></div>
             <div><span style={label}>Artist</span><input style={input} name="artist" placeholder="Optional"/></div>
           </div>}
@@ -70,8 +66,8 @@ export default function NewInvoice({ works = [] }) {
                 <input name="shipping" inputMode="numeric" placeholder="0" style={{width:'100%'}}/></label></div>
             <div><span style={label}>Due</span><input style={input} name="due" type="date"/></div>
           </div>
-          {w && <div style={{fontSize:12, color:'#86868b'}}>
-            Paying this invoice in full marks “{w.title}” sold and books it to the collector automatically.</div>}
+          {work && <div style={{fontSize:12, color:'#86868b'}}>
+            Paying this invoice in full marks “{work.title}” sold and books it to the collector automatically.</div>}
           <div style={{display:'flex', justifyContent:'flex-end'}}>
             <button className="btn">Create invoice</button>
           </div>
