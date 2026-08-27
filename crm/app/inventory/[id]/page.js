@@ -71,7 +71,8 @@ export default async function Unit({ params, searchParams }) {
               : <span className="pill" style={{fontSize:10, fontWeight:700}}>SOLD</span>}
           </div>
           <div className="h1" style={{fontSize:27, marginTop:4, letterSpacing:'-.02em'}}>{a.title}</div>
-          <div style={{fontSize:13, color:'#86868b', marginTop:5}}>
+          <div style={{fontSize:13, color:'#86868b', marginTop:5, overflow:'hidden',
+            textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:640}}>
             {[a.medium, a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null].filter(Boolean).join(' · ') || 'Details incomplete'}
           </div>
         </div>
@@ -109,7 +110,22 @@ export default async function Unit({ params, searchParams }) {
               : <span style={{color:'#86868b'}}>Not listed</span>}</Row>
         </div>
 
-        {(a.description || a.provenance) && <div className="card">
+        {(() => {
+          const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+          const d = norm(a.description), m = norm(a.medium);
+          const size = a.dims_h_in ? norm(`${a.dims_h_in} x ${a.dims_w_in} in`) : '';
+          const residue = d.replace(m, '').replace(size, '').trim();
+          const useful = a.description && residue.length > 24;
+          return (useful || a.provenance) ? <div className="card">
+            <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>About this work</div>
+            {useful && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
+            {a.provenance && <div style={{marginTop:useful ? 12 : 0}}>
+              <div style={{fontSize:11, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase', color:'#86868b', marginBottom:4}}>Provenance</div>
+              <div style={{fontSize:13, lineHeight:1.6, color:'#3a3a3c', whiteSpace:'pre-line'}}>{a.provenance}</div>
+            </div>}
+          </div> : null;
+        })()}
+        {false && (a.description || a.provenance) && <div className="card">
           <div style={{fontSize:13.5, fontWeight:650, marginBottom:8}}>About this work</div>
           {a.description && <div style={{fontSize:13.5, lineHeight:1.65, whiteSpace:'pre-line'}}>{a.description}</div>}
           {a.provenance && <div style={{marginTop:a.description ? 12 : 0}}>

@@ -4,12 +4,17 @@ Canonical idea ledger. RULE: when Devyn drops a new idea mid-build, the current 
 the idea lands HERE (and the Google Doc mirror) immediately — nothing gets skipped.
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
+## Shipped since last update
+- Comp engine phase 1 + valuation section w/ invoice-cited comps + thumbnails
+- Artists page (capital allocation: sell-through x revenue x on-hand, DOUBLE DOWN / MOVE STOCK verdicts)
+- Aging move-list on Today
+- 45 artist bios (9 site + 36 web-researched w/ source URLs) + About-this-work/provenance
+- Unified control law; unit-page luxury pass; details link confirm-mode
+
 ## In flight
-- Internal comp engine, phase 1: suggested estimates on POR works from own realized $/sq-in (44 artists, 1,971 comps live in artist_comps view)
+- (nothing — awaiting Shopify token + wire paragraph)
 
 ## Queued
-- Artist Performance page: sell-through + revenue + on-hand value per artist, capital-allocation verdicts (promised in "build into this")
-- Aging move-list on Today: works >12 mo on hand -> feature in drop / reprice / place
 - COA generator: per-work certificate PDF from the invoice brand pipeline
 - Bulk push to site: stage all READY TO LIST works as Shopify drafts (after token proves out on 5-10 works)
 - Image-quality scoring for Artcloud CDN photos (extend the sharpness gate before bulk publish)

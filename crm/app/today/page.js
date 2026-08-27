@@ -3,7 +3,13 @@ import Sla from '../../components/Sla';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
+const usdM = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 export default async function Today() {
+  const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+  const { data: agingRows } = await db.from('artworks')
+    .select('id, title, artist, price_cents, internal_value_cents, image_url, acquired_at, location')
+    .eq('available', true).lt('acquired_at', cutoff)
+    .order('price_cents', { ascending: false, nullsFirst: false }).limit(6);
   const { data: rows } = await db.from('inquiries')
     .select('*, collectors(first_name, last_name, email, phone, city, budget_range, trade)')
     .in('status', ['new', 'contacted'])
@@ -36,5 +42,22 @@ export default async function Today() {
       })}
     </div>
     {!rows?.length && <div className="empty">No open inquiries. The floor is clear.</div>}
+  
+    {(agingRows || []).length > 0 && <>
+    <div className="h1" style={{fontSize:18, marginTop:34}}>Move list</div>
+    <div className="sub">Highest-value works sitting over a year — feature in a drop, reprice, or place</div>
+    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))', gap:12, marginTop:14}}>
+      {(agingRows || []).map(w => {
+        const mo = Math.floor((Date.now() - new Date(w.acquired_at)) / 2629800000);
+        return <a key={w.id} href={'/inventory/' + w.id} className="card" style={{padding:8, display:'block', textDecoration:'none', color:'inherit'}}>
+          <div style={{aspectRatio:'1', background:'#fafafa', borderRadius:6, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {w.image_url ? <img src={w.image_url + (w.image_url.includes('?') ? '&' : '?') + 'width=300'} alt="" style={{width:'100%', height:'100%', objectFit:'contain'}}/> : <span style={{fontSize:10, color:'#c7c7cc'}}>NO IMAGE</span>}
+          </div>
+          <div style={{fontSize:11, fontWeight:650, marginTop:6, textTransform:'uppercase', letterSpacing:'.04em'}}>{w.artist}</div>
+          <div style={{fontSize:12, fontStyle:'italic', color:'#3a3a3c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{w.title}</div>
+          <div style={{fontSize:11.5, marginTop:3, fontWeight:600}}>{(w.price_cents || w.internal_value_cents) > 0 ? usdM(w.price_cents || w.internal_value_cents) : 'POR'}
+            <span className="pill" style={{marginLeft:6, fontSize:9.5, fontWeight:700, background:'#ffefdc', color:'#b25a00'}}>{mo} MO</span></div>
+        </a>; })}
+    </div></>}
   </Shell>;
 }
