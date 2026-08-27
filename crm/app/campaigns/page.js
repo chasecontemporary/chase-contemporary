@@ -39,12 +39,12 @@ export default async function Campaigns() {
       <input type="hidden" name="back" value="/campaigns"/>
       <div className="inline-form" style={{flexWrap:'wrap'}}>
         <input name="name" placeholder="Internal name (e.g. Pelé Drop 09/26)" required style={{minWidth:230}}/>
-        <select name="kind" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+        <select name="kind" className="sel rect">
           <option value="drop">Drop / release</option>
           <option value="newsletter">Newsletter</option>
           <option value="oneoff">One-off</option>
         </select>
-        <select name="audience_id" required style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+        <select name="audience_id" required className="sel rect">
           <option value="">Audience…</option>
           {(auds || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>

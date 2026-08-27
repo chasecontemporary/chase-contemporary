@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import Sel from '../../components/Sel';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -67,15 +68,13 @@ export default async function Collectors({ searchParams }) {
       <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginTop:12}}>
         <form style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
           {seg !== 'all' && <input type="hidden" name="seg" value={seg}/>}
-          <select name="artist" defaultValue={artist} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
-            fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', maxWidth:200}}>
+          <Sel submit name="artist" defaultValue={artist}>
             <option value="">Any artist interest</option>
             {(topArtists || []).map(a => <option key={a.artist} value={a.artist}>{a.artist}</option>)}
-          </select>
-          <select name="min" defaultValue={min} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
-            fontFamily:'inherit', fontSize:12.5, padding:'6px 12px'}}>
+          </Sel>
+          <Sel submit name="min" defaultValue={min}>
             {MINS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          </Sel>
           <input className="search" style={{marginTop:0, width:240}} name="q" defaultValue={q} placeholder="Search name, email, city, company"/>
           <button className="btn mini">Apply</button>
           {filtered && <a href="/collectors" style={{fontSize:12.5, color:'#86868b'}}>Clear</a>}

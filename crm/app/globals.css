@@ -142,3 +142,11 @@ body { background: linear-gradient(180deg, #f7f7f9 0%, #f2f2f5 100%); background
 
 .meter{height:6px;background:#e8e8ed;border-radius:3px;overflow:hidden;min-width:60px}
 .meter i{display:block;height:100%;background:#1d1d1f;border-radius:3px}
+
+/* branded select — one control everywhere (the open menu itself is OS-rendered) */
+.sel{-webkit-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236e6e73' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+border:1px solid #e8e8ed;border-radius:99px;font-family:inherit;font-size:12.5px;color:#1d1d1f;
+padding:7px 30px 7px 13px;line-height:1.2;cursor:pointer;max-width:220px;text-overflow:ellipsis}
+.sel:hover{border-color:#d2d2d7}
+.sel:focus{outline:none;border-color:#0071e3;box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+.sel.rect{border-radius:10px}

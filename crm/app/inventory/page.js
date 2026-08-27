@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import Sel from '../../components/Sel';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -66,25 +67,16 @@ export default async function Inventory({ searchParams }) {
     <div style={{display:'flex', gap:8, marginTop:20, alignItems:'center', flexWrap:'wrap'}}>
       {VIEWS.map(([k, label]) => <a key={k} href={href({ view: k, page: 1 })} className="pill"
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
-      <form style={{display:'inline'}}>
+      <form style={{display:'inline-flex', gap:8}}>
         <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
-        {loc && <input type="hidden" name="loc" value={loc}/>}
-        <select name="artist" defaultValue={artist} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
-          fontFamily:'inherit', fontSize:12.5, padding:'6px 12px', maxWidth:190}}>
+        <Sel submit name="artist" defaultValue={artist}>
           <option value="">All artists</option>
           {(allArtists || []).map(x => <option key={x.artist} value={x.artist}>{x.artist} ({x.works})</option>)}
-        </select>
-        <button className="btn mini" style={{marginLeft:6}}>Go</button>
-      </form>
-      <form style={{display:'inline'}}>
-        <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
-        {artist && <input type="hidden" name="artist" value={artist}/>}
-        <select name="loc" defaultValue={loc} style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:99,
-          fontFamily:'inherit', fontSize:12.5, padding:'6px 12px'}} onChange={undefined}>
+        </Sel>
+        <Sel submit name="loc" defaultValue={loc}>
           <option value="">All locations</option>
           {locs.map(l => <option key={l.location} value={l.location}>{l.location}</option>)}
-        </select>
-        <button className="btn mini" style={{marginLeft:6}}>Go</button>
+        </Sel>
       </form>
       <form style={{marginLeft:'auto', flex:1, maxWidth:340}}>
         <input type="hidden" name="view" value={view}/>{loc && <input type="hidden" name="loc" value={loc}/>}

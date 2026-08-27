@@ -172,8 +172,7 @@ export default function Kanban({ initial, team = [] }) {
               await fetch('/api/act', { method:'POST', body: fd });
               setOpenLead(o => ({ ...o, owner }));
               setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
-            }} style={{border:'1px solid #e8e8ed', borderRadius:8, fontFamily:'inherit',
-              fontSize:13, padding:'4px 8px', background:'#fff'}}>
+            }} className="sel rect">
             <option value="">Unassigned</option>
             {team.map(t => <option key={t} value={t}>{t}</option>)}
           </select></dd>

@@ -43,8 +43,7 @@ export default async function Team() {
       <input type="hidden" name="back" value="/team"/>
       <input name="name" placeholder="Name" required/>
       <input name="email" placeholder="Email" type="email"/>
-      <select name="role" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10,
-        fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+      <select name="role" className="sel">
         <option value="rep">Rep</option><option value="owner">Owner</option>
       </select>
       <button className="btn mini">Add to team</button>

@@ -45,8 +45,7 @@ export default async function Finance() {
     <form method="POST" action="/api/act" className="inline-form" style={{marginTop:10, flexWrap:'wrap'}}>
       <input type="hidden" name="action" value="invoice_add"/>
       <input type="hidden" name="back" value="/finance"/>
-      <select name="collector_id" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10,
-        fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+      <select name="collector_id" className="sel rect">
         <option value="">No collector</option>
         {(collectors||[]).map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
       </select>

@@ -44,7 +44,7 @@ export default async function Audiences() {
       <input type="hidden" name="action" value="audience_add"/>
       <input type="hidden" name="back" value="/audiences"/>
       <input name="name" placeholder="Name (e.g. Hambleton buyers $50k+)" required style={{minWidth:250}}/>
-      <select name="seg" style={{background:'#fff', border:'1px solid #e8e8ed', borderRadius:10, fontFamily:'inherit', fontSize:13.5, padding:'8px 12px'}}>
+      <select name="seg" className="sel">
         {SEGS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
       </select>
       <input name="artist" placeholder="Interested in artist…" style={{width:180}}/>

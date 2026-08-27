@@ -92,7 +92,7 @@ export default async function Card({ params }) {
         <input type="hidden" name="id" value={c.id}/>
         <input type="hidden" name="back" value={'/collectors/' + c.id}/>
         <input name="label" placeholder="Pin an interest (artist, style, subject…)" style={{width:250}}/>
-        <select name="kind" style={{fontFamily:'inherit', fontSize:13, border:'1px solid #e8e8ed', borderRadius:8, padding:'6px 8px', background:'#fff'}}>
+        <select name="kind" className="sel rect">
           <option value="custom">Interest</option><option value="artist">Artist</option>
           <option value="medium">Medium</option><option value="style">Style</option><option value="subject">Subject</option>
         </select>
