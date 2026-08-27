@@ -1,4 +1,6 @@
 import { db } from '../../../lib/db';
+import { buildInvoicePdf } from '../../../lib/invoicePdf';
+import { put } from '@vercel/blob';
 
 export async function POST(req) {
   const form = await req.formData();
@@ -147,6 +149,26 @@ export async function POST(req) {
       tax_cents: Math.round(Number(form.get('tax') || 0) * 100),
       shipping_cents: Math.round(Number(form.get('shipping') || 0) * 100),
       due_at: form.get('due') || null, notes: form.get('notes') || null });
+  } else if (action === 'invoice_pdf') {
+    const { data: inv } = await db.from('invoices').select('*, collectors(*)').eq('id', id).single();
+    if (inv) {
+      let items = [];
+      if (inv.sale_id) {
+        const { data: si } = await db.from('sale_items')
+          .select('*, artworks(medium, dims_h_in, dims_w_in)').eq('sale_id', inv.sale_id);
+        items = (si || []).map(it => ({ artist: it.artist, title: it.title, amount_cents: it.agreed_cents,
+          medium: it.artworks?.medium,
+          dims: it.artworks?.dims_h_in ? `${it.artworks.dims_h_in} × ${it.artworks.dims_w_in} in` : null }));
+      }
+      if (!items.length) items = [{ artist: inv.artist, title: inv.title, amount_cents: inv.amount_cents }];
+      const bytes = await buildInvoicePdf({ invoice: inv, collector: inv.collectors, items });
+      const num = String(inv.invoice_number).padStart(4, '0');
+      const blob = await put(`invoices/chase-contemporary-invoice-${num}.pdf`, Buffer.from(bytes),
+        { access: 'public', contentType: 'application/pdf', addRandomSuffix: true, allowOverwrite: true });
+      await db.from('invoices').update({ pdf_url: blob.url }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
+        kind: 'invoice_pdf', body: blob.url, actor: rep });
+    }
   } else if (action === 'invoice_paid') {
     const { data: inv } = await db.from('invoices')
       .update({ status: 'paid', paid_at: new Date().toISOString(), method: form.get('method') || null })

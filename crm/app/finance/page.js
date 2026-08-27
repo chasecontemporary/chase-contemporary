@@ -59,7 +59,7 @@ export default async function Finance() {
     </form>
 
     <div className="tblcard"><table className="tbl"><thead><tr>
-      <th>#</th><th>Collector</th><th>Work</th><th>Amount</th><th>Issued</th><th>Age</th><th>Status</th><th></th>
+      <th>#</th><th>Collector</th><th>Work</th><th>Amount</th><th>Issued</th><th>Age</th><th>Status</th><th>Document</th><th></th>
     </tr></thead><tbody>
       {all.map(i => {
         const age = Math.floor((now - new Date(i.issued_at).getTime()) / 86400000);
@@ -75,6 +75,16 @@ export default async function Finance() {
         <td>{i.status === 'paid' ? <span className="pill green">Paid{i.method ? ' · ' + i.method : ''}</span>
           : i.status === 'void' ? <span className="pill">Void</span>
           : <span className="pill blue">Open</span>}</td>
+        <td style={{whiteSpace:'nowrap'}}>
+          <form method="POST" action="/api/act" style={{display:'inline-block', marginRight:6}}>
+            <input type="hidden" name="action" value="invoice_pdf"/>
+            <input type="hidden" name="id" value={i.id}/>
+            <input type="hidden" name="back" value="/finance"/>
+            <button className="btn mini">{i.pdf_url ? 'Re-issue PDF' : 'Generate PDF'}</button>
+          </form>
+          {i.pdf_url && <a className="pill" style={{background:'#fff', border:'1px solid #e8e8ed', marginRight:6}}
+            href={i.pdf_url} target="_blank">PDF ↗</a>}
+        </td>
         <td>{i.status === 'open' && <div style={{display:'flex', gap:6}}>
           <form method="POST" action="/api/act" style={{display:'flex', gap:4}}>
             <input type="hidden" name="action" value="invoice_paid"/>
