@@ -65,7 +65,7 @@ export default async function Finance({ searchParams }) {
       <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commission pool accrued, unsettled</div></div>
     </div>
 
-    {open.length > 0 && (() => {
+    {(() => {
       const ORDER = [['issued','Issued','#8e8e93'],['sent','Sent','#0071e3'],['nudged','Nudged','#af52de'],['promised','Promised','#ff9500']];
       const by = {};
       open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
@@ -86,6 +86,8 @@ export default async function Finance({ searchParams }) {
         </div>
         {overdue.length > 0 && <div style={{marginTop:10, fontSize:12, fontWeight:650, color:'#b8231a'}}>
           {overdue.length} invoice{overdue.length > 1 ? 's' : ''} overdue ({usd(overdue.reduce((s, i) => s + tot(i), 0))}) — over 30 days or past a promise date</div>}
+        {open.length === 0 && <div style={{marginTop:10, fontSize:12, color:'#86868b'}}>
+          No open AR right now. Each invoice moves Issued → Sent → Nudged → Promised as the chase progresses; the segments fill with dollars the moment one issues.</div>}
       </div>; })()}
 
     <div className="card" style={{marginTop:16}}>
