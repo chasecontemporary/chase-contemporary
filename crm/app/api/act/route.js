@@ -200,6 +200,8 @@ export async function POST(req) {
       const inqIds = items.map(i => i.inquiry_id).filter(Boolean);
       if (inqIds.length) await db.from('inquiries')
         .update({ status: 'invoice', stage_changed_at: new Date().toISOString() }).in('id', inqIds);
+      if (form.get('back') && form.get('back') !== 'json')
+        return Response.redirect(new URL(form.get('back'), req.url), 303);
       return new Response(JSON.stringify({ ok: true, invoice_number: inv?.invoice_number }),
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
