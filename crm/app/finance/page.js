@@ -3,6 +3,7 @@ import DocPreview from '../../components/DocPreview';
 import ArStage from '../../components/ArStage';
 import FollowUp from '../../components/FollowUp';
 import BrandSelect from '../../components/BrandSelect';
+import NewInvoice from '../../components/NewInvoice';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const fmtPhone = (p) => {
@@ -21,9 +22,10 @@ export default async function Finance({ searchParams }) {
   const view = sp.view || 'open';
   const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
   const since = new Date(); since.setMonth(since.getMonth() - 36);
-  const [{ data: invs }, { data: collectors }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }, { data: saleItemDocs }] = await Promise.all([
+  const [{ data: invs }, { data: availWorks }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }, { data: saleItemDocs }] = await Promise.all([
     db.from('invoices').select('*, collectors(id, first_name, last_name, phone, email, city, state)').order('issued_at', { ascending: false }).limit(200),
-    db.from('collectors').select('id, first_name, last_name').order('created_at', { ascending: false }).limit(200),
+    db.from('artworks').select('id, title, artist, price_cents, internal_value_cents')
+      .eq('available', true).order('artist').order('title').limit(300),
     db.from('finance_monthly').select('*').gte('month', since.toISOString().slice(0, 10)).order('month'),
     db.from('commissions').select('amount_cents').eq('settled', false).limit(1000),
     db.from('sales').select('id, created_at, owner, collectors(id, first_name, last_name), sale_items(agreed_cents, title)')
@@ -77,8 +79,16 @@ export default async function Finance({ searchParams }) {
   const shown = view === 'paid' ? paid : view === 'all' ? all : [...open].sort((a, b) => new Date(a.issued_at) - new Date(b.issued_at));
   const VIEWS = [['open', `Open · ${open.length}`], ['paid', `Paid · ${paid.length}`], ['payments', 'Payments received'], ['all', 'All']];
   return <Shell active="finance">
-    <div className="h1">Finance</div>
-    <div className="sub">Money in, money owed, and who to follow up with — invoices are made from sales, then you send, follow up, and record money as it arrives</div>
+    <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16}}>
+      <div>
+        <div className="h1">Finance</div>
+        <div className="sub">Money in, money owed, and who to follow up with — invoices are made from sales, then you send, follow up, and record money as it arrives</div>
+      </div>
+      <div style={{paddingTop:6}}>
+        <NewInvoice works={(availWorks || []).map(w => ({ id: w.id, title: w.title, artist: w.artist || '',
+          cents: Number(w.price_cents || w.internal_value_cents || 0) }))}/>
+      </div>
+    </div>
 
     {(() => {
       const thisMonth = new Date(); thisMonth.setDate(1);
@@ -291,21 +301,6 @@ export default async function Finance({ searchParams }) {
         {view === 'open' ? 'No open invoices. New ones are generated from sales in the pipeline drawer.' : 'Nothing here yet.'}</div>}
     </div>}
 
-    <details className="edit" style={{marginTop:16}}>
-      <summary>Manual invoice — walk-in or off-pipeline sale</summary>
-      <form method="POST" action="/api/act" className="inline-form" style={{marginTop:12, flexWrap:'wrap'}}>
-        <input type="hidden" name="action" value="invoice_add"/>
-        <input type="hidden" name="back" value="/finance"/>
-        <BrandSelect name="collector_id" placeholder="No collector"
-          options={[['', 'No collector'], ...(collectors || []).map(c => [c.id, [c.first_name, c.last_name].filter(Boolean).join(' ')])]}/>
-        <input name="title" placeholder="Work / description" required style={{flex:1, minWidth:180}}/>
-        <input name="artist" placeholder="Artist" style={{width:140}}/>
-        <input name="amount" placeholder="Amount $" type="number" step="0.01" required style={{width:110}}/>
-        <input name="tax" placeholder="Tax $" type="number" step="0.01" style={{width:90}}/>
-        <input name="shipping" placeholder="Ship $" type="number" step="0.01" style={{width:90}}/>
-        <input name="due" type="date" style={{width:150}}/>
-        <button className="btn mini quiet">Create invoice</button>
-      </form>
-    </details>
+
   </Shell>;
 }

@@ -229,6 +229,27 @@ export async function POST(req) {
       return new Response(JSON.stringify({ ok: true, invoice_number: inv?.invoice_number }),
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+  } else if (action === 'invoice_manual') {
+    const money = (k) => Math.round(Number(String(form.get(k) || '0').replace(/[$,\s]/g, '')) * 100);
+    const collectorId = form.get('collector_id') || null;
+    const artworkId = form.get('artwork_id') || null;
+    const cents = money('amount');
+    if (artworkId && collectorId) {
+      const { data: art } = await db.from('artworks').select('title, artist').eq('id', artworkId).single();
+      const { data: sale } = await db.from('sales').insert({ collector_id: collectorId, owner: rep }).select().single();
+      await db.from('sale_items').insert({ sale_id: sale.id, artwork_id: artworkId,
+        title: art?.title, artist: art?.artist, agreed_cents: cents });
+      await db.from('invoices').insert({ collector_id: collectorId, sale_id: sale.id,
+        title: art?.title, artist: art?.artist, amount_cents: cents,
+        tax_cents: money('tax'), shipping_cents: money('shipping'),
+        due_at: form.get('due') || null, notes: 'manual invoice' });
+      await db.from('sales').update({ status: 'invoiced' }).eq('id', sale.id);
+    } else {
+      await db.from('invoices').insert({ collector_id: collectorId,
+        title: form.get('title') || 'Sale', artist: form.get('artist') || null,
+        amount_cents: cents, tax_cents: money('tax'), shipping_cents: money('shipping'),
+        due_at: form.get('due') || null, notes: 'manual invoice' });
+    }
   } else if (action === 'invoice_add') {
     const cents = Math.round(Number(form.get('amount') || 0) * 100);
     await db.from('invoices').insert({
