@@ -91,20 +91,21 @@ export default async function Finance({ searchParams }) {
     {(() => {
       const thisMonth = new Date(); thisMonth.setDate(1);
       const mKey = thisMonth.toISOString().slice(0, 7);
-      const lastM = new Date(thisMonth); lastM.setMonth(lastM.getMonth() - 1);
-      const lKey = lastM.toISOString().slice(0, 7);
       const collThis = M.filter(m => String(m.month).slice(0, 7) === mKey).reduce((s, m) => s + Number(m.collected_cents), 0);
-      const collLast = M.filter(m => String(m.month).slice(0, 7) === lKey).reduce((s, m) => s + Number(m.collected_cents), 0);
+      const paidWithDates = paid.filter(p => p.paid_at);
+      const avgDays = paidWithDates.length
+        ? Math.round(paidWithDates.reduce((s, p) => s + (new Date(p.paid_at) - new Date(p.issued_at)) / 86400000, 0) / paidWithDates.length)
+        : null;
       return <div className="stats">
+        <div className="stat"><div className="n">{usd(ytd)}</div><div className="l">Closed {yr}{yoy !== null ? <span style={{color: yoy >= 0 ? '#1d7a3d' : '#b25a00', fontWeight:700}}> · {yoy >= 0 ? '+' : ''}{yoy}% vs {yr - 1}</span> : ''}</div></div>
         <div className="stat"><div className="n">{usd(ar)}</div><div className="l">Owed to the gallery · {open.length} open invoice{open.length === 1 ? '' : 's'}</div></div>
         <div className="stat"><div className="n">{usd(collThis)}</div><div className="l">Collected in {new Date().toLocaleDateString('en-US', { month: 'long' })}</div></div>
-        <div className="stat"><div className="n">{usd(collLast)}</div><div className="l">Collected in {lastM.toLocaleDateString('en-US', { month: 'long' })}</div></div>
-        <div className="stat"><div className="n">{usd(commOwed)}</div><div className="l">Commissions owed to the team</div></div>
+        <div className="stat"><div className="n">{avgDays === null ? '—' : avgDays + 'd'}</div><div className="l">Average days to collect</div></div>
       </div>; })()}
 
     {(() => {
-      const ORDER = [['issued','Unsent','#8e8e93'],['sent','Sent','#0071e3'],['fu1','Follow up 1','#5e5ce6'],['fu2','Follow up 2','#af52de'],['fu3','Follow up 3','#ff9500']];
-      const by = {};
+      const ORDER = [['issued','Unsent','#8e8e93'],['sent','Sent','#0071e3'],['fu1','Follow up 1','#5e5ce6'],['fu2','Follow up 2','#af52de'],['fu3','Follow up 3','#ff9500'],['paidstage','Paid','#34c759']];
+      const by = { paidstage: paid };
       open.forEach(i => { const k = i.ar_status || 'issued'; (by[k] = by[k] || []).push(i); });
       const overdue = open.filter(i => (Date.now() - new Date(i.issued_at)) / 86400000 > 30
        );
@@ -113,7 +114,7 @@ export default async function Finance({ searchParams }) {
         <div style={{display:'flex', gap:6, marginTop:4}}>
           {ORDER.map(([k, label, color]) => {
             const rows = by[k] || [];
-            const amt = rows.reduce((s, i) => s + balance(i), 0);
+            const amt = k === 'paidstage' ? rows.reduce((s, i) => s + tot(i), 0) : rows.reduce((s, i) => s + balance(i), 0);
             const w = ar > 0 ? Math.max(rows.length ? 10 : 4, Math.round(100 * amt / ar)) : 25;
             return <div key={k} style={{flexGrow:w, minWidth:90}}>
               <div style={{height:7, borderRadius:4, background: rows.length ? color : '#e8e8ed'}}/>

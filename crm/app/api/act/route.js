@@ -230,25 +230,41 @@ export async function POST(req) {
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
   } else if (action === 'invoice_manual') {
-    const money = (k) => Math.round(Number(String(form.get(k) || '0').replace(/[$,\s]/g, '')) * 100);
+    // line-item invoice: works create a sale underneath (thesis), shipping/tax/service are lines
     const collectorId = form.get('collector_id') || null;
-    const artworkId = form.get('artwork_id') || null;
-    const cents = money('amount');
-    if (artworkId && collectorId) {
-      const { data: art } = await db.from('artworks').select('title, artist').eq('id', artworkId).single();
-      const { data: sale } = await db.from('sales').insert({ collector_id: collectorId, owner: rep }).select().single();
-      await db.from('sale_items').insert({ sale_id: sale.id, artwork_id: artworkId,
-        title: art?.title, artist: art?.artist, agreed_cents: cents });
-      await db.from('invoices').insert({ collector_id: collectorId, sale_id: sale.id,
-        title: art?.title, artist: art?.artist, amount_cents: cents,
-        tax_cents: money('tax'), shipping_cents: money('shipping'),
-        due_at: form.get('due') || null, notes: 'manual invoice' });
-      await db.from('sales').update({ status: 'invoiced' }).eq('id', sale.id);
-    } else {
-      await db.from('invoices').insert({ collector_id: collectorId,
-        title: form.get('title') || 'Sale', artist: form.get('artist') || null,
-        amount_cents: cents, tax_cents: money('tax'), shipping_cents: money('shipping'),
-        due_at: form.get('due') || null, notes: 'manual invoice' });
+    let lines = [];
+    try { lines = JSON.parse(form.get('lines') || '[]'); } catch {}
+    const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
+    lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
+    const workLines = lines.filter(l => l.kind === 'work' && l.artwork_id);
+    const svcLines = lines.filter(l => l.kind === 'service');
+    const shipC = lines.filter(l => l.kind === 'shipping').reduce((s, l) => s + cents(l.amount), 0);
+    const taxC = lines.filter(l => l.kind === 'tax').reduce((s, l) => s + cents(l.amount), 0);
+    const artC = workLines.reduce((s, l) => s + cents(l.amount), 0) + svcLines.reduce((s, l) => s + cents(l.amount), 0);
+    if (artC + shipC + taxC > 0 || workLines.length) {
+      let saleId = null;
+      if (collectorId && workLines.length) {
+        const { data: sale } = await db.from('sales').insert({ collector_id: collectorId, owner: rep }).select().single();
+        saleId = sale?.id;
+        for (const l of workLines)
+          await db.from('sale_items').insert({ sale_id: saleId, artwork_id: l.artwork_id,
+            title: l.title, artist: l.artist, agreed_cents: cents(l.amount) });
+        if (saleId) await db.from('sales').update({ status: 'invoiced' }).eq('id', saleId);
+      }
+      const first = workLines[0] || svcLines[0] || {};
+      const title = workLines.length > 1 ? `${workLines.length} works · ` + workLines.map(l => l.title).join(', ').slice(0, 110)
+        : (first.title || 'Sale');
+      const { data: inv } = await db.from('invoices').insert({ collector_id: collectorId, sale_id: saleId,
+        title, artist: workLines.length === 1 ? first.artist : null,
+        amount_cents: artC, tax_cents: taxC, shipping_cents: shipC,
+        due_at: form.get('due') || null, notes: 'manual invoice' }).select().single();
+      if (inv) {
+        let sort = 0;
+        for (const l of lines)
+          await db.from('invoice_lines').insert({ invoice_id: inv.id, kind: l.kind,
+            artwork_id: l.artwork_id || null, title: l.title || null, artist: l.artist || null,
+            amount_cents: cents(l.amount), sort: sort++ });
+      }
     }
   } else if (action === 'invoice_add') {
     const cents = Math.round(Number(form.get('amount') || 0) * 100);
@@ -263,7 +279,13 @@ export async function POST(req) {
     const { data: inv } = await db.from('invoices').select('*, collectors(*)').eq('id', id).single();
     if (inv) {
       let items = [];
-      if (inv.sale_id) {
+      const { data: ilines } = await db.from('invoice_lines').select('*, artworks(medium, dims_h_in, dims_w_in)')
+        .eq('invoice_id', id).in('kind', ['work', 'service']).order('sort');
+      if (ilines?.length) {
+        items = ilines.map(it => ({ artist: it.artist, title: it.title, amount_cents: it.amount_cents,
+          medium: it.artworks?.medium,
+          dims: it.artworks?.dims_h_in ? `${it.artworks.dims_h_in} × ${it.artworks.dims_w_in} in` : null }));
+      } else if (inv.sale_id) {
         const { data: si } = await db.from('sale_items')
           .select('*, artworks(medium, dims_h_in, dims_w_in)').eq('sale_id', inv.sale_id);
         items = (si || []).map(it => ({ artist: it.artist, title: it.title, amount_cents: it.agreed_cents,
