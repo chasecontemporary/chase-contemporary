@@ -2,6 +2,7 @@ import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
 import { listingGaps } from '../../../lib/readiness';
 import DocPreview from '../../../components/DocPreview';
+import CollectorPicker from '../../../components/CollectorPicker';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
@@ -184,28 +185,35 @@ export default async function Unit({ params, searchParams }) {
           </form>
         </div>}
 
-        {a.available && <div className="card">
-          <div className="cardtitle" style={{marginBottom:out ? 10 : 4}}>{out ? 'Out on approval' : 'Send out on approval'}</div>
-          {!out && <div style={{fontSize:12, color:'#86868b', marginBottom:12}}>Release the work to a client, designer, or partner with a return date.</div>}
-          {out ? <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
-            <span>With <b>{out.out_to}</b>{out.expires_at ? ` · due back ${new Date(out.expires_at).toLocaleDateString()}` : ''}</span>
-            {['returned','converted'].map(o => <form key={o} method="POST" action="/api/act">
-              <input type="hidden" name="action" value="approval_close"/>
-              <input type="hidden" name="id" value={a.id}/>
-              <input type="hidden" name="hold_id" value={out.id}/>
-              <input type="hidden" name="outcome" value={o}/>
-              <input type="hidden" name="back" value={back}/>
-              <button className="btn mini">{o === 'returned' ? 'Mark returned' : 'Converted to sale'}</button>
-            </form>)}
-          </div> : <form method="POST" action="/api/act" className="inline-form" style={{margin:0}}>
-            <input type="hidden" name="action" value="approval_out"/>
-            <input type="hidden" name="id" value={a.id}/>
-            <input type="hidden" name="back" value={back}/>
-            <input name="out_to" placeholder="With whom" required style={{flex:1, minWidth:180}}/>
-            <input name="due" type="date" style={{width:150}}/>
-            <button className="btn mini quiet">Send out</button>
-          </form>}
-        </div>}
+        {a.available && (out
+          ? <div className="card">
+              <div className="cardtitle" style={{marginBottom:10}}>Out on approval</div>
+              <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', fontSize:13.5}}>
+                <span>With <b>{out.collector_id ? <a href={'/collectors/' + out.collector_id}>{out.out_to}</a> : out.out_to}</b>
+                  {out.expires_at ? ` · due back ${new Date(out.expires_at).toLocaleDateString()}` : ''}
+                  {out.expires_at && new Date(out.expires_at) < new Date() && <span className="pill" style={{marginLeft:8, background:'#ffefdc', color:'#b25a00', fontWeight:700, fontSize:10}}>OVERDUE</span>}</span>
+                {['returned','converted'].map(o => <form key={o} method="POST" action="/api/act">
+                  <input type="hidden" name="action" value="approval_close"/>
+                  <input type="hidden" name="id" value={a.id}/>
+                  <input type="hidden" name="hold_id" value={out.id}/>
+                  <input type="hidden" name="outcome" value={o}/>
+                  <input type="hidden" name="back" value={back}/>
+                  <button className="btn mini quiet">{o === 'returned' ? 'Mark returned' : 'Converted to sale'}</button>
+                </form>)}
+              </div>
+            </div>
+          : <details className="edit">
+              <summary>Send out on approval</summary>
+              <div style={{fontSize:12, color:'#86868b', margin:'10px 0 12px'}}>Release the work to a collector with a return date — linked to their record, chased on Today. Leave the date blank for a 7-day default.</div>
+              <form method="POST" action="/api/act" className="inline-form" style={{margin:0, flexWrap:'wrap'}}>
+                <input type="hidden" name="action" value="approval_out"/>
+                <input type="hidden" name="id" value={a.id}/>
+                <input type="hidden" name="back" value={back}/>
+                <CollectorPicker required/>
+                <input name="due" type="date" style={{width:150}}/>
+                <button className="btn mini quiet">Send out</button>
+              </form>
+            </details>)}
 
         {(buys||[]).length > 0 && <div className="card">
           <div className="cardtitle">Sold to</div>

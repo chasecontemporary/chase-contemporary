@@ -185,6 +185,20 @@ export default function Kanban({ initial, team = [] }) {
           <dt>Found us via</dt><dd>{openLead.source || c.source || '—'}</dd>
           <dt>Device</dt><dd>{openLead.device || '—'}</dd>
           <dt>Time on page</dt><dd>{openLead.seconds_on_page ? openLead.seconds_on_page + 's' : '—'}</dd>
+          <dt>On approval</dt><dd>
+            <button className="btn mini quiet" onClick={async () => {
+              if (!a?.id || !openLead.collectors?.id) return;
+              const fd = new FormData();
+              fd.set('action','approval_out'); fd.set('id', a.id);
+              fd.set('collector_id', openLead.collectors.id);
+              fd.set('inquiry_id', openLead.id); fd.set('back','json');
+              const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json());
+              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, status: 'hold' } : l));
+              setOpenLead(o => ({ ...o, status: 'hold', _approval: r }));
+            }} disabled={!a?.id || !a?.available}>Send work on approval</button>
+            {openLead._approval && <span style={{fontSize:12, color:'#1d7a3d', fontWeight:600, marginLeft:8}}>
+              Out with {openLead._approval.out_to} · due {openLead._approval.due}</span>}
+          </dd>
           <dt>Invoice-ready</dt><dd>{(() => {
             const col = openLead.collectors || {};
             const miss = [!col.address_line1 && 'billing address', !col.phone && 'phone',

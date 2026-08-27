@@ -77,10 +77,23 @@ export async function POST(req) {
     await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
       kind: 'internal_value_set', body: cents ? '$' + (cents / 100).toLocaleString() : 'cleared', actor: rep });
   } else if (action === 'approval_out') {
+    const collectorId = form.get('collector_id') || null;
+    let outTo = form.get('out_to') || null;
+    if (collectorId && !outTo) {
+      const { data: col } = await db.from('collectors').select('first_name, last_name, email').eq('id', collectorId).single();
+      outTo = col ? ([col.first_name, col.last_name].filter(Boolean).join(' ') || col.email) : null;
+    }
+    const due = form.get('due') || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     await db.from('holds').insert({ artwork_id: id, kind: 'approval',
-      out_to: form.get('out_to'), expires_at: form.get('due') || null });
+      collector_id: collectorId, out_to: outTo, expires_at: due });
     await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
-      kind: 'on_approval_out', body: 'to ' + form.get('out_to'), actor: rep });
+      kind: 'on_approval_out', body: `to ${outTo} · due back ${due}`, actor: rep });
+    if (collectorId) await db.from('activities').insert({ entity_type: 'collector', entity_id: collectorId,
+      kind: 'on_approval_out', body: `took a work on approval · due back ${due}`, actor: rep });
+    if (form.get('inquiry_id')) await db.from('inquiries')
+      .update({ status: 'hold', stage_changed_at: new Date().toISOString() }).eq('id', form.get('inquiry_id'));
+    if (form.get('back') === 'json')
+      return new Response(JSON.stringify({ ok: true, out_to: outTo, due }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } else if (action === 'approval_close') {
     const outcome = form.get('outcome');   // returned | converted
     await db.from('holds').update({ status: outcome }).eq('id', form.get('hold_id'));
