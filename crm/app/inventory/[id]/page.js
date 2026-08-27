@@ -65,8 +65,7 @@ export default async function Unit({ params, searchParams }) {
         <div>
           <div style={{display:'flex', gap:10, alignItems:'center'}}>
             <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</span>
-            {out ? <span className="pill" style={{background:'#b7791f', color:'#fff', fontSize:10, fontWeight:700}}>ON APPROVAL</span>
-              : a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
+            {a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
               : <span className="pill" style={{fontSize:10, fontWeight:700}}>SOLD</span>}
           </div>
           <div className="h1" style={{fontSize:27, marginTop:4, letterSpacing:'-.02em'}}>{a.title}</div>
