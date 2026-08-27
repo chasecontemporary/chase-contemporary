@@ -70,14 +70,10 @@ export default async function Inventory({ searchParams }) {
         style={view === k ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
       <form style={{display:'inline-flex', gap:8}}>
         <input type="hidden" name="view" value={view}/>{q && <input type="hidden" name="q" value={q}/>}
-        <Sel submit name="artist" defaultValue={artist}>
-          <option value="">All artists</option>
-          {(allArtists || []).map(x => <option key={x.artist} value={x.artist}>{x.artist} ({x.works})</option>)}
-        </Sel>
-        <Sel submit name="loc" defaultValue={loc}>
-          <option value="">All locations</option>
-          {locs.map(l => <option key={l.location} value={l.location}>{l.location}</option>)}
-        </Sel>
+        <Sel name="artist" defaultValue={artist}
+          options={[['', 'All artists'], ...(allArtists || []).map(x => [x.artist, `${x.artist} (${x.works})`])]}/>
+        <Sel name="loc" defaultValue={loc}
+          options={[['', 'All locations'], ...locs.map(l => [l.location, l.location])]}/>
       </form>
       <form style={{marginLeft:'auto', flex:1, maxWidth:340}}>
         <input type="hidden" name="view" value={view}/>{loc && <input type="hidden" name="loc" value={loc}/>}

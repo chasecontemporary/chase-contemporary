@@ -1,4 +1,5 @@
 'use client';
+import BrandSelect from './BrandSelect';
 import { useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
@@ -123,10 +124,8 @@ export default function Kanban({ initial, team = [] }) {
             {c.trade ? <span className="badge">Trade</span> : null}</h2>
           <div className="sub">{[c.email, c.phone].filter(Boolean).join(' · ')}</div>
           <div style={{marginTop:12, display:'flex', gap:10, alignItems:'center'}}>
-            <select className="stagesel" style={{background: COLOR[openLead.status]}}
-              value={openLead.status} onChange={e => move(openLead.id, e.target.value)}>
-              {STAGES.map(s => <option key={s} value={s}>{LABEL[s]}</option>)}
-            </select>
+            <BrandSelect pill options={STAGES.map(s => [s, LABEL[s]])} value={openLead.status}
+              pillColor={(v) => COLOR[v] || '#8e8e93'} onValue={(v) => move(openLead.id, v)}/>
             <button className="btn ghost mini" onClick={async () => {
               const fd = new FormData(); fd.set('action','called'); fd.set('id', openLead.id);
               await fetch('/api/act', { method:'POST', body: fd });
@@ -220,17 +219,14 @@ export default function Kanban({ initial, team = [] }) {
             <a href={dlink} target="_blank" style={{color:'#0071e3', wordBreak:'break-all'}}>{dlink}</a></div>}
           </dd>
           <dt>Owner</dt><dd>
-            <select value={openLead.owner || ''} onChange={async e => {
-              const owner = e.target.value;
-              const fd = new FormData();
-              fd.set('action','assign'); fd.set('id', openLead.id); fd.set('owner', owner); fd.set('back','json');
-              await fetch('/api/act', { method:'POST', body: fd });
-              setOpenLead(o => ({ ...o, owner }));
-              setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
-            }} className="sel rect">
-            <option value="">Unassigned</option>
-            {team.map(t => <option key={t} value={t}>{t}</option>)}
-          </select></dd>
+            <BrandSelect options={[['', 'Unassigned'], ...team.map(t => [t, t])]} value={openLead.owner || ''}
+              onValue={async (owner) => {
+                const fd = new FormData();
+                fd.set('action','assign'); fd.set('id', openLead.id); fd.set('owner', owner); fd.set('back','json');
+                await fetch('/api/act', { method:'POST', body: fd });
+                setOpenLead(o => ({ ...o, owner }));
+                setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, owner } : l));
+              }}/></dd>
         </dl>
         {openLead.page_journey && <div className="msg"><b style={{fontSize:12}}>Path through the site</b><br/>
           {openLead.page_journey}</div>}

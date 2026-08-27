@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import BrandSelect from '../../components/BrandSelect';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
@@ -39,15 +40,10 @@ export default async function Campaigns() {
       <input type="hidden" name="back" value="/campaigns"/>
       <div className="inline-form" style={{flexWrap:'wrap'}}>
         <input name="name" placeholder="Internal name (e.g. Pelé Drop 09/26)" required style={{minWidth:230}}/>
-        <select name="kind" className="sel rect">
-          <option value="drop">Drop / release</option>
-          <option value="newsletter">Newsletter</option>
-          <option value="oneoff">One-off</option>
-        </select>
-        <select name="audience_id" required className="sel rect">
-          <option value="">Audience…</option>
-          {(auds || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
+        <BrandSelect name="kind" defaultValue="drop"
+          options={[['drop','Drop / release'],['newsletter','Newsletter'],['oneoff','One-off']]}/>
+        <BrandSelect name="audience_id" placeholder="Audience…"
+          options={(auds || []).map(a => [a.id, a.name])}/>
       </div>
       <div className="inline-form" style={{marginTop:10, flexWrap:'wrap'}}>
         <input name="subject" placeholder="Subject line" required style={{flex:1, minWidth:280}}/>

@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import BrandSelect from '../../components/BrandSelect';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
@@ -43,9 +44,7 @@ export default async function Team() {
       <input type="hidden" name="back" value="/team"/>
       <input name="name" placeholder="Name" required/>
       <input name="email" placeholder="Email" type="email"/>
-      <select name="role" className="sel">
-        <option value="rep">Rep</option><option value="owner">Owner</option>
-      </select>
+      <BrandSelect name="role" options={[['rep','Rep'],['owner','Owner'],['ops','Ops']]} defaultValue="rep"/>
       <button className="btn mini">Add to team</button>
     </form>
   </Shell>;

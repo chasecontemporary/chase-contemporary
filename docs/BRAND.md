@@ -61,7 +61,11 @@ that isn't on the live site.
   caps, stage color ground, white chevron. Anything sharing a row with it (DEPOSIT IN,
   PAID) matches that exact 24px pill scale. Money inputs always carry the $ inside the control and format with
   thousands separators.
-- `.sel` — THE select. Every dropdown in the engine uses it: appearance none, white,
+- `BrandSelect` — THE dropdown (native select menus are OS-drawn and off-brand, so the
+  menu is ours): branded trigger (36px rect, or 24px colored pill for editable statuses),
+  fixed-positioned white menu card (12px radius, hairline, soft shadow, hover rows, blue
+  check on the active row). Every dropdown in the engine uses it; `.sel` survives only as
+  legacy CSS. Every dropdown in the engine uses it: appearance none, white,
   hairline border, pill radius (`.rect` for 10px in forms), custom gray chevron
   (inline SVG), blue focus ring. Filter selects auto-submit via `components/Sel.js`
   (no "Go" buttons). The open menu itself is OS-rendered and can't be styled — the

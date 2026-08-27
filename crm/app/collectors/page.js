@@ -68,13 +68,9 @@ export default async function Collectors({ searchParams }) {
       <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginTop:12}}>
         <form style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
           {seg !== 'all' && <input type="hidden" name="seg" value={seg}/>}
-          <Sel submit name="artist" defaultValue={artist}>
-            <option value="">Any artist interest</option>
-            {(topArtists || []).map(a => <option key={a.artist} value={a.artist}>{a.artist}</option>)}
-          </Sel>
-          <Sel submit name="min" defaultValue={min}>
-            {MINS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </Sel>
+          <Sel name="artist" defaultValue={artist}
+            options={[['', 'Any artist interest'], ...(topArtists || []).map(a => [a.artist, a.artist])]}/>
+          <Sel name="min" defaultValue={min} options={MINS}/>
           <input className="search" style={{marginTop:0, width:240}} name="q" defaultValue={q} placeholder="Search name, email, city, company"/>
           <button className="btn mini">Apply</button>
           {filtered && <a href="/collectors" style={{fontSize:12.5, color:'#86868b'}}>Clear</a>}

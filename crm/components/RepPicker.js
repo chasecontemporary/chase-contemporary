@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import BrandSelect from './BrandSelect';
 export default function RepPicker() {
   const [team, setTeam] = useState([]);
   const [me, setMe] = useState('');
@@ -14,9 +15,7 @@ export default function RepPicker() {
   };
   return <div style={{position:'absolute', bottom:28, left:16, right:16}}>
     <div style={{fontSize:11, color:'#86868b', fontWeight:600, padding:'0 2px 6px'}}>Signed in as</div>
-    <select value={me} onChange={e => set(e.target.value)} className="sel" style={{width:'100%', maxWidth:'none'}}>
-      <option value="" disabled>Choose…</option>
-      {team.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-    </select>
+    <BrandSelect options={team.map(t => [t.name, t.name])} value={me}
+      placeholder="Choose…" width="100%" onValue={set}/>
   </div>;
 }

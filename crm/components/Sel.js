@@ -1,6 +1,8 @@
 'use client';
-// Branded select. submit -> auto-submits its form on change (GET filter forms only).
-export default function Sel({ submit, className = '', ...props }) {
-  return <select {...props} className={('sel ' + className).trim()}
-    onChange={submit ? (e) => e.target.form?.requestSubmit() : props.onChange} />;
+import BrandSelect from './BrandSelect';
+
+// Filter select: branded trigger + branded menu, auto-submits its form on pick.
+export default function Sel({ name, options = [], defaultValue = '', placeholder, submit = true, width }) {
+  return <BrandSelect name={name} options={options} defaultValue={defaultValue}
+    placeholder={placeholder} submit={submit} width={width}/>;
 }

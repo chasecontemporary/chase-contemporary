@@ -2,6 +2,7 @@ import Shell from '../../components/Shell';
 import DocPreview from '../../components/DocPreview';
 import ArStage from '../../components/ArStage';
 import FollowUp from '../../components/FollowUp';
+import BrandSelect from '../../components/BrandSelect';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const fmtPhone = (p) => {
@@ -295,10 +296,8 @@ export default async function Finance({ searchParams }) {
       <form method="POST" action="/api/act" className="inline-form" style={{marginTop:12, flexWrap:'wrap'}}>
         <input type="hidden" name="action" value="invoice_add"/>
         <input type="hidden" name="back" value="/finance"/>
-        <select name="collector_id" className="sel rect">
-          <option value="">No collector</option>
-          {(collectors||[]).map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
-        </select>
+        <BrandSelect name="collector_id" placeholder="No collector"
+          options={[['', 'No collector'], ...(collectors || []).map(c => [c.id, [c.first_name, c.last_name].filter(Boolean).join(' ')])]}/>
         <input name="title" placeholder="Work / description" required style={{flex:1, minWidth:180}}/>
         <input name="artist" placeholder="Artist" style={{width:140}}/>
         <input name="amount" placeholder="Amount $" type="number" step="0.01" required style={{width:110}}/>

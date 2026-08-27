@@ -1,4 +1,5 @@
 import Shell from '../../../components/Shell';
+import BrandSelect from '../../../components/BrandSelect';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
@@ -98,10 +99,8 @@ export default async function Card({ params, searchParams }) {
         <input type="hidden" name="id" value={c.id}/>
         <input type="hidden" name="back" value={'/collectors/' + c.id}/>
         <input name="label" placeholder="Pin an interest (artist, style, subject…)" style={{width:250}}/>
-        <select name="kind" className="sel rect">
-          <option value="custom">Interest</option><option value="artist">Artist</option>
-          <option value="medium">Medium</option><option value="style">Style</option><option value="subject">Subject</option>
-        </select>
+        <BrandSelect name="kind" defaultValue="custom"
+          options={[['custom','Interest'],['artist','Artist'],['medium','Medium'],['style','Style'],['subject','Subject']]}/>
         <button className="btn mini">Pin</button>
       </form>
     </div>

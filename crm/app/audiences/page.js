@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import BrandSelect from '../../components/BrandSelect';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
@@ -44,9 +45,7 @@ export default async function Audiences() {
       <input type="hidden" name="action" value="audience_add"/>
       <input type="hidden" name="back" value="/audiences"/>
       <input name="name" placeholder="Name (e.g. Hambleton buyers $50k+)" required style={{minWidth:250}}/>
-      <select name="seg" className="sel">
-        {SEGS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-      </select>
+      <BrandSelect name="seg" options={SEGS} defaultValue="all"/>
       <input name="artist" placeholder="Interested in artist…" style={{width:180}}/>
       <input name="min_spend" placeholder="Min lifetime $" type="number" style={{width:130}}/>
       <label style={{display:'flex', alignItems:'center', gap:6, fontSize:13}}>
