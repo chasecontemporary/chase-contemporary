@@ -31,7 +31,7 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 ## Needs key (built, waiting)
 - Shopify pay links + product push: custom app token (scopes: write_products, read_products, write_draft_orders, read_draft_orders, read_orders) + API secret key — Devyn
 - Wire instructions paragraph for invoice PDFs — Kristine
-- Campaign sends: Resend account + DNS + CAN-SPAM address — Wyatt/Kristine
+- Campaign sends: KLAVIYO account (pivot 8/27) + private API key + Shopify connect + DNS auth + CAN-SPAM address — Wyatt/Kristine; then build audience->List sync + campaign push
 - Stripe ACH lane: parked account, revisit when mid-band online closes are frequent
 
 ## Housekeeping

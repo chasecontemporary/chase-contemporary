@@ -12,8 +12,15 @@ export default async function Campaigns() {
       .order('created_at', { ascending: false }).limit(24),
   ]);
   const KIND = { drop: 'Drop', newsletter: 'Newsletter', oneoff: 'One-off' };
-  return <Shell active="campaigns">
-    <div className="h1">Campaigns</div>
+  const ACTIVE = '/campaigns';
+  return <Shell active="audiences">
+    <div className="h1">Email</div>
+    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:4}}>
+      {[['/audiences','Audiences'],['/campaigns','Campaigns']].map(([href, label]) => <a key={href} href={href}
+        className="pill" style={ACTIVE === href ? {background:'#1d1d1f', color:'#fff'} : {background:'#fff', border:'1px solid #e8e8ed'}}>{label}</a>)}
+      <span style={{fontSize:12, color:'#86868b'}}>Audiences decide who · Campaigns decide what · Klaviyo delivers</span>
+    </div>
+    <div className="h1" style={{fontSize:18, marginTop:8}}>Campaigns</div>
     <div className="sub">Drops, releases, and letters — drafted here, designed in the site&apos;s language, sent only on explicit approval</div>
 
     <div className="tblcard"><table className="tbl"><thead><tr>

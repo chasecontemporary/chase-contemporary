@@ -2,7 +2,7 @@ import RepPicker from './RepPicker';
 export default function Shell({ active, children, counts = {} }) {
   const items = [['today','Today'],['pipeline','Pipeline'],['collectors','Collectors'],
                  ['inventory','Inventory'],['artists','Artists'],['finance','Finance'],['commissions','Commissions'],
-                 ['audiences','Audiences'],['campaigns','Campaigns'],['team','Team']];
+                 ['audiences','Email'],['team','Team']];
   return <div className="shell">
     <aside className="side">
       <div className="brand">Chase Engine<small>Chase Contemporary</small></div>

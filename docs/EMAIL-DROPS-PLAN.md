@@ -42,11 +42,20 @@ prioritized audience. The art-world version of a streetwear release — scarcity
    the pipeline, so each campaign reads out inquiries → conversations → invoices → paid, and
    revenue-per-send. Campaign stats land on the campaign page once sends go live.
 
+## PIVOT 8/27: Klaviyo is the delivery engine (Devyn's call)
+
+Division of labor: the ENGINE owns audience intelligence (taste/LTV/VIP segments Klaviyo
+cannot compute) and drop composition (inventory-native, brand-true renders); KLAVIYO owns
+delivery, deliverability, compliance/unsubscribes, flows, and open/click tracking, with
+native Shopify store integration. Sync design: engine audience -> Klaviyo List via API
+(membership refreshed pre-send); engine campaign -> Klaviyo campaign (HTML template +
+synced list). Attribution returns via UTM on every INQUIRE into the pipeline.
+Nav: one "Email" section with Audiences/Campaigns tabs inside.
+
 ## What sending requires (the one external dependency)
 
-- **Provider account under gallery identity** (recommendation: Resend — API-first, drafts
-  render exactly as our HTML, domain auth via DNS at GoDaddy: SPF/DKIM on
-  chasecontemporary.com or a subdomain like mail.chasecontemporary.com).
+- **Klaviyo account under gallery identity** (wyatt@) + private API key; connect the
+  Shopify store (one click in Klaviyo); domain auth via DNS at GoDaddy (SPF/DKIM).
 - **CAN-SPAM mailing address** to put in the footer ({{mailing_address}} placeholder ready).
 - **Unsubscribe handling**: provider list-unsubscribe + a suppression flag on collectors
   (newsletter=false already modeled; unsubscribes sync back).
