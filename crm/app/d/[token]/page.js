@@ -2,6 +2,9 @@
 import { db } from '../../../lib/db';
 import localFont from 'next/font/local';
 export const dynamic = 'force-dynamic';
+// collector-facing and tokenised: never index, never follow
+export const metadata = { robots: { index: false, follow: false } };
+const LINK_DAYS = 14;
 
 const nimbus = localFont({
   src: [
@@ -37,7 +40,9 @@ export default async function Details({ params, searchParams }) {
       </div>
     </div>
   );
-  if (!c) return wrap(<p style={{ fontSize: 14, lineHeight: 1.7, textAlign: 'center' }}>
+  const stale = c?.details_requested_at &&
+    (Date.now() - new Date(c.details_requested_at).getTime()) > LINK_DAYS * 86400000;
+  if (!c || stale) return wrap(<p style={{ fontSize: 14, lineHeight: 1.7, textAlign: 'center' }}>
     This link is no longer active. Please contact the gallery at info@chasecontemporary.com.</p>);
   if (c.details_completed_at) return wrap(<div style={{ textAlign: 'center' }}>
     <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>Thank you</div>

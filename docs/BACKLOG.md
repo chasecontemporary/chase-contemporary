@@ -18,6 +18,37 @@ Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account
 - (nothing — awaiting Shopify token + wire paragraph)
 
 ## PRODUCTION READINESS (audit 8/28 — full report: artifact 054e216c)
+
+### DONE 8/28 (session 2)
+- error.js + not-found.js — no more raw white screens.
+- Mobile: full @media(max-width:900px) layer (sidebar -> scrolling top bar, snapped kanban,
+  wide rows scroll in-card, full-screen drawer) + touch stage picker on cards (iOS never
+  fires HTML5 drag events).
+- Silent writes: act route wrapped in try/catch with a must() guard on record-critical
+  writes; failures redirect with ?err and render a NOT SAVED banner (components/ErrBanner).
+  Kanban move/note now revert + report; note box never clears before a confirmed save.
+- Commissions deny-by-default: an unrecognised viewer sees nothing (was: saw EVERYONE).
+- Invoice requires a collector, server- and client-side (setCustomValidity — `required`
+  on a hidden input is ignored by browsers).
+- Confirmations + one-shot guards on Mark paid in full / Void / campaign + audience delete /
+  Record payment / 50% deposit / Create invoice.
+- Money guardrails: no overpayment, no zero/blank, no negative line items. All 5 verified live.
+- Migration 0037: RLS on the last 4 tables (every table now enabled); ~24 indexes added —
+  details-link lookup went from a 27k seq scan to an index scan, inventory sorts by index.
+- scripts/backup.py: full paginated export past the 1000-row cap (35,120 rows, 2.4MB, verified
+  readable). backups/ is gitignored.
+- /d/ links expire after 14 days; /d/ and /o/ are noindex.
+
+### STILL OPEN — Phase 1
+- !! SUPABASE IS ON THE FREE PLAN !! No PITR, no restorable backups, and free projects
+  auto-pause after inactivity. 27k collector records + 10yrs of sales. Upgrade to Pro
+  (~$25/mo, gallery org "chasecontemporary's Org") — needs Bernie/Devyn billing. Until then
+  scripts/backup.py IS the backup: run it and keep a copy off the machine.
+- Per-person logins (Supabase Auth). Today: one shared code, cookie value IS the password,
+  cc_rep is user-settable so the audit trail (`actor`) is self-declared. The commissions
+  hole is patched but identity still isn't real.
+- Undo for a settlement (Mark paid in full is confirmed now, but still irreversible).
+
 Phase 1 — BEFORE the team touches it (~1 week):
 - Mobile: zero @media queries in the codebase; Finance/Artists/Commissions rows overflow a phone; Kanban HTML5 drag never fires on iOS Safari. Add one max-width:900px block + a stage dropdown per card.
 - Silent write failures: only 1 of ~40 actions in act/route.js checks the DB error. Capture + surface via ?err banner (pattern exists on inventory page). Kanban move()/saveNote() swallow errors and saveNote clears the box before confirming.

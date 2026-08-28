@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import localFont from 'next/font/local';
 import OfferInterest from '../../../components/OfferInterest';
 export const dynamic = 'force-dynamic';
+// collector-facing and tokenised: never index, never follow
+export const metadata = { robots: { index: false, follow: false } };
 
 const nimbus = localFont({
   src: [
