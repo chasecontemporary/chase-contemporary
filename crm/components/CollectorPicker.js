@@ -10,6 +10,13 @@ export default function CollectorPicker({ name = 'collector_id', placeholder = '
   const [picked, setPicked] = useState(null);
   const t = useRef();
   const rootRef = useRef(null);
+  const visRef = useRef(null);
+  // `required` on a hidden input is ignored by browsers — enforce it on the visible
+  // field instead, so typing a name without choosing one can't submit.
+  useEffect(() => {
+    if (visRef.current) visRef.current.setCustomValidity(
+      required && !picked ? 'Choose a collector from the list' : '');
+  }, [picked, required]);
   useEffect(() => {
     const away = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
     const key = (e) => e.key === 'Escape' && setOpen(false);
@@ -28,7 +35,7 @@ export default function CollectorPicker({ name = 'collector_id', placeholder = '
   const focus = () => { if (!picked) load(q); };
   return <span ref={rootRef} style={{position:'relative', display:'block'}}>
     <input type="hidden" name={name} value={picked?.id || ''} required={required}/>
-    <input value={picked ? picked.name : q} onChange={e => search(e.target.value)} onFocus={focus}
+    <input ref={visRef} value={picked ? picked.name : q} onChange={e => search(e.target.value)} onFocus={focus}
       onClick={() => { if (picked) { setPicked(null); setQ(''); load(''); } }}
       placeholder={placeholder} required={required && !picked} style={pickerInput}/>
     <svg width="10" height="6" viewBox="0 0 10 6" style={pickerChevron}>

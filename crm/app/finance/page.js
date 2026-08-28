@@ -1,5 +1,6 @@
 import Shell from '../../components/Shell';
 import DocPreview from '../../components/DocPreview';
+import ConfirmButton from '../../components/ConfirmButton';
 import ArStage from '../../components/ArStage';
 import FollowUp from '../../components/FollowUp';
 import BrandSelect from '../../components/BrandSelect';
@@ -276,22 +277,26 @@ export default async function Finance({ searchParams }) {
               <input type="hidden" name="back" value="/finance"/>
               <label className="money"><span>$</span><input name="amount" inputMode="numeric" placeholder="Amount received"/></label>
               <input name="method" placeholder="wire / card" style={{width:96, fontSize:12.5, border:'1px solid #e3e3dd', borderRadius:2, height:36, padding:'0 10px', fontFamily:'inherit', background:'#fff'}}/>
-              <button className="btn mini quiet">Record payment</button>
-              {!paidIn[i.id] && <button className="btn mini quiet" name="fraction" value="0.5">50% deposit · {usd(Math.round(tot(i) / 2))}</button>}
+              <ConfirmButton className="btn mini quiet">Record payment</ConfirmButton>
+              {!paidIn[i.id] && <ConfirmButton className="btn mini quiet" name="fraction" value="0.5">50% deposit · {usd(Math.round(tot(i) / 2))}</ConfirmButton>}
             </form>
             <div style={{marginLeft:'auto', display:'flex', gap:14, alignItems:'center'}}>
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_paid"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button className="btn mini">{paidIn[i.id] ? 'Record final ' + usd(balance(i)) : 'Mark paid in full'}</button>
+                <ConfirmButton className="btn mini"
+                  message={`Mark invoice No. ${String(i.invoice_number).padStart(4,'0')} paid in full?\n\nThis records ${usd(balance(i))}, marks the work sold, books it to the collector, and writes the commission. Only do this once the money is actually in the bank.`}>
+                  {paidIn[i.id] ? 'Record final ' + usd(balance(i)) : 'Mark paid in full'}</ConfirmButton>
               </form>
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_void"/>
                 <input type="hidden" name="id" value={i.id}/>
                 <input type="hidden" name="back" value="/finance"/>
-                <button style={{background:'none', border:0, color:'#b8231a', fontSize:12.5, fontWeight:600,
-                  fontFamily:'inherit', cursor:'pointer', padding:0}}>Void</button>
+                <ConfirmButton className=""
+                  message={`Void invoice No. ${String(i.invoice_number).padStart(4,'0')}?\n\nThis cannot be undone. Any payments already recorded against it stay on the books.`}
+                  style={{background:'none', border:0, color:'#b8231a', fontSize:12.5, fontWeight:600,
+                  fontFamily:'inherit', cursor:'pointer', padding:0}}>Void</ConfirmButton>
               </form>
             </div>
           </div>}

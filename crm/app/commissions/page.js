@@ -17,6 +17,18 @@ export default async function Commissions() {
   ]);
   const role = (team || []).find(t => t.name === viewer)?.role;
   const personal = role === 'rep';
+  // Pay is private: an unrecognised viewer sees nothing at all, rather than everyone's.
+  // Only a named owner sees the whole team.
+  if (!role) return <Shell active="commissions">
+    <div className="h1">Commissions</div>
+    <div className="sub">Pay is private to each person</div>
+    <div className="card" style={{marginTop:22, maxWidth:460}}>
+      <div style={{fontSize:14, fontWeight:600}}>Tell the engine who you are</div>
+      <p style={{fontSize:13.5, lineHeight:1.65, color:'#3a3a35', margin:'10px 0 0'}}>
+        Pick your name at the bottom of the sidebar and this page will show your commissions.
+        Salespeople see their own; owners see the whole team.</p>
+    </div>
+  </Shell>;
   const inv = {}; (invMap || []).forEach(i => inv[i.id] = i);
   const all = personal ? (rows || []).filter(r => r.person === viewer) : (rows || []);
   const now = new Date();

@@ -1,4 +1,5 @@
 import Shell from '../../components/Shell';
+import ConfirmButton from '../../components/ConfirmButton';
 import { db } from '../../lib/db';
 import AudienceBuilder from '../../components/AudienceBuilder';
 export const dynamic = 'force-dynamic';
@@ -78,7 +79,9 @@ export default async function Audiences() {
               <input type="hidden" name="action" value="audience_del"/>
               <input type="hidden" name="id" value={a.id}/>
               <input type="hidden" name="back" value="/audiences"/>
-              <button style={{background:'none', border:0, color:'#b8231a', fontSize:12.5, fontWeight:600, fontFamily:'inherit', cursor:'pointer'}}>Delete</button>
+              <ConfirmButton className=""
+                message={`Delete the audience "${a.name}"? Any campaign pointing at it will lose its list. This cannot be undone.`}
+                style={{background:'none', border:0, color:'#b8231a', fontSize:12.5, fontWeight:600, fontFamily:'inherit', cursor:'pointer'}}>Delete</ConfirmButton>
             </form>
           </div>
         </div>; })}

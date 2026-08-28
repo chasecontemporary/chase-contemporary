@@ -21,6 +21,8 @@ export default function SaleWizard({ lead, onClose }) {
   const [docBusy, setDocBusy] = useState(null);
   // the paper step: docs[workId] = { tearsheet: url|'busy'|'failed', coa: ... }
   const [docs, setDocs] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState(null);
   const paperRun = useRef(false);
   const makeDoc = async (workId, kind) => {
     setDocs(d => ({ ...d, [workId]: { ...d[workId], [kind]: 'busy' } }));
@@ -213,6 +215,7 @@ export default function SaleWizard({ lead, onClose }) {
       <div style={{padding:'12px 20px', borderTop:'1px solid #eeeee9', display:'flex', gap:8,
         background:'#fbfbfd'}}>
         {step > 1 && <button className="btn mini quiet" onClick={() => setStep(s => s - 1)}>Back</button>}
+        {err && <span style={{fontSize:12.5, color:'#c02d23', fontWeight:600, flex:1}}>{err}</span>}
         <div style={{marginLeft:'auto'}}>
           {step < 4
             ? (() => { const blocked = (step === 1 && (!works.length || works.some(w => !num(w.amount))))
@@ -220,7 +223,11 @@ export default function SaleWizard({ lead, onClose }) {
                 return <button className="btn" disabled={blocked} style={blocked ? {opacity:.4} : {}}
                   onClick={() => setStep(s => s + 1)}>
                   {step === 3 && !paperDone ? 'Preparing the paper…' : 'Continue'}</button>; })()
-            : <button className="btn" onClick={async () => {
+            : <button className="btn" disabled={submitting}
+                style={submitting ? {opacity:.5} : {}}
+                onClick={async () => {
+                if (submitting) return;
+                setSubmitting(true);
                 const fd = new FormData();
                 fd.set('action', 'invoice_manual');
                 fd.set('collector_id', c.id);
@@ -231,9 +238,15 @@ export default function SaleWizard({ lead, onClose }) {
                 if (num(tax)) lines.push({ kind: 'tax', amount: String(num(tax)) });
                 if (num(shipping)) lines.push({ kind: 'shipping', amount: String(num(shipping)) });
                 fd.set('lines', JSON.stringify(lines));
-                await fetch('/api/act', { method: 'POST', body: fd });
-                window.location.href = '/finance';
-              }}>Create invoice · {usd(total)}</button>}
+                try {
+                  const r = await fetch('/api/act', { method: 'POST', body: fd });
+                  if (!r.ok) throw new Error('rejected');
+                  window.location.href = '/finance';
+                } catch {
+                  setSubmitting(false);
+                  setErr('The invoice was not created. Check the collector and try again.');
+                }
+              }}>{submitting ? 'Creating…' : `Create invoice · ${usd(total)}`}</button>}
         </div>
       </div>
     </div>

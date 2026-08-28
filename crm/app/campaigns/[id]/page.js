@@ -1,6 +1,7 @@
 import Shell from '../../../components/Shell';
 import { db } from '../../../lib/db';
 import { renderCampaignEmail } from '../../../lib/email';
+import ConfirmButton from '../../../components/ConfirmButton';
 export const dynamic = 'force-dynamic';
 
 export default async function Campaign({ params }) {
@@ -48,7 +49,8 @@ export default async function Campaign({ params }) {
         <input type="hidden" name="action" value="campaign_del"/>
         <input type="hidden" name="id" value={c.id}/>
         <input type="hidden" name="back" value="/campaigns"/>
-        <button className="btn mini" style={{color:'#c02d23'}}>Delete</button>
+        <ConfirmButton className="btn mini" style={{color:'#c02d23'}}
+          message={`Delete the campaign "${c.name}"? This cannot be undone.`}>Delete</ConfirmButton>
       </form>
     </div>
     <div style={{fontSize:12.5, color:'#73736c', marginTop:10}}>

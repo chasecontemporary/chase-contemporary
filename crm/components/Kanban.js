@@ -3,7 +3,7 @@ import BrandSelect from './BrandSelect';
 import SaleWizard from './SaleWizard';
 import OfferComposer from './OfferComposer';
 import DocPreview from './DocPreview';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
 const LABEL = { new:'Inbound', contacted:'Contacted', in_conversation:'In conversation',
@@ -47,21 +47,46 @@ export default function Kanban({ initial, team = [] }) {
   const [openLead, setOpenLead] = useState(null);
   const [note, setNote] = useState('');
   const [wizard, setWizard] = useState(false);
+  const [noteState, setNoteState] = useState('idle');   // idle | saving | saved | failed
+  const [failed, setFailed] = useState(null);           // id of a lead whose move didn't stick
+  // touch devices can't drag (HTML5 drag events never fire on iOS) — give them a picker
+  const [touch, setTouch] = useState(false);
+  useEffect(() => {
+    try { setTouch(window.matchMedia('(hover: none)').matches); } catch {}
+  }, []);
 
   const move = async (id, status) => {
+    const before = leads.find(l => l.id === id)?.status;
+    setFailed(null);
     setLeads(ls => ls.map(l => l.id === id ? { ...l, status, stage_changed_at: new Date().toISOString() } : l));
     if (openLead?.id === id) setOpenLead(o => ({ ...o, status }));
     const fd = new FormData();
-    fd.set('action', 'status'); fd.set('id', id); fd.set('status', status);
-    fetch('/api/act', { method: 'POST', body: fd }).catch(() => {});
+    fd.set('action', 'status'); fd.set('id', id); fd.set('status', status); fd.set('back', 'json');
+    try {
+      const r = await fetch('/api/act', { method: 'POST', body: fd });
+      if (!r.ok) throw new Error('rejected');
+    } catch {
+      // put it back where it was and say so — never leave a card lying about where it sits
+      setLeads(ls => ls.map(l => l.id === id ? { ...l, status: before } : l));
+      if (openLead?.id === id) setOpenLead(o => ({ ...o, status: before }));
+      setFailed(id);
+    }
   };
   const saveNote = async () => {
-    if (!note.trim()) return;
+    if (!note.trim() || noteState === 'saving') return;
+    setNoteState('saving');
     const fd = new FormData();
     fd.set('action', 'note'); fd.set('id', openLead.collector_id);
-    fd.set('entity_type', 'collector'); fd.set('body', note);
-    fetch('/api/act', { method: 'POST', body: fd }).catch(() => {});
-    setNote('');
+    fd.set('entity_type', 'collector'); fd.set('body', note); fd.set('back', 'json');
+    try {
+      const r = await fetch('/api/act', { method: 'POST', body: fd });
+      if (!r.ok) throw new Error('rejected');
+      setNote('');                       // only clear once the save is confirmed
+      setNoteState('saved');
+      setTimeout(() => setNoteState('idle'), 2500);
+    } catch {
+      setNoteState('failed');            // the note stays in the box
+    }
   };
 
   const c = openLead?.collectors || {};
@@ -124,6 +149,12 @@ export default function Kanban({ initial, team = [] }) {
                   {ageDays(l.stage_changed_at || l.created_at)}d</span>}
           </div>
           {l.owner && <div className="s">{l.owner}</div>}
+          {failed === l.id && <div style={{fontSize:11, fontWeight:700, color:'#c02d23', marginTop:6}}>
+            Not saved — check your connection and try again</div>}
+          {touch && <div onClick={e => e.stopPropagation()} style={{marginTop:8}}>
+            <BrandSelect options={STAGES.map(x => [x, LABEL[x]])} value={l.status}
+              pill pillColor={(v) => COLOR[v] || '#82827b'} onValue={(v) => move(l.id, v)}/>
+          </div>}
         </div>; })}
       </div>)}
     </div>
@@ -291,8 +322,13 @@ export default function Kanban({ initial, team = [] }) {
           value={note} onChange={e => setNote(e.target.value)} rows={3}
           style={{width:'100%', border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit',
             fontSize:13.5, padding:'10px 12px', outline:'none', resize:'vertical', lineHeight:1.6}}/>
-        <div style={{display:'flex', justifyContent:'flex-end', marginTop:8}}>
-          <button className="btn mini quiet" onClick={saveNote}>Save note</button>
+        <div style={{display:'flex', justifyContent:'flex-end', alignItems:'center', gap:10, marginTop:8}}>
+          {noteState === 'saved' && <span style={{fontSize:12, fontWeight:650, color:'#2e6b3f'}}>Saved</span>}
+          {noteState === 'failed' && <span style={{fontSize:12, fontWeight:650, color:'#c02d23'}}>
+            Not saved — your note is still here, try again</span>}
+          <button className="btn mini quiet" disabled={noteState === 'saving'}
+            style={noteState === 'saving' ? {opacity:.5} : {}}
+            onClick={saveNote}>{noteState === 'saving' ? 'Saving…' : 'Save note'}</button>
         </div>
         </div>
         <div className="ld-foot">

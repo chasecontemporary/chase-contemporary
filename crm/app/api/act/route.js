@@ -8,15 +8,39 @@ import { renderCampaignEmail } from '../../../lib/email';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
 
+// Every action runs inside this wrapper. If the database rejects a write, the user
+// lands back on their page with a red banner saying so — never a silent success.
 export async function POST(req) {
   const form = await req.formData();
+  const back = form.get('back') || '/today';
+  const wantsJson = back === 'json' || req.headers.get('accept')?.includes('application/json');
+  try {
+    const res = await handle(req, form);
+    if (res) return res;
+    if (wantsJson) return Response.json({ ok: true });
+    return new Response(null, { status: 302, headers: { Location: back } });
+  } catch (e) {
+    const msg = String(e?.message || 'Something went wrong').slice(0, 180);
+    if (wantsJson)
+      return new Response(JSON.stringify({ ok: false, error: msg }), { status: 500,
+        headers: { 'Content-Type': 'application/json' } });
+    const sep = back.includes('?') ? '&' : '?';
+    return new Response(null, { status: 302,
+      headers: { Location: back + sep + 'err=' + encodeURIComponent(msg) } });
+  }
+}
+
+// Throws if the database rejected the write. On every record- and money-critical path.
+const must = (r) => { if (r?.error) throw new Error(r.error.message); return r; };
+
+async function handle(req, form) {
   const rep = decodeURIComponent((req.headers.get('cookie') || '').match(/cc_rep=([^;]+)/)?.[1] || 'rep');
   const action = form.get('action');
   const id = form.get('id');
   const back = form.get('back') || '/today';
   if (action === 'assign') {
     const owner = form.get('owner') || null;
-    await db.from('inquiries').update({ owner }).eq('id', id);
+    must(await db.from('inquiries').update({ owner }).eq('id', id));
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id,
       kind: 'assigned', body: owner ? `to ${owner}` : 'unassigned', actor: rep });
     if (req.headers.get('accept')?.includes('application/json') || form.get('back') === 'json') {
@@ -213,7 +237,7 @@ export async function POST(req) {
     }
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } else if (action === 'status') {
-    await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id);
+    must(await db.from('inquiries').update({ status: form.get('status'), stage_changed_at: new Date().toISOString() }).eq('id', id));
     await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'status_change', body: form.get('status'), actor: rep });
   } else if (action === 'commissions_recompute') {
     // apply current rates to everything not yet paid out — for when the real percentages land
@@ -307,9 +331,13 @@ export async function POST(req) {
   } else if (action === 'invoice_manual') {
     // line-item invoice: works create a sale underneath (thesis), shipping/tax/service are lines
     const collectorId = form.get('collector_id') || null;
+    // Without a collector no sale row is created, so paying the invoice would never
+    // mark the work sold or write a commission. Refuse rather than corrupt the book.
+    if (!collectorId) throw new Error('Choose a collector from the list before creating the invoice.');
     let lines = [];
     try { lines = JSON.parse(form.get('lines') || '[]'); } catch {}
     const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
+    if (lines.some(l => cents(l.amount) < 0)) throw new Error('An amount is negative. Check the line items.');
     lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
     const workLines = lines.filter(l => l.kind === 'work' && l.artwork_id);
     const svcLines = lines.filter(l => l.kind === 'service');
@@ -397,7 +425,8 @@ export async function POST(req) {
       const { data: fi } = await db.from('invoices').select('amount_cents, tax_cents, shipping_cents').eq('id', id).single();
       if (fi) amt = Math.round((fi.amount_cents + (fi.tax_cents || 0) + (fi.shipping_cents || 0)) * Number(form.get('fraction')));
     }
-    if (amt > 0) {
+    if (!amt) throw new Error('Enter how much came in before recording a payment.');
+    {
       const r = await recordPayment(id, amt, form.get('method') || null);
       if (r) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
         kind: r.closed ? 'paid' : 'payment_received',
@@ -430,7 +459,7 @@ export async function POST(req) {
     await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
       kind: 'purchase_logged', body: `${form.get('title')} · $${form.get('amount')}`, actor: rep });
   } else if (action === 'note') {
-    await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep });
+    must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }
-  return new Response(null, { status: 302, headers: { Location: back } });
+  return null;
 }

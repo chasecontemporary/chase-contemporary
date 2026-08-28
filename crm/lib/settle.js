@@ -25,11 +25,18 @@ export async function closeOutInvoice(inv) {
 // settled payment via the DB trigger; the invoice closes out when the balance reaches zero.
 export async function recordPayment(invoiceId, amountCents, method) {
   const { data: inv } = await db.from('invoices').select('*').eq('id', invoiceId).single();
-  if (!inv || inv.status !== 'open') return null;
+  if (!inv) throw new Error('That invoice no longer exists.');
+  if (inv.status !== 'open') throw new Error('That invoice is already closed.');
   const total = inv.amount_cents + (inv.tax_cents || 0) + (inv.shipping_cents || 0);
   const { data: prior } = await db.from('payments').select('amount_cents').eq('invoice_id', invoiceId).eq('status', 'settled');
   const received = (prior || []).reduce((s, p) => s + Number(p.amount_cents), 0);
-  const amount = amountCents ?? (total - received);          // no amount = settle the balance
+  const balance = total - received;
+  const amount = amountCents ?? balance;                     // no amount = settle the balance
+  // Guardrails: money that can't be right shouldn't be quietly accepted.
+  if (!Number.isFinite(amount) || amount <= 0)
+    throw new Error('Enter a payment amount greater than zero.');
+  if (amount > balance)
+    throw new Error(`That is more than the ${(balance / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} still owed. Record the balance, or check the amount.`);
   const { data: pay } = await db.from('payments')
     .insert({ invoice_id: invoiceId, amount_cents: amount, method: method || null, status: 'pending' })
     .select().single();

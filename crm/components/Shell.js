@@ -1,4 +1,6 @@
 import RepPicker from './RepPicker';
+import ErrBanner from './ErrBanner';
+import { Suspense } from 'react';
 export default function Shell({ active, children, counts = {} }) {
   const emailOpen = ['audiences', 'campaigns'].includes(active);
   const items = [['today','Today'],['pipeline','Sales pipeline'],['collectors','Collectors'],
@@ -29,6 +31,9 @@ export default function Shell({ active, children, counts = {} }) {
       </nav>
       <RepPicker />
     </aside>
-    <main className="main">{children}</main>
+    <main className="main">
+      <Suspense fallback={null}><ErrBanner/></Suspense>
+      {children}
+    </main>
   </div>;
 }
