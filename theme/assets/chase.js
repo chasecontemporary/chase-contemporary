@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* engine bridge: mirror inquiry submissions into the CRM backbone */
   var ENGINE = 'https://chase-engine.vercel.app/api/inquiry';
-  document.querySelectorAll('form#inq, form#cf').forEach(function (f) {
+  document.querySelectorAll('form#inq, form#cf, form.nlform').forEach(function (f) {
     f.addEventListener('submit', function () {
       try {
         var payload = {};
@@ -343,15 +343,58 @@ document.addEventListener('DOMContentLoaded', function () {
           var m = k.match(/^contact\[(.+)\]$/);
           payload[m ? m[1] : k] = v;
         });
+        /* the footer newsletter form is a subscription, not a sales lead: it should land
+           in the book and the audiences without inventing a pipeline inquiry */
+        if (f.classList.contains('nlform')) {
+          payload.subscribe = true;
+          payload.source = payload.source || 'Newsletter signup';
+        }
         if (CC_VID) payload.visitor_id = CC_VID;
+        /* If the send fails (offline, engine down, tab closed mid-flight) the inquiry is
+           kept in this browser and retried on the next page load, so a lead is never lost
+           on the visitor's side either. Shopify's own form submission still runs regardless,
+           so the gallery is emailed no matter what. */
         fetch(ENGINE, {
           method: 'POST', keepalive: true,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        }).catch(function(){});
+        }).then(function (r) {
+          if (!r || !r.ok) ccQueue(payload);
+        }).catch(function () { ccQueue(payload); });
       } catch (e) {}
     });
   });
+
+  /* ---- outbox: retry anything that didn't make it ---- */
+  function ccQueue(payload) {
+    try {
+      var q = JSON.parse(localStorage.getItem('cc_outbox') || '[]');
+      q.push({ at: Date.now(), payload: payload });
+      localStorage.setItem('cc_outbox', JSON.stringify(q.slice(-20)));
+    } catch (e) {}
+  }
+  function ccFlush() {
+    var q;
+    try { q = JSON.parse(localStorage.getItem('cc_outbox') || '[]'); } catch (e) { return; }
+    if (!q.length) return;
+    var keep = [];
+    var done = 0;
+    q.forEach(function (item) {
+      /* give up after 7 days rather than retrying forever */
+      if (Date.now() - (item.at || 0) > 7 * 86400000) return;
+      fetch(ENGINE, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.payload),
+      }).then(function (r) {
+        if (!r || !r.ok) keep.push(item);
+      }).catch(function () { keep.push(item); }).then(function () {
+        if (++done === q.length) {
+          try { localStorage.setItem('cc_outbox', JSON.stringify(keep)); } catch (e) {}
+        }
+      });
+    });
+  }
+  setTimeout(ccFlush, 2500);
 
   /* branded dropdowns (delegated; supports dynamic lists) */
   document.addEventListener('click', function (e) {

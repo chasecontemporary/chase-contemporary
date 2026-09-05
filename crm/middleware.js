@@ -7,6 +7,7 @@ export function middleware(req) {
       pathname.startsWith('/api/shopify-webhook') ||
       pathname.startsWith('/api/stripe-webhook') || pathname.startsWith('/p/') ||
       pathname.startsWith('/api/inquiry') || pathname.startsWith('/api/visit') ||
+      pathname.startsWith('/api/health') ||
       pathname.startsWith('/login') ||
       pathname.startsWith('/api/login') || pathname.startsWith('/fonts') ||
       pathname === '/') return NextResponse.next();

@@ -3,6 +3,7 @@ import Sla from '../../components/Sla';
 import Omnisearch from '../../components/Omnisearch';
 import { db } from '../../lib/db';
 import { cookies } from 'next/headers';
+import { dbReachable, listSpill } from '../../lib/spill';
 export const dynamic = 'force-dynamic';
 
 // The landing page. Three jobs, in order: what changed since you were last here,
@@ -31,6 +32,24 @@ export default async function Today() {
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+
+  // Never render a calm, empty page when the machine is actually broken.
+  const [alive, parked] = await Promise.all([dbReachable(db), listSpill()]);
+  if (!alive) return <Shell active="today">
+    <div className="h1">Today</div>
+    <div style={{background:'#fbeceb', border:'1px solid #e8c4c0', color:'#8f1f18',
+      padding:'18px 20px', marginTop:18, maxWidth:620}}>
+      <div style={{fontSize:11, fontWeight:700, letterSpacing:'.1em'}}>THE DATABASE IS UNREACHABLE</div>
+      <p style={{fontSize:14, lineHeight:1.65, margin:'10px 0 0', fontWeight:500}}>
+        Nothing on this screen would be accurate right now, so the engine is not showing you
+        anything rather than showing you an empty gallery. <b>Your data is safe</b> and new
+        inquiries from the website are still being captured and held.</p>
+      <p style={{fontSize:13.5, lineHeight:1.65, margin:'10px 0 0', fontWeight:500}}>
+        {parked.length > 0
+          ? `${parked.length} inquiry${parked.length === 1 ? '' : ' inquiries'} arrived while it has been down and ${parked.length === 1 ? 'is' : 'are'} waiting to be added.`
+          : 'No inquiries have arrived while it has been down.'} Tell Devyn — the database needs to be woken up.</p>
+    </div>
+  </Shell>;
 
   const [
     { data: team }, { data: inqs }, { data: paysNew }, { data: formsDone }, { data: visits },
@@ -143,6 +162,16 @@ export default async function Today() {
     <div className="h1">Today</div>
     <div className="sub">What changed, what needs you, and where the money stands{personal ? ` · showing ${viewer}'s follow-ups` : ''}</div>
     <Omnisearch/>
+    {parked.length > 0 && <div style={{background:'#fdf3e3', border:'1px solid #e8d5ae', color:'#7a5310',
+      padding:'13px 16px', marginTop:16, display:'flex', gap:14, alignItems:'center', flexWrap:'wrap'}}>
+      <span style={{fontSize:10.5, fontWeight:700, letterSpacing:'.08em', flex:'0 0 auto'}}>HELD SAFELY</span>
+      <span style={{fontSize:13.5, fontWeight:500, flex:1, minWidth:220}}>
+        {parked.length} inquir{parked.length === 1 ? 'y' : 'ies'} came in while the database was
+        unreachable. Nothing was lost — add {parked.length === 1 ? 'it' : 'them'} to the pipeline now.</span>
+      <form method="POST" action="/api/replay">
+        <button className="btn mini">Add {parked.length === 1 ? 'it' : 'them'} to the pipeline</button>
+      </form>
+    </div>}
 
     <div style={sec}>What&apos;s new · last two days</div>
     <div style={card}>

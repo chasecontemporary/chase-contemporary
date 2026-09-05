@@ -5,6 +5,13 @@ import { useSearchParams } from 'next/navigation';
 // of the page rather than letting them believe it saved.
 export default function ErrBanner() {
   const sp = useSearchParams();
+  const ok = sp.get('ok');
+  if (ok) return <div style={{background:'#eef6f0', border:'1px solid #cfe3d6', color:'#1f5c36',
+    borderRadius:2, padding:'11px 14px', marginBottom:18, fontSize:13.5, fontWeight:600,
+    display:'flex', gap:10, alignItems:'baseline'}}>
+    <span style={{fontSize:10.5, fontWeight:700, letterSpacing:'.08em', flex:'0 0 auto'}}>DONE</span>
+    <span style={{fontWeight:500, flex:1}}>{ok}</span>
+  </div>;
   const err = sp.get('err') || sp.get('pusherr');
   if (!err) return null;
   const friendly = sp.get('pusherr')

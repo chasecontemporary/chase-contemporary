@@ -5,6 +5,24 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- !! 9/4 OUTAGE: the Supabase project went unreachable (hostname NXDOMAINs from every
+  resolver) — the free-tier auto-pause we flagged in the audit, hitting the day after
+  go-live. The sbp_ management token is ALSO dead (401), and the Supabase MCP connector is
+  authed to Devyn's personal org, not the gallery org, so it CANNOT be restored from here.
+  ACTION: log into the Supabase dashboard as the gallery identity, restore the project, and
+  upgrade to Pro so it cannot pause again. Insurance: the 8/28 export (35,120 rows) is on
+  disk AND now in the private Drive folder (chase-engine-database-backup-2026-08-28.tar.gz).
+- CAPTURE IS NOW FOOLPROOF (built during the outage, proven against it from a real browser
+  on the live site): server-side spill to Blob storage (separate failure domain) whenever the
+  DB write fails, so no inquiry is ever lost; /api/health for uptime monitoring; /api/replay
+  + a one-click "Add them to the pipeline" banner on Today; Today now SHOUTS "the database is
+  unreachable" instead of rendering a reassuring empty page; Slack ping fires either way and
+  says explicitly when a lead was saved offline; browser-side localStorage outbox retries a
+  failed send on the next page load (7-day TTL). Verified live: 3 leads captured with the DB
+  fully down (they are test rows on @import.chasecontemporary.com — purge after replay).
+- Newsletter signups now reach the CRM: the footer form (form.nlform) was never bridged.
+  It now upserts a collector with newsletter=true + a signup activity, WITHOUT creating a
+  fake pipeline inquiry, so it feeds audiences without polluting the sales board.
 - SITE IS LIVE 9/4: "CHASE DVN DRAFT v1" #152942346391 published over Prestige on
   chasecontemporary.com (rollback = republish Prestige #151058219159). Local theme pushed
   first so the live asset carries the visitor-id beacon + inquiry bridge; verified in the
