@@ -5,6 +5,15 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- SITE IS LIVE 9/4: "CHASE DVN DRAFT v1" #152942346391 published over Prestige on
+  chasecontemporary.com (rollback = republish Prestige #151058219159). Local theme pushed
+  first so the live asset carries the visitor-id beacon + inquiry bridge; verified in the
+  served chase.js. CORS confirmed for both apex and www. Inquiry capture and full-journey
+  tracking are now collecting real traffic.
+  OPEN CONSEQUENCE: the 939 legacy URLs (research/chase-contemporary/legacy-site-url-inventory.md
+  — /artistpage 368, /exhibition 179, /exhibitions 105, /artists 100, /news 26 …) still 404.
+  They were 404ing before go-live too, so nothing regressed, but this is now the top SEO/GEO
+  task: needs the Squarespace login (Kristine) for content + a Shopify redirect map.
 - Private selections (offer links) SHIPPED 8/28, loop tested live: OfferComposer on collector cards + pipeline drawer (up to 10 works, per-work special prices, note, expiry), collector-facing /o/[token] page in the site brand register, view tracking (staff opens don't count), one-tap "I'm interested" that creates a pipeline inquiry assigned to the sender, surfacing on Today pulse ("Selection opened") + collector card (opened Nx / interested in N). Demo: "A selection for Test" on the Test Collector left live to show the flow.
 - Today rebuilt as THE landing page 8/28 (post competitive discovery, docs/CRM-DISCOVERY.md): omnisearch (collectors + works), "What's new" pulse (inquiries / money in / forms completed / known collectors seen on the site), "Needs attention" exceptions (answer now, gone quiet 5d+, money to chase, holds running out), 4-number money strip, Move list demoted to bottom. Personalized: reps see their own follow-ups. Old response-queue duplication with Pipeline removed.
 - Full-journey attribution BUILT 8/27 (live loop tested end-to-end): anonymous visitor id (localStorage cc_vid) + sendBeacon page views -> site_events; inquiry submit stitches the whole trail to the collector (visitor_links + retro backfill); collector_journey view; "Visits to our site" row in the pipeline drawer. Site-side JS is in the theme and goes live with theme go-live. Later identity moments (Klaviyo click UTMs, checkout) plug into the same tables.
@@ -109,7 +118,6 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - "What Bernie Sees" owner dashboard: killed the placeholder Board page (8/27). Build only after launch, composed from the data every other page is accumulating (Finance collections, Artists velocity, Commissions, campaign attribution, response speed). Not before.
 
 ## Parked decisions
-- Site go-live over live Shopify theme — Bernie
 - artcloud.market seat: keep during transition or sunset — Bernie
 - Squarespace login for archive restore — Kristine
 - Consignment economics question (95% of history) — Bernie
