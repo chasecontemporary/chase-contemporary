@@ -7,6 +7,7 @@
 //
 // Uses the shared pooler (the per-project host disappears whenever the project is paused).
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 // `pg` lives in crm/node_modules; resolve from there rather than next to this file.
 const require = createRequire(new URL('../crm/package.json', import.meta.url));
@@ -25,7 +26,14 @@ const client = new pg.Client({
   user: `postgres.${REF}`,
   password: PASSWORD,
   database: 'postgres',
-  ssl: { rejectUnauthorized: false },
+  // This connection carries the database password, so the server certificate is verified
+  // against Supabase's pinned root CA (db/supabase-root-ca.crt). Supabase's published CA
+  // download is gone, so the certificate was captured from the live chain and pinned:
+  // trust-on-first-use, but any later MITM presenting a different CA now fails closed.
+  ssl: {
+    rejectUnauthorized: true,
+    ca: readFileSync(fileURLToPath(new URL('../db/supabase-root-ca.crt', import.meta.url)), 'utf8'),
+  },
 });
 
 const sql = readFileSync(file, 'utf8');

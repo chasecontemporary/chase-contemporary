@@ -2,13 +2,20 @@ import Shell from '../../components/Shell';
 import Sel from '../../components/Sel';
 import { listingGaps } from '../../lib/readiness';
 import { db } from '../../lib/db';
+
+// PostgREST filter strings are not escaped by the client: a comma starts a new OR branch
+// and parentheses nest logic, so raw user input here can query columns this endpoint never
+// returns. Strip the grammar before it reaches the filter.
+const safeQ = (v) => String(Array.isArray(v) ? v[0] : (v ?? ''))
+  .replace(/[,()"'*:\\%]/g, ' ').trim().slice(0, 80);
+
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const PAGE = 96;
 
 export default async function Inventory({ searchParams }) {
   const sp = (await searchParams) || {};
-  const q = sp.q || '';
+  const q = safeQ(sp.q);
   const loc = sp.loc || '';
   const artist = sp.artist || '';
   const view = sp.view || 'available';       // available | sold | all

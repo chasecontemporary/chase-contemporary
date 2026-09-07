@@ -1,21 +1,26 @@
 import { db } from './db';
 
 // The real write. Throws on any failure so the caller can fall back to the spill store.
+// Unauthenticated callers reach this. Cap every stored string and refuse non-strings, so
+// a script cannot bury the real book under oversized junk or force a spill write via a
+// type error.
+const cap = (v, n) => (typeof v === 'string' ? v.slice(0, n) : v == null ? null : null);
+
 export async function persist(p, email) {
   const { data: collector, error: cErr } = await db
     .from('collectors')
     .upsert({
       email,
-      first_name: p.first_name || null,
-      last_name: p.last_name || null,
-      phone: p.phone || null,
-      city: p.city || null,
-      timezone: p.timezone || null,
-      locale: p.locale || null,
-      source: p.source || null,
+      first_name: cap(p.first_name, 80),
+      last_name: cap(p.last_name, 80),
+      phone: cap(p.phone, 40),
+      city: cap(p.city, 80),
+      timezone: cap(p.timezone, 60),
+      locale: cap(p.locale, 20),
+      source: cap(p.source, 80),
       trade: p.trade === 'yes' || p.trade === true,
       newsletter: p.subscribe === true || p.newsletter_opt_in === 'yes' || p.newsletter_opt_in === true,
-      budget_range: p.budget_range || null,
+      budget_range: cap(p.budget_range, 60),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' })
     .select()
@@ -34,21 +39,21 @@ export async function persist(p, email) {
     .from('inquiries')
     .insert({
       collector_id: collector.id,
-      artwork_handle: p.artwork_handle || null,
+      artwork_handle: cap(p.artwork_handle, 200),
       artwork_title: p.artwork_title || p.artwork || null,
-      artist: p.artist || p.artist_interest || null,
-      price_band: p.price_band || null,
-      purpose: p.purpose || 'acquire',
-      outlet: p.outlet || null,
-      budget_range: p.budget_range || null,
-      timeframe: p.timeframe || null,
-      message: p.body || p.message || null,
-      source: p.source || null,
-      page_journey: p.page_journey || null,
-      referrer: p.referrer || null,
-      utm: p.utm || null,
+      artist: cap(p.artist || p.artist_interest, 200),
+      price_band: cap(p.price_band, 60),
+      purpose: cap(p.purpose, 40) || 'acquire',
+      outlet: cap(p.outlet, 80),
+      budget_range: cap(p.budget_range, 60),
+      timeframe: cap(p.timeframe, 80),
+      message: cap(p.body || p.message, 5000),
+      source: cap(p.source, 80),
+      page_journey: cap(p.page_journey, 2000),
+      referrer: cap(p.referrer, 500),
+      utm: cap(p.utm, 500),
       seconds_on_page: parseInt(p.seconds_on_page) || null,
-      device: p.device || null,
+      device: cap(p.device, 120),
       visitor_id: /^v-[a-z0-9]{8,40}$/.test(p.visitor_id || '') ? p.visitor_id : null,
       owner: 'Sara',
     })

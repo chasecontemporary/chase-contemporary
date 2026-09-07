@@ -5,6 +5,43 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- SECURITY AUDIT + HARDENING 9/6 (full sweep: authz, injection, XSS/SSRF, secrets, git
+  history, deps, headers, webhooks, tokens, PII storage). FIXED AND VERIFIED LIVE:
+  * ACTIVE PII EXPOSURE — six API routes (collectors, works, team, audience-count, replay,
+    rep) sat behind "is anyone signed in?" with no staff check. With Clerk public sign-up
+    enabled, a stranger could sign up and harvest real names/emails/cities/lifetime spend
+    from /api/collectors. All now require isStaff().
+  * /d/ LINK EXPIRY WAS DEAD CODE — the page checked details_requested_at but never
+    SELECTed it, so links never expired; the write endpoint had no expiry or single-use
+    check at all. A leaked link was a permanent write handle on a collector's name, phone
+    and both addresses. Now: column selected, expiry + single-use enforced server-side,
+    token burned on completion.
+  * POSTGREST FILTER INJECTION — supabase-js does not escape .or() filter strings, so the
+    search `q` on /api/collectors, /api/works and /inventory could query columns the
+    endpoint never returns (internal valuations, notes) as a boolean oracle. Input is now
+    stripped of PostgREST grammar before it reaches the filter.
+  * OPEN REDIRECT — `back` on /api/act was used raw as Location; now must be a local path.
+  * UNAUTH STORAGE ABUSE — /api/inquiry had no length caps on any stored field; 21 fields
+    now capped and non-strings rejected (this also closed a path that forced public blob
+    writes via type confusion).
+  * SPILL PII ENTROPY — inquiry payloads were named with Math.random() + addRandomSuffix
+    OFF while sitting at public blob URLs. Now crypto-random + the store's own suffix.
+  * NO CLICKJACKING DEFENCE — added X-Frame-Options DENY, frame-ancestors none, nosniff,
+    Referrer-Policy. /api/act settles and voids invoices from plain form posts.
+  * RAW DB ERRORS reached the browser via ?err= — now logged server-side, generic message
+    shown; our own human-written errors still pass through.
+  * MITM ON MIGRATIONS — scripts/migrate.mjs had rejectUnauthorized:false while sending the
+    DB password. Now verifies against a pinned Supabase root CA (db/supabase-root-ca.crt).
+  * Campaign preview iframes had no sandbox; lib/email.js esc() did not escape quotes.
+  VERIFIED CLEAN: no credential ever committed (all 4,324 git blobs scanned); no secret in
+  any client bundle; Shopify + Stripe webhook signature verification is correct (raw body,
+  timing-safe, fails closed — and both are inert with no secret set); no dangerouslySetInnerHTML
+  anywhere; /d/ and /o/ tokens are 160-bit crypto-random; both noindex; blob store is not
+  listable; no reachable dependency CVE (the 2 npm audit findings are build-time postcss).
+  STILL OPEN — the shared CRM_ACCESS_CODE fallback grants full staff access with no rate
+  limit, no lockout, no revocation, and the cookie value IS the password. It is deliberate
+  (no-lockout during the Clerk migration) and is now the single biggest remaining hole.
+  REMOVE IT the moment all four have signed in via Clerk.
 - ENGINE FINISHING PASS 9/6 (migration 0039): invoice creation is now ONE transactional
   Postgres function (`create_manual_invoice`) — a mid-way failure used to orphan a sale
   marked 'invoiced' with no invoice, invisible on every screen; "Mark paid in full" is now

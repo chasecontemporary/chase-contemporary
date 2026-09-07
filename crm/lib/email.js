@@ -2,7 +2,7 @@
 // Optic white, black, caps with tracking, wall-label captions, INQUIRE buttons.
 // Placeholders resolved at send time by the provider layer: {{first_name}}, {{unsubscribe}}, {{mailing_address}}
 const SITE = 'https://www.chasecontemporary.com';
-const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 
 export function renderCampaignEmail({ campaign, artworks = [] }) {

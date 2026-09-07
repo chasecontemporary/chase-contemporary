@@ -99,7 +99,7 @@ export default function NewCampaign({ audiences = [] }) {
           <div style={{background:'#f2f2ee', display:'flex', flexDirection:'column', minHeight:0}}>
             <div style={{padding:'10px 16px', fontSize:11, fontWeight:650, letterSpacing:'.06em',
               textTransform:'uppercase', color:'#73736c'}}>Live preview — what lands in the inbox</div>
-            <iframe srcDoc={html} title="preview" style={{flex:1, border:0, width:'100%', background:'#fff'}}/>
+            <iframe sandbox="" srcDoc={html} title="preview" style={{flex:1, border:0, width:'100%', background:'#fff'}}/>
           </div>
         </div>
       </div>

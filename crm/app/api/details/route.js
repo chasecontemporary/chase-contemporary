@@ -3,12 +3,21 @@ import { db } from '../../../lib/db';
 export async function POST(req) {
   const form = await req.formData();
   const token = form.get('token');
-  const { data: c } = await db.from('collectors').select('id').eq('details_token', token).single();
+  const { data: c } = await db.from('collectors')
+    .select('id, details_requested_at, details_completed_at').eq('details_token', token).single();
+  // A details link is a write handle on someone's name, phone and home address. It must
+  // stop working when it expires and once it has been used — enforced HERE, not only on
+  // the page, or a saved form post keeps working forever.
+  const LINK_DAYS = 14;
+  const expired = c?.details_requested_at &&
+    (Date.now() - new Date(c.details_requested_at).getTime()) > LINK_DAYS * 86400000;
+  if (c && (expired || c.details_completed_at))
+    return new Response('Link expired', { status: 410 });
   if (!c) return new Response('Link expired', { status: 404 });
   const g = (k) => (form.get(k) || '').trim() || null;
   if (form.get('mode') === 'confirm') {
     const { data: cur } = await db.from('collectors').select('address_line1, address_line2, city, state, zip, country, shipping_line1').eq('id', c.id).single();
-    const stamp = { details_completed_at: new Date().toISOString() };
+    const stamp = { details_completed_at: new Date().toISOString(), details_token: null };
     if (cur && !cur.shipping_line1) Object.assign(stamp, { shipping_line1: cur.address_line1,
       shipping_line2: cur.address_line2, shipping_city: cur.city, shipping_state: cur.state,
       shipping_zip: cur.zip, shipping_country: cur.country });
@@ -17,7 +26,7 @@ export async function POST(req) {
       kind: 'details_confirmed', body: 'collector confirmed details on file', actor: 'collector' });
     return Response.redirect(new URL('/d/' + token, req.url), 303);
   }
-  const patch = { details_completed_at: new Date().toISOString() };
+  const patch = { details_completed_at: new Date().toISOString(), details_token: null };
   for (const k of ['first_name','last_name','phone','address_line1','address_line2','city','state','zip','country']) {
     const v = g(k); if (v) patch[k] = v;
   }

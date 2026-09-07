@@ -29,7 +29,7 @@ export default async function Details({ params, searchParams }) {
   const { token } = await params;
   const sp = (await searchParams) || {};
   const { data: c } = await db.from('collectors')
-    .select('id, first_name, last_name, email, phone, address_line1, address_line2, city, state, zip, country, shipping_line1, shipping_city, shipping_state, shipping_zip, details_completed_at')
+    .select('id, first_name, last_name, email, phone, address_line1, address_line2, city, state, zip, country, shipping_line1, shipping_city, shipping_state, shipping_zip, details_completed_at, details_requested_at')
     .eq('details_token', token).single();
   const wrap = (children) => (
     <div className={nimbus.className} style={{ minHeight: '100vh', background: '#fff', color: '#000' }}>

@@ -61,7 +61,7 @@ export default async function Campaign({ params }) {
     <div className="h1" style={{fontSize:18, marginTop:30}}>Email preview</div>
     <div className="sub">Exactly what lands in the inbox — the website&apos;s design language, email-safe</div>
     <div className="card" style={{padding:0, marginTop:12, overflow:'hidden'}}>
-      <iframe srcDoc={html} title="preview" style={{width:'100%', height:760, border:0, background:'#fff'}}/>
+      <iframe sandbox="" srcDoc={html} title="preview" style={{width:'100%', height:760, border:0, background:'#fff'}}/>
     </div>
   </Shell>;
 }

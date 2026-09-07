@@ -13,7 +13,11 @@ import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
 // lands back on their page with a red banner saying so — never a silent success.
 export async function POST(req) {
   const form = await req.formData();
-  const back = form.get('back') || '/today';
+  // `back` decides where we send the browser next, so it must never point off-site —
+  // otherwise a crafted form walks a signed-in rep out to an attacker's page.
+  const rawBack = form.get('back') || '/today';
+  const back = (rawBack === 'json' || (rawBack.startsWith('/') && !rawBack.startsWith('//')))
+    ? rawBack : '/today';
   const wantsJson = back === 'json' || req.headers.get('accept')?.includes('application/json');
   try {
     const res = await handle(req, form);
@@ -21,7 +25,13 @@ export async function POST(req) {
     if (wantsJson) return Response.json({ ok: true });
     return new Response(null, { status: 302, headers: { Location: back } });
   } catch (e) {
-    const msg = String(e?.message || 'Something went wrong').slice(0, 180);
+    const raw = String(e?.message || 'Something went wrong');
+    // Errors we raise ourselves are written for a person and are safe to show. Errors that
+    // come back from Postgres are not: they leak schema details and read as gibberish to
+    // the user. Log the real one, show a plain one.
+    const fromDb = /input syntax|violates|relation .* does not exist|column .* does not exist|duplicate key|invalid input|permission denied|syntax error/i.test(raw);
+    if (fromDb) console.error('[act] database error:', raw);
+    const msg = (fromDb ? 'That didn\u2019t save. Check the details and try again.' : raw).slice(0, 180);
     if (wantsJson)
       return new Response(JSON.stringify({ ok: false, error: msg }), { status: 500,
         headers: { 'Content-Type': 'application/json' } });
