@@ -1,17 +1,12 @@
 import { SignIn } from '@clerk/nextjs';
+import AuthFrame from '../../../components/AuthFrame';
+import { authAppearance } from '../../../components/authAppearance';
 
-// Clerk's hosted sign-in, dressed in the engine's register. Email link only — the team
-// signs in with their gallery mailbox and never manages a password.
+export const metadata = { title: 'Sign in · Chase Engine' };
+
 export default function Page() {
-  return <div style={{minHeight:'100vh', background:'#f7f7f4', display:'flex',
-    flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24,
-    fontFamily:"'Helvetica Neue', Helvetica, Arial, sans-serif"}}>
-    <div style={{fontSize:12.5, fontWeight:600, letterSpacing:'.2em', textTransform:'uppercase',
-      color:'#1a1a18', marginBottom:6}}>Chase&nbsp;Engine</div>
-    <div style={{fontSize:12.5, color:'#73736c', marginBottom:26}}>Chase Contemporary</div>
-    <SignIn appearance={{
-      variables: { colorPrimary: '#1a1a18', colorText: '#1a1a18', colorBackground: '#ffffff',
-                   borderRadius: '2px', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" },
-    }}/>
-  </div>;
+  return <AuthFrame eyebrow="Sign in"
+    note="Use your gallery address. You'll get a link by email — there's no password to remember.">
+    <SignIn appearance={authAppearance}/>
+  </AuthFrame>;
 }

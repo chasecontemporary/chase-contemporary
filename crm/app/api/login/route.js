@@ -7,5 +7,5 @@ export async function POST(req) {
       'Set-Cookie': `cc_crm=${code}; Path=/; HttpOnly; Secure; Max-Age=2592000; SameSite=Lax`,
     }});
   }
-  return new Response(null, { status: 302, headers: { 'Location': '/login' } });
+  return new Response(null, { status: 302, headers: { 'Location': '/login?e=1' } });
 }
