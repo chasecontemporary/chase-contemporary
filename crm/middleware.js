@@ -10,7 +10,7 @@ const isPublic = (p) =>
   p.startsWith('/api/health') ||
   p.startsWith('/api/shopify-webhook') || p.startsWith('/api/stripe-webhook') ||
   p.startsWith('/login') || p.startsWith('/api/login') ||
-  p.startsWith('/sign-in') || p.startsWith('/fonts') ||
+  p.startsWith('/sign-in') || p.startsWith('/sign-up') || p.startsWith('/fonts') ||
   p === '/';
 
 const clerkOn = !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
