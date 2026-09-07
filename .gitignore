@@ -7,3 +7,6 @@ data/
 
 # database exports (PII) never in git
 backups/
+
+# agent tooling, not product code
+.agents/

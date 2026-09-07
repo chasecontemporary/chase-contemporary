@@ -38,4 +38,10 @@ export default function middleware(req, ev) {
   return clerkOn ? withClerk(req, ev) : legacy(req);
 }
 
-export const config = { matcher: ['/((?!_next|favicon).*)'] };
+export const config = {
+  matcher: [
+    '/((?!_next|favicon).*)',
+    '/(api|trpc)(.*)',
+    '/__clerk/:path*',
+  ],
+};
