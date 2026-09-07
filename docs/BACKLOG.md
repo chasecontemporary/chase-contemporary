@@ -5,6 +5,16 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- RATE LIMITING 9/6 (migration 0040) — the last open finding from our own security audit.
+  Counted in Postgres via bump_rate_limit(), not memory: serverless instances reset
+  in-memory counters on every cold start, so a per-instance limiter is no limiter at all.
+  Limits: /api/login 10 per 15 min per IP (it previously accepted UNLIMITED guesses at the
+  shared access code), /api/inquiry 20/hr, /api/offer + /api/details 40/hr, /api/visit
+  400/hr and dropped SILENTLY so a throttled beacon never shows an error on the gallery's
+  website. Two deliberate choices: limits are far above any real behaviour so a collector
+  is never blocked, and if the limiter itself errors the request PROCEEDS — losing a lead
+  is worse than letting a burst through. Verified live: the 11th login attempt was refused
+  and the counter cleared afterwards so nobody was locked out.
 - SECURITY AUDIT + HARDENING 9/6 (full sweep: authz, injection, XSS/SSRF, secrets, git
   history, deps, headers, webhooks, tokens, PII storage). FIXED AND VERIFIED LIVE:
   * ACTIVE PII EXPOSURE — six API routes (collectors, works, team, audience-count, replay,
