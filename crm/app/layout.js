@@ -14,6 +14,12 @@ const nimbus = localFont({
 });
 
 export const metadata = { title: 'Chase Contemporary · Engine' };
-export default function RootLayout({ children }) {
-  return <html lang="en"><body className={nimbus.className}>{children}</body></html>;
+
+const clerkOn = !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+export default async function RootLayout({ children }) {
+  const page = <html lang="en"><body className={nimbus.className}>{children}</body></html>;
+  if (!clerkOn) return page;                       // no keys yet: run exactly as before
+  const { ClerkProvider } = await import('@clerk/nextjs');
+  return <ClerkProvider>{page}</ClerkProvider>;
 }

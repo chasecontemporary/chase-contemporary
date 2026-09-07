@@ -2,7 +2,7 @@ import Shell from '../../components/Shell';
 import Sla from '../../components/Sla';
 import Omnisearch from '../../components/Omnisearch';
 import { db } from '../../lib/db';
-import { cookies } from 'next/headers';
+import { whoami } from '../../lib/identity';
 import { dbReachable, listSpill, readAllSpill } from '../../lib/spill';
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +22,8 @@ const nameOf = (c) => [c?.first_name, c?.last_name].filter(Boolean).join(' ') ||
 const pretty = (seg) => seg.replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
 
 export default async function Today() {
-  const jar = await cookies();
-  const viewer = decodeURIComponent(jar.get('cc_rep')?.value || '');
+  const me = await whoami();
+  const viewer = me.name || '';
   const H48 = new Date(Date.now() - 48 * 3600000).toISOString();
   const D5 = new Date(Date.now() - 5 * 86400000).toISOString();
   const D7 = new Date(Date.now() - 7 * 86400000).toISOString();

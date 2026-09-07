@@ -183,6 +183,20 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - DECLINED 8/27: bulk-image request to Artcloud support (sold works stay imageless)
 
 ## Needs key (built, waiting)
+- CLERK (per-person sign-in) — BUILT 9/6, env-gated, needs the app + keys:
+  1. Create a Clerk application under the GALLERY identity (transferable, not MOA/personal).
+  2. Enable **Email link (magic link)** as the sign-in method; turn OFF public sign-ups so
+     only invited people can get in.
+  3. Invite: wyatt@chasecontemporary.com, sara@chasecontemporary.com,
+     devyn@magnumopus.agency, and Bernie — **Bernie has NO email in team_members, we need it**
+     (his row must carry the same address he signs in with, or he gets in with no role).
+  4. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY in Vercel, redeploy.
+  5. Everyone signs in once, THEN remove CRM_ACCESS_CODE and the /login + RepPicker fallback.
+  Identity lives in ONE place now (crm/lib/identity.js `whoami()`): with Clerk it is verified
+  from the signed-in mailbox and mapped to team_members for name+role; without it, the old
+  self-picked name still works but is marked unverified, so pay stays hidden and actions log
+  as unattributed. Middleware runs Clerk when keys exist and the shared code when they don't,
+  so there is no lockout window.
 - ORDERING (Devyn 9/6): **SHOPIFY IS LAST.** Pay links, order webhooks and product push stay
   dormant until everything else is done. Do not treat the missing token as a blocker.
 - Shopify pay links + product push: custom app token (scopes: write_products, read_products, write_draft_orders, read_draft_orders, read_orders) + API secret key — Devyn

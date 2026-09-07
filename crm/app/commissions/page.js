@@ -1,25 +1,28 @@
 import Shell from '../../components/Shell';
 import { db } from '../../lib/db';
-import { cookies } from 'next/headers';
+import { whoami, clerkReady } from '../../lib/identity';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const monthName = (d) => new Date(String(d).slice(0, 7) + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 const monthShort = (d) => new Date(String(d).slice(0, 7) + '-02').toLocaleDateString('en-US', { month: 'short' });
 
 export default async function Commissions() {
-  const jar = await cookies();
-  const viewer = decodeURIComponent(jar.get('cc_rep')?.value || '');
+  const me = await whoami();
+  const viewer = me.name || '';
   const [{ data: rules }, { data: team }, { data: rows }, { data: invMap }] = await Promise.all([
     db.from('commission_rules').select('*').order('person'),
     db.from('team_members').select('name, role'),
     db.from('commissions').select('*').order('created_at', { ascending: false }).limit(800),
     db.from('invoices').select('id, invoice_number, title, collectors(first_name, last_name)').limit(300),
   ]);
-  const role = (team || []).find(t => t.name === viewer)?.role;
-  const personal = role === 'rep';
+  // Seeing everyone's pay requires a verified owner. An unverified session (the shared
+  // code, no sign-in) sees nothing at all — pay is never shown on an unproven identity.
+  const role = me.role;
+  const trusted = me.verified || !clerkReady();   // pre-Clerk the old picker still applies
+  const personal = role === 'rep' || (role === 'owner' && !trusted);
   // Pay is private: an unrecognised viewer sees nothing at all, rather than everyone's.
   // Only a named owner sees the whole team.
-  if (!role) return <Shell active="commissions">
+  if (!role || (role === 'owner' && !trusted && !me.name)) return <Shell active="commissions">
     <div className="h1">Commissions</div>
     <div className="sub">Pay is private to each person</div>
     <div className="card" style={{marginTop:22, maxWidth:460}}>

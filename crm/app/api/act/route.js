@@ -1,4 +1,5 @@
 import { db } from '../../../lib/db';
+import { actorName } from '../../../lib/identity';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
@@ -34,7 +35,9 @@ export async function POST(req) {
 const must = (r) => { if (r?.error) throw new Error(r.error.message); return r; };
 
 async function handle(req, form) {
-  const rep = decodeURIComponent((req.headers.get('cookie') || '').match(/cc_rep=([^;]+)/)?.[1] || 'rep');
+  // Who gets the credit (or the blame) on this action. Null when we genuinely don't know,
+  // so the record reads "unattributed" rather than naming a person who may not have done it.
+  const rep = await actorName();
   const action = form.get('action');
   const id = form.get('id');
   const back = form.get('back') || '/today';
@@ -191,7 +194,7 @@ async function handle(req, form) {
       must(await db.from('holds').insert({
         artwork_id: id, collector_id: collectorId, kind: 'reserve', status: 'active',
         inquiry_id: form.get('inquiry_id') || null,
-        placed_by: rep === 'rep' ? null : rep,
+        placed_by: rep,
         note: form.get('note') || null,
         expires_at: new Date(Date.now() + days * 86400000).toISOString(),
       }));
@@ -219,7 +222,7 @@ async function handle(req, form) {
     const { data: offer, error: oErr } = await db.from('offers').insert({
       token, collector_id: id, inquiry_id: form.get('inquiry_id') || null,
       title: form.get('title') || null, note: form.get('note') || null,
-      items, created_by: rep === 'rep' ? null : rep,
+      items, created_by: rep,
       expires_at: new Date(Date.now() + days * 86400000).toISOString(),
     }).select().single();
     if (oErr) return new Response(JSON.stringify({ error: oErr.message }), { status: 500 });
@@ -397,7 +400,7 @@ async function handle(req, form) {
       p_collector_id: collectorId,
       p_lines: lines.map(l => ({ kind: l.kind, artwork_id: l.artwork_id || null,
         title: l.title || null, artist: l.artist || null, amount_cents: cents(l.amount) })),
-      p_owner: rep === 'rep' ? null : rep,
+      p_owner: rep,
       p_due: form.get('due') || null,
       p_inquiry_id: form.get('inquiry_id') || null,
     });
