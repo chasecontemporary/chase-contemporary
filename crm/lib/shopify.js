@@ -65,3 +65,13 @@ export async function pushProduct(a) {
   const { product } = await shopify('/products.json', 'POST', payload);
   return { productId: product.id, handle: product.handle };
 }
+
+// Sold-sync: the website must never offer a work the gallery has already sold.
+// Settlement hides the product (status draft: the URL stops resolving, nothing is deleted);
+// an undo puts it back exactly as it was. Both idempotent, both env-gated by the caller.
+export async function setProductStatus(productId, status) {
+  const { product } = await shopify(`/products/${productId}.json`, 'PUT', { product: { id: productId, status } });
+  return product?.status;
+}
+export const hideProduct = (productId) => setProductStatus(productId, 'draft');
+export const showProduct = (productId) => setProductStatus(productId, 'active');

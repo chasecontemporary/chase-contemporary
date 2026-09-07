@@ -3,12 +3,13 @@ import Kanban from '../../components/Kanban';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
-export default async function Pipeline() {
+export default async function Pipeline({ searchParams }) {
+  const openId = (await searchParams)?.lead || null;
   // Three waves instead of nine sequential round trips. Everything in wave two depends
   // only on the inquiry rows, so it all goes at once; only the reserves need artwork ids.
   const INQ_FIELDS = 'id, status, kind, collector_id, artwork_handle, artwork_title, purpose, ' +
     'budget_range, timeframe, source, owner, message, page_journey, created_at, ' +
-    'stage_changed_at, contacted_at, first_called_at';
+    'stage_changed_at, contacted_at, first_called_at, next_action_at, next_action';
   const ART_FIELDS = 'id, handle, title, artist, price_cents, internal_value_cents, ' +
     'image_url, medium, dims_h_in, dims_w_in, available';
 
@@ -109,6 +110,6 @@ export default async function Pipeline() {
       <div className="stat"><div className="n">{usd(invoiced.reduce((s, l) => s + worth(l), 0))}</div>
         <div className="l">Invoiced · awaiting payment</div></div>
     </div>
-    <Kanban initial={leads} team={(team || []).map(t => t.name)} />
+    <Kanban initial={leads} team={(team || []).map(t => t.name)} openId={openId} />
   </Shell>;
 }

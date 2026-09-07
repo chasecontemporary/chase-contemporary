@@ -5,14 +5,17 @@ const nimbus = localFont({
     { path: '../../../assets/fonts/nimbus-sans-novus-semibold.ttf', weight: '600' },
   ],
 });
-export default function Thanks() {
+export default async function Thanks({ searchParams }) {
+  const sp = (await searchParams) || {};
+  const details = !!sp.details;
   return <div className={nimbus.className} style={{ minHeight: '100vh', background: '#fff', color: '#000',
     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
     <div style={{ textAlign: 'center', maxWidth: 480 }}>
       <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '.22em', marginBottom: 40 }}>CHASE&nbsp;CONTEMPORARY</div>
-      <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>Payment received</div>
-      <p style={{ fontSize: 14, lineHeight: 1.75, marginTop: 16 }}>Thank you. Your acquisition is confirmed
-        and the gallery will be in touch shortly to arrange delivery.</p>
+      <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>{details ? 'Thank you' : 'Payment received'}</div>
+      <p style={{ fontSize: 14, lineHeight: 1.75, marginTop: 16 }}>{details
+        ? 'Your details are on file. The gallery will be in touch shortly with your invoice and to arrange delivery.'
+        : 'Thank you. Your acquisition is confirmed and the gallery will be in touch shortly to arrange delivery.'}</p>
     </div>
   </div>;
 }

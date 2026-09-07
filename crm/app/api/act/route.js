@@ -8,6 +8,12 @@ import { klaviyoReady, ensureList, syncMembers, pushCampaign } from '../../../li
 import { renderCampaignEmail } from '../../../lib/email';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
+import { sendMail, fetchAttachment, mailReady } from '../../../lib/mail';
+import { sendSms } from '../../../lib/sms';
+import { renderTemplate } from '../../../lib/templates';
+import { buildContext } from '../../../lib/emailContext';
+import { sendForSignature } from '../../../lib/docusign';
+import { showProduct, shopifyReady as shopReady } from '../../../lib/shopify';
 
 // Every action runs inside this wrapper. If the database rejects a write, the user
 // lands back on their page with a red banner saying so — never a silent success.
@@ -418,6 +424,10 @@ async function handle(req, form) {
     });
     if (invErr) throw new Error(invErr.message.replace(/^.*?:\s*/, ''));
 
+    // what deposit was agreed, so the invoice email and the paper can say so
+    const dep = cents(form.get('deposit'));
+    if (inv && dep > 0) await db.from('invoices').update({ deposit_cents: dep }).eq('id', inv.id);
+
     // invoicing for the collector who holds a work closes that hold out
     if (wantIds.length)
       await db.from('holds').update({ status: 'converted', released_at: new Date().toISOString() })
@@ -484,14 +494,24 @@ async function handle(req, form) {
       const r = await recordPayment(id, amt, form.get('method') || null);
       if (r) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
         kind: r.closed ? 'paid' : 'payment_received',
-        body: '$' + (amt / 100).toLocaleString() + (r.closed ? ' · settled in full' : ' · balance $' + ((r.total - r.received) / 100).toLocaleString()),
+        body: '$' + Math.round(amt / 100).toLocaleString() + (r.closed ? ' · settled in full' : ' · balance $' + Math.round((r.total - r.received) / 100).toLocaleString()),
         actor: rep });
     }
   } else if (action === 'invoice_unsettle') {
     // The one action that used to be permanent. Puts the works back, removes the purchases
     // and commissions the settlement created, and reopens the invoice.
+    const { data: invU } = await db.from('invoices').select('sale_id').eq('id', id).single();
     const { error } = await db.rpc('unsettle_invoice', { p_invoice_id: id });
     if (error) throw new Error(error.message);
+    if (shopReady() && invU?.sale_id) {
+      const { data: its } = await db.from('sale_items').select('artwork_id').eq('sale_id', invU.sale_id);
+      for (const it of (its || [])) if (it.artwork_id) {
+        const { data: art } = await db.from('artworks').select('shopify_product_id, site_status').eq('id', it.artwork_id).single();
+        if (art?.shopify_product_id && art.site_status === 'sold') {
+          try { await showProduct(art.shopify_product_id); await db.from('artworks').update({ site_status: 'live' }).eq('id', it.artwork_id); } catch {}
+        }
+      }
+    }
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
       kind: 'payment_undone', body: 'settlement reversed', actor: rep });
   } else if (action === 'invoice_paid') {
@@ -519,6 +539,114 @@ async function handle(req, form) {
       purchased_at: form.get('date') || new Date().toISOString().slice(0, 10), source: 'manual' });
     await db.from('activities').insert({ entity_type: 'collector', entity_id: id,
       kind: 'purchase_logged', body: `${form.get('title')} · $${form.get('amount')}`, actor: rep });
+  } else if (action === 'email_send') {
+    // A collector email, from a template the rep previewed. Sends through the gallery's
+    // domain when connected; otherwise the composer already fell back to a mailto: draft.
+    const template = form.get('template') || 'first_reply';
+    const ctx = await buildContext({ inquiryId: form.get('inquiry_id') || null,
+      collectorId: form.get('collector_id') || null, invoiceId: form.get('invoice_id') || null,
+      note: form.get('note') || '' });
+    if (!ctx.collector) throw new Error('No collector to write to.');
+    const out = renderTemplate(template, ctx);
+    const subject = form.get('subject') || out.subject;
+    const attachments = [];
+    if (template === 'invoice' && ctx.invoice) {
+      let url = ctx.invoice.pdf_url;
+      if (!url) {
+        // make the PDF first so the invoice always travels as an attachment
+        const { data: inv } = await db.from('invoices').select('*, collectors(*)').eq('id', ctx.invoice.id).single();
+        const { data: ilines } = await db.from('invoice_lines').select('*, artworks(medium, dims_h_in, dims_w_in)').eq('invoice_id', inv.id).in('kind', ['work', 'service']).order('sort');
+        const items = (ilines || []).map(it => ({ artist: it.artist, title: it.title, amount_cents: it.amount_cents, medium: it.artworks?.medium,
+          dims: it.artworks?.dims_h_in ? `${it.artworks.dims_h_in} × ${it.artworks.dims_w_in} in` : null }));
+        const { data: pays } = await db.from('payments').select('amount_cents, method, settled_at').eq('invoice_id', inv.id).eq('status', 'settled').order('settled_at');
+        const bytes = await buildInvoicePdf({ invoice: inv, collector: inv.collectors, items: items.length ? items : [{ artist: inv.artist, title: inv.title, amount_cents: inv.amount_cents }], payments: pays || [] });
+        const blob = await put(`invoices/chase-contemporary-invoice-${String(inv.invoice_number).padStart(4, '0')}.pdf`, Buffer.from(bytes),
+          { access: 'public', contentType: 'application/pdf', addRandomSuffix: true, allowOverwrite: true });
+        await db.from('invoices').update({ pdf_url: blob.url }).eq('id', inv.id);
+        url = blob.url;
+      }
+      attachments.push(await fetchAttachment(url, `Chase-Contemporary-Invoice-${String(ctx.invoice.invoice_number).padStart(4, '0')}.pdf`));
+      if (ctx.artwork?.coa_url && form.get('attach_coa')) attachments.push(await fetchAttachment(ctx.artwork.coa_url, 'Certificate-of-Authenticity.pdf'));
+    }
+    if (template === 'first_reply' && ctx.artwork?.tearsheet_url && form.get('attach_tearsheet'))
+      attachments.push(await fetchAttachment(ctx.artwork.tearsheet_url, 'Tear-Sheet.pdf'));
+    const r = await sendMail({ to: ctx.collector.email, subject, html: out.html, text: out.text, attachments,
+      template, collectorId: ctx.collector.id,
+      entityType: ctx.invoice ? 'invoice' : ctx.inquiry ? 'inquiry' : 'collector',
+      entityId: ctx.invoice?.id || ctx.inquiry?.id || ctx.collector.id, actor: rep,
+      bcc: process.env.MAIL_BCC ? [process.env.MAIL_BCC] : undefined });
+    // the send is the touch: first response, chase stage, hold confirmation
+    if (ctx.inquiry && ['first_reply', 'follow_up', 'hold_confirmed', 'selection', 'details_link'].includes(template)) {
+      const patch = { owner: ctx.inquiry.owner || rep };
+      if (!ctx.inquiry.contacted_at) patch.contacted_at = new Date().toISOString();
+      if (ctx.inquiry.status === 'new') { patch.status = 'contacted'; patch.stage_changed_at = new Date().toISOString(); }
+      await db.from('inquiries').update(patch).eq('id', ctx.inquiry.id);
+    }
+    if (ctx.invoice && template === 'invoice') {
+      const st = ctx.invoice.ar_status || 'issued';
+      const NEXT = { issued: 'sent', sent: 'fu1', fu1: 'fu2', fu2: 'fu3', fu3: 'fu3' };
+      await db.from('invoices').update({ ar_status: NEXT[st] || 'sent', sent_at: ctx.invoice.sent_at || new Date().toISOString(),
+        last_nudge_at: st === 'issued' ? null : new Date().toISOString() }).eq('id', ctx.invoice.id);
+      await db.from('activities').insert({ entity_type: 'invoice', entity_id: ctx.invoice.id, kind: 'ar_' + (NEXT[st] || 'sent'), actor: rep });
+    }
+    if (form.get('back') === 'json') return Response.json({ ok: true, id: r.id });
+  } else if (action === 'sms_send') {
+    const collectorId = form.get('collector_id');
+    const { data: c } = await db.from('collectors').select('id, phone, first_name').eq('id', collectorId).single();
+    if (!c?.phone) throw new Error('No phone number on file for this collector.');
+    const body = (form.get('body') || '').trim().slice(0, 480);
+    if (!body) throw new Error('Write the text first.');
+    await sendSms({ to: c.phone, body, template: form.get('template') || 'custom', collectorId: c.id,
+      entityType: form.get('inquiry_id') ? 'inquiry' : 'collector', entityId: form.get('inquiry_id') || c.id, actor: rep });
+    if (form.get('inquiry_id')) {
+      const { data: q } = await db.from('inquiries').select('contacted_at, status, owner').eq('id', form.get('inquiry_id')).single();
+      const patch = { owner: q?.owner || rep };
+      if (!q?.contacted_at) patch.contacted_at = new Date().toISOString();
+      if (q?.status === 'new') { patch.status = 'contacted'; patch.stage_changed_at = new Date().toISOString(); }
+      await db.from('inquiries').update(patch).eq('id', form.get('inquiry_id'));
+    }
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'next_action') {
+    // "Call Friday." A date and a few words; Today lists what is due.
+    const when = form.get('when') || null;
+    must(await db.from('inquiries').update({ next_action_at: when, next_action: (form.get('what') || '').slice(0, 140) || null }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'next_action',
+      body: when ? `${form.get('what') || 'follow up'} · ${when}` : 'cleared', actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'lost') {
+    // Closing a lead honestly, with a reason the gallery can learn from.
+    const reason = (form.get('reason') || '').slice(0, 200);
+    must(await db.from('inquiries').update({ status: 'closed', lost_reason: reason || null,
+      lost_at: new Date().toISOString(), stage_changed_at: new Date().toISOString(), next_action_at: null }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: id, kind: 'lost', body: reason || null, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'doc_sign') {
+    // Send a PDF the engine made for signature through DocuSign.
+    const kind = form.get('kind');            // invoice | coa | tearsheet | purchase_agreement
+    const url = form.get('url');
+    if (!url) throw new Error('Generate the document first.');
+    let collector = null, invoiceId = form.get('invoice_id') || null, artworkId = form.get('artwork_id') || null, saleId = null;
+    if (invoiceId) {
+      const { data: inv } = await db.from('invoices').select('sale_id, collectors(*)').eq('id', invoiceId).single();
+      collector = inv?.collectors; saleId = inv?.sale_id || null;
+    } else if (form.get('collector_id')) {
+      ({ data: collector } = await db.from('collectors').select('*').eq('id', form.get('collector_id')).single());
+    }
+    if (!collector) throw new Error('Choose who signs it.');
+    const name = form.get('name') || (kind === 'invoice' ? 'Invoice' : kind === 'coa' ? 'Certificate of Authenticity' : 'Document');
+    const r = await sendForSignature({ kind, pdfUrl: url, name, collector, invoiceId, saleId, artworkId, actor: rep,
+      message: form.get('message') || 'Please review and sign. Reply to this email with any questions.' });
+    if (form.get('back') === 'json') return Response.json({ ok: true, ...r });
+  } else if (action === 'team_phone') {
+    must(await db.from('team_members').update({ phone: form.get('phone') || null, email: form.get('email') || null }).eq('id', id));
+  } else if (action === 'artwork_relist') {
+    // after an undo: put the product back on the site
+    const { data: art } = await db.from('artworks').select('shopify_product_id, site_status').eq('id', id).single();
+    if (shopReady() && art?.shopify_product_id && art.site_status === 'sold') {
+      await showProduct(art.shopify_product_id);
+      await db.from('artworks').update({ site_status: 'live' }).eq('id', id);
+      await db.from('activities').insert({ entity_type: 'artwork', entity_id: id, kind: 'site_relisted', actor: rep });
+    }
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }

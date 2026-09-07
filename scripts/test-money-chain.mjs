@@ -52,12 +52,16 @@ const collector = (await rest('collectors', {
 }))[0];
 console.log(`\n  work: ${work.title}\n  collector: ${collector.id}\n`);
 
+// a lead on this work, so settlement has something to close (the 9/7 D1 regression)
+const lead = (await rest('inquiries', { method: 'POST', headers: { Prefer: 'return=representation' },
+  body: JSON.stringify({ collector_id: collector.id, artwork_title: work.title, purpose: 'acquire', status: 'in_conversation', owner: 'Sara' }) }))[0];
+
 const lines = (amount) => JSON.stringify([
   { kind: 'work', artwork_id: work.id, title: work.title, amount: String(amount) },
 ]);
 
 // ---------- 1. invoice creation is transactional ----------
-await act({ action: 'invoice_manual', collector_id: collector.id, lines: lines(10000) });
+await act({ action: 'invoice_manual', collector_id: collector.id, inquiry_id: lead.id, lines: lines(10000) });
 let [inv] = await rest(`invoices?collector_id=eq.${collector.id}&select=id,invoice_number,sale_id,status`);
 check('invoice created with a sale attached', !!inv && !!inv.sale_id);
 
@@ -104,6 +108,8 @@ check('settling closes the invoice', settled[0].status === 'paid');
 check('settling marks the work sold', artAfter[0].available === false);
 check('settling books the purchase', purch.length === 1);
 check('settling writes a commission', comm.length >= 1);
+const leadAfter = await rest(`inquiries?id=eq.${lead.id}&select=status`);
+check('settling closes the lead (D1)', leadAfter[0]?.status === 'paid', `status ${leadAfter[0]?.status}`);
 
 // ---------- 5. undo ----------
 await act({ action: 'invoice_unsettle', id: inv.id });
@@ -117,6 +123,8 @@ check('undo puts the work back on sale', artBack[0].available === true);
 check('undo removes the purchase', purchGone.length === 0);
 check('undo removes the commission', commGone.length === 0);
 check('undo removes the payments', payGone.length === 0);
+const leadBack = await rest(`inquiries?id=eq.${lead.id}&select=status`);
+check('undo reopens the lead as invoiced', leadBack[0]?.status === 'invoice', `status ${leadBack[0]?.status}`);
 
 // ---------- teardown ----------
 const ids = [collector.id, other.id];
@@ -133,6 +141,9 @@ if (sales?.length) {
   const l = sales.map(s => s.id).join(',');
   await del(`sale_items?sale_id=in.(${l})`); await del(`sales?id=in.(${l})`);
 }
+await del(`messages?collector_id=in.(${ids})`);
+await del(`activities?entity_id=eq.${lead.id}`);
+await del(`inquiries?id=eq.${lead.id}`);
 await del(`holds?artwork_id=eq.${work.id}&kind=eq.reserve`);
 await del(`purchases?collector_id=in.(${ids})`);
 await del(`activities?entity_id=in.(${ids})`);

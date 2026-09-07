@@ -5,7 +5,10 @@ import ArStage from '../../components/ArStage';
 import FollowUp from '../../components/FollowUp';
 import BrandSelect from '../../components/BrandSelect';
 import NewInvoice from '../../components/NewInvoice';
+import EmailComposer from '../../components/EmailComposer';
 import { db } from '../../lib/db';
+import { mailReady } from '../../lib/mail';
+import { docusignReady } from '../../lib/docusign';
 export const dynamic = 'force-dynamic';
 const fmtPhone = (p) => {
   const d = String(p || '').replace(/\D/g, '');
@@ -22,6 +25,8 @@ export default async function Finance({ searchParams }) {
   const sp = (await searchParams) || {};
   const view = sp.view || 'open';
   const payReady = !!process.env.SHOPIFY_ADMIN_TOKEN;
+  const canMail = mailReady();
+  const canSign = docusignReady();
   const since = new Date(); since.setMonth(since.getMonth() - 36);
   const [{ data: invs }, { data: availWorks }, { data: months }, { data: unsettled }, { data: openSales }, { data: payRows }, { data: saleItemDocs }] = await Promise.all([
     db.from('invoices').select('*, collectors(id, first_name, last_name, phone, email, city, state)').order('issued_at', { ascending: false }).limit(200),
@@ -33,6 +38,8 @@ export default async function Finance({ searchParams }) {
     db.from('payments').select('invoice_id, amount_cents, method, settled_at').eq('status', 'settled').not('invoice_id', 'is', null).order('settled_at').limit(1000),
     db.from('sale_items').select('sale_id, title, artworks(tearsheet_url, coa_url, title)').not('sale_id', 'is', null).limit(400),
   ]);
+  const { data: signedDocs } = await db.from('documents').select('invoice_id, kind, status, signed_pdf_url').not('invoice_id', 'is', null).limit(500);
+  const signedBy = {}; (signedDocs || []).forEach(d => { if (d.status === 'completed' && d.signed_pdf_url) signedBy[d.invoice_id + ':' + d.kind] = d.signed_pdf_url; });
   const all = invs || [];
   const open = all.filter(i => i.status === 'open');
   const paid = all.filter(i => i.status === 'paid');
@@ -249,7 +256,8 @@ export default async function Finance({ searchParams }) {
               <div style={{display:'flex', gap:14, flexWrap:'wrap', alignItems:'flex-start'}}>
                 <div style={{display:'flex', flexDirection:'column', gap:8, alignItems:'center'}}>
                   {i.pdf_url
-                    ? <DocPreview url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}/>
+                    ? <DocPreview url={i.pdf_url} label={'Invoice No. ' + String(i.invoice_number).padStart(4,'0')}
+                        sign={{ kind: 'invoice', invoiceId: i.id, ready: canSign }} signed={signedBy[i.id + ':invoice'] || null}/>
                     : <div style={{width:110, height:143, borderRadius:2, border:'1px dashed #cccdc4',
                         display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#73736c'}}>No PDF yet</div>}
                   <form method="POST" action="/api/act">
@@ -272,10 +280,13 @@ export default async function Finance({ searchParams }) {
           </div>
           {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
             borderTop:'1px solid #eeeee9', background:'#fbfbfd'}}>
-            <FollowUp id={i.id} stage={i.ar_status} email={c && !c.email?.endsWith('import.chasecontemporary.com') ? c.email : ''}
-              name={c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : ''}
-              num={String(i.invoice_number).padStart(4,'0')} balance={usd(balance(i))}
-              pdf={i.pdf_url} docs={docsBySale[i.sale_id] || []}/>
+            {canMail
+              ? <EmailComposer invoiceId={i.id} collectorId={c?.id} defaultTemplate="invoice" quiet={false}
+                  label={(i.ar_status || 'issued') === 'issued' ? 'Send invoice' : 'Send a follow-up'}/>
+              : <FollowUp id={i.id} stage={i.ar_status} email={c && !c.email?.endsWith('import.chasecontemporary.com') ? c.email : ''}
+                  name={c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : ''}
+                  num={String(i.invoice_number).padStart(4,'0')} balance={usd(balance(i))}
+                  pdf={i.pdf_url} docs={docsBySale[i.sale_id] || []}/>}
             <span style={{width:1, height:22, background:'#e3e3dd'}}/>
             <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center'}}>
               <input type="hidden" name="action" value="invoice_payment"/>

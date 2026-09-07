@@ -28,7 +28,7 @@ export async function POST(req) {
     await db.from('collectors').update(stamp).eq('id', c.id);
     await db.from('activities').insert({ entity_type: 'collector', entity_id: c.id,
       kind: 'details_confirmed', body: 'collector confirmed details on file', actor: 'collector' });
-    return Response.redirect(new URL('/d/' + token, req.url), 303);
+    return Response.redirect(new URL('/p/thanks?details=1', req.url), 303);
   }
   const patch = { details_completed_at: new Date().toISOString(), details_token: null };
   for (const k of ['first_name','last_name','phone','address_line1','address_line2','city','state','zip','country']) {
@@ -55,5 +55,5 @@ export async function POST(req) {
   }
   await db.from('activities').insert({ entity_type: 'collector', entity_id: c.id,
     kind: 'details_completed', body: 'collector completed the details link', actor: 'collector' });
-  return Response.redirect(new URL('/d/' + token, req.url), 303);
+  return Response.redirect(new URL('/p/thanks?details=1', req.url), 303);
 }

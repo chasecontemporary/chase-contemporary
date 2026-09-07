@@ -95,7 +95,7 @@ export default async function Today() {
   ] = await Promise.all([
     db.from('team_members').select('name, role'),
     db.from('inquiries')
-      .select('id, status, kind, owner, created_at, stage_changed_at, first_called_at, contacted_at, artwork_title, purpose, message, collector_id, collectors(first_name, last_name, email, phone)')
+      .select('id, status, kind, owner, created_at, stage_changed_at, first_called_at, contacted_at, next_action_at, next_action, artwork_title, purpose, message, collector_id, collectors(first_name, last_name, email, phone)')
       .in('status', ['new', 'contacted', 'in_conversation', 'hold']).order('created_at', { ascending: false }).limit(300),
     db.from('payments').select('amount_cents, settled_at, method, invoices(invoice_number, collectors(id, first_name, last_name))')
       .eq('status', 'settled').gte('settled_at', H48).order('settled_at', { ascending: false }).limit(20),
@@ -183,7 +183,10 @@ export default async function Today() {
   const holdsOut = (reserveRows || [])
     .filter(r => r.expires_at && new Date(r.expires_at).getTime() < soon)
     .sort((a, b) => new Date(a.expires_at) - new Date(b.expires_at));
-  const attentionCount = answerNow.length + quiet.length + chase.length + holdsOut.length + otherMessages.length;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dueToday = buying.filter(r => r.next_action_at && r.next_action_at <= todayStr && (!personal || r.owner === viewer))
+    .sort((a, b) => a.next_action_at.localeCompare(b.next_action_at));
+  const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length + holdsOut.length + otherMessages.length;
 
   // ---- the numbers ----
   const collectedMonth = (paysMonth || []).reduce((s, p) => s + Number(p.amount_cents), 0);
@@ -240,18 +243,35 @@ export default async function Today() {
         {answerNow.length > 0 && <div style={card}>
           <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
             Answer now — {answerNow.length} inquir{answerNow.length === 1 ? 'y' : 'ies'} with no first response</div>
-          {answerNow.slice(0, 5).map((r, i) => <a key={r.id} href="/pipeline" style={rowSt(i)}>
+          {answerNow.slice(0, 5).map((r, i) => <div key={r.id} style={rowSt(i)}>
             <Sla createdAt={r.created_at} contactedAt={r.contacted_at}/>
-            <span style={{flex: 1}}><b>{nameOf(r.collectors)}</b>
+            <span style={{flex: 1, minWidth: 0}}><b>{nameOf(r.collectors)}</b>
               <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}</span>
-              {!r.owner && <span style={{color:'#9a551a', fontWeight:650}}> · unclaimed</span>}</span>
-            <span style={{fontSize: 12, color: '#2257c5', fontWeight: 650}}>Open in Pipeline →</span>
-          </a>)}
+              {!r.owner && <span style={{color:'#9a551a', fontWeight:650}}> · unclaimed</span>}
+              <span style={{display:'block', fontSize:12.5, marginTop:2}}>
+                {r.collectors?.phone && <a href={'tel:' + String(r.collectors.phone).replace(/[^\d+]/g, '')} style={{color:'#2257c5', fontWeight:650, marginRight:10}}>{fmtPhone(r.collectors.phone)}</a>}
+                {r.collectors?.email && !r.collectors.email.endsWith('import.chasecontemporary.com') && <a href={'mailto:' + r.collectors.email} style={{color:'#2257c5'}}>{r.collectors.email}</a>}
+              </span></span>
+            <a href={'/pipeline?lead=' + r.id} style={{fontSize: 12, color: '#2257c5', fontWeight: 650, whiteSpace:'nowrap'}}>Open the lead →</a>
+          </div>)}
+        </div>}
+        {dueToday.length > 0 && <div style={card}>
+          <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
+            Due today — {dueToday.length} follow-up{dueToday.length === 1 ? '' : 's'} you set</div>
+          {dueToday.slice(0, 8).map((r, i) => <div key={r.id} style={rowSt(i)}>
+            <span style={{flex: 1, minWidth: 0}}><b>{nameOf(r.collectors)}</b>
+              <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}</span>
+              <span style={{display:'block', fontSize:12.5, marginTop:2}}>
+                <span style={{fontWeight:650, color: r.next_action_at < todayStr ? '#c02d23' : '#1a1a18'}}>{r.next_action || 'Follow up'}{r.next_action_at < todayStr ? ' · overdue' : ''}</span>
+                {r.collectors?.phone && <a href={'tel:' + String(r.collectors.phone).replace(/[^\d+]/g, '')} style={{color:'#2257c5', fontWeight:650, marginLeft:10}}>{fmtPhone(r.collectors.phone)}</a>}
+              </span></span>
+            <a href={'/pipeline?lead=' + r.id} style={{fontSize: 12, color: '#2257c5', fontWeight: 650, whiteSpace:'nowrap'}}>Open the lead →</a>
+          </div>)}
         </div>}
         {quiet.length > 0 && <div style={card}>
           <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
             Gone quiet — {quiet.length} conversation{quiet.length === 1 ? '' : 's'} with no movement in 5+ days</div>
-          {quiet.slice(0, 5).map((r, i) => <a key={r.id} href="/pipeline" style={rowSt(i)}>
+          {quiet.slice(0, 5).map((r, i) => <a key={r.id} href={'/pipeline?lead=' + r.id} style={rowSt(i)}>
             <span style={{flex: 1}}><b>{nameOf(r.collectors)}</b>
               <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}{r.owner ? ' · ' + r.owner : ''}</span></span>
             <span style={{fontSize: 12.5, color: '#9a551a', fontWeight: 650}}>

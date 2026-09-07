@@ -151,6 +151,8 @@ export async function buildInvoicePdf({ invoice, collector, items, payments = []
   const wire = process.env.WIRE_INSTRUCTIONS ||
     'Payment by wire to Zenzeba Group Inc. Wire instructions are provided under separate cover.';
   const payLines = [wire, `Please reference Invoice ${num.replace('NO. ', 'No. ')} with your payment.`];
+  if (invoice.deposit_cents > 0 && received === 0)
+    payLines.unshift(`A deposit of ${usd(invoice.deposit_cents)} reserves the work; the balance is due ${invoice.due_at ? new Date(invoice.due_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'before delivery'}.`);
   for (const line of payLines) {
     page.drawText(line, { x: M, y, size: 9, font: regular, color: INK, maxWidth: W, lineHeight: 13 });
     y -= 13 * Math.ceil(regular.widthOfTextAtSize(line, 9) / W);

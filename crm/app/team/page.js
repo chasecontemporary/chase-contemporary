@@ -24,7 +24,15 @@ export default async function Team() {
       <th>Name</th><th>Role</th><th>Open leads</th><th>Closed</th><th>Avg speed to call</th><th>Status</th><th></th>
     </tr></thead><tbody>
       {(members||[]).map(m => <tr key={m.id}>
-        <td style={{fontWeight:600}}>{m.name}<div style={{fontSize:12,color:'#73736c',fontWeight:400}}>{m.email}</div></td>
+        <td style={{fontWeight:600}}>{m.name}
+          <form method="POST" action="/api/act" style={{display:'flex', gap:6, marginTop:6, alignItems:'center'}}>
+            <input type="hidden" name="action" value="team_phone"/>
+            <input type="hidden" name="id" value={m.id}/>
+            <input type="hidden" name="back" value="/team"/>
+            <input name="email" defaultValue={m.email || ''} placeholder="Email (sign-in + alerts)" style={{width:210, fontSize:12, height:30, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
+            <input name="phone" defaultValue={m.phone || ''} placeholder="Mobile (text alerts)" style={{width:150, fontSize:12, height:30, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
+            <button className="btn mini quiet" style={{height:30}}>Save</button>
+          </form></td>
         <td style={{textTransform:'capitalize'}}>{m.role}</td>
         <td>{stats[m.name]?.open || 0}</td>
         <td>{stats[m.name]?.closed || 0}</td>

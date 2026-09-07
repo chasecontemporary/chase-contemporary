@@ -15,7 +15,9 @@ export default function SaleWizard({ lead, onClose }) {
     amount: lead.artwork.price_cents > 0 ? String(lead.artwork.price_cents / 100) : '',
   }] : []);
   const [tax, setTax] = useState('');
+  const [taxHint, setTaxHint] = useState(null);
   const [shipping, setShipping] = useState('');
+  const [deposit, setDeposit] = useState('');
   const [dlink, setDlink] = useState(null);
   const [selLink, setSelLink] = useState(null);
   const [docBusy, setDocBusy] = useState(null);
@@ -42,6 +44,15 @@ export default function SaleWizard({ lead, onClose }) {
     }); });
   }, [step]);   // eslint-disable-line react-hooks/exhaustive-deps
   const isUrl = (v) => typeof v === 'string' && v.startsWith('http');
+  // review step: suggest tax from the collector's ship-to state; the rep confirms or edits
+  useEffect(() => {
+    if (step !== 4 || !lead.collector_id) return;
+    const sub = works.reduce((s, w) => s + num(w.amount), 0);
+    fetch(`/api/tax?collector_id=${lead.collector_id}&subtotal=${sub}`).then(r => r.json()).then(t => {
+      setTaxHint(t);
+      if (t && t.cents > 0 && !tax) setTax(String(Math.round(t.cents / 100)));
+    }).catch(() => {});
+  }, [step]);   // eslint-disable-line react-hooks/exhaustive-deps
   const paperDone = works.length > 0 && works.every(w => isUrl(docs[w.id]?.tearsheet) && isUrl(docs[w.id]?.coa));
   // the same deal ticket, as a tracked private-selection page instead of an invoice
   const asSelection = async () => {
@@ -88,7 +99,7 @@ export default function SaleWizard({ lead, onClose }) {
       </div>
       <div style={{display:'flex', gap:0, padding:'14px 20px 0'}}>
         {STEPS.map((s, i) => <div key={s} style={{flex:1, textAlign:'center'}}>
-          <div style={{height:3, borderRadius:2, background: i + 1 <= step ? '#2257c5' : '#e3e3dd', margin:'0 3px'}}/>
+          <div style={{height:3, borderRadius:2, background: i + 1 <= step ? '#1a1a18' : '#e3e3dd', margin:'0 3px'}}/>
           <div style={{fontSize:11, fontWeight: i + 1 === step ? 700 : 500,
             color: i + 1 <= step ? '#1a1a18' : '#73736c', marginTop:6}}>{i + 1}. {s}</div>
         </div>)}
@@ -196,10 +207,18 @@ export default function SaleWizard({ lead, onClose }) {
             <span style={{fontSize:11.5, color:'#2e6b3f', fontWeight:650}}>paper ready ✓</span>
             <span style={{fontVariantNumeric:'tabular-nums', fontWeight:650, width:90, textAlign:'right'}}>{usd(num(w.amount))}</span>
           </div>)}
-          <div style={{display:'flex', gap:10, marginTop:12}}>
-            <div><span style={label}>Sales tax</span>
+          <div style={{display:'flex', gap:10, marginTop:12, flexWrap:'wrap'}}>
+            <div><span style={label}>Sales tax{taxHint?.rate > 0 ? ` · ${taxHint.rate}%` : ''}</span>
               <label className="money"><span>$</span><input inputMode="numeric" placeholder="0" value={tax}
-                onChange={(e) => setTax(e.target.value)} style={{width:100}}/></label></div>
+                onChange={(e) => setTax(e.target.value)} style={{width:100}}/></label>
+              {taxHint && <div style={{fontSize:11, color: taxHint.nexus ? '#73736c' : '#9a551a', marginTop:4, maxWidth:170}}>{taxHint.reason}</div>}</div>
+            <div><span style={label}>Deposit expected</span>
+              <label className="money"><span>$</span><input inputMode="numeric" placeholder="optional" value={deposit}
+                onChange={(e) => setDeposit(e.target.value)} style={{width:100}}/></label>
+              <div style={{display:'flex', gap:4, marginTop:4}}>
+                <button className="btn mini quiet" style={{height:24, fontSize:11}} onClick={() => setDeposit(String(Math.round(total / 2)))}>50%</button>
+                <button className="btn mini quiet" style={{height:24, fontSize:11}} onClick={() => setDeposit('')}>None</button>
+              </div></div>
             <div><span style={label}>Shipping</span>
               <label className="money"><span>$</span><input inputMode="numeric" placeholder="0" value={shipping}
                 onChange={(e) => setShipping(e.target.value)} style={{width:100}}/></label></div>
@@ -238,6 +257,7 @@ export default function SaleWizard({ lead, onClose }) {
                 if (num(tax)) lines.push({ kind: 'tax', amount: String(num(tax)) });
                 if (num(shipping)) lines.push({ kind: 'shipping', amount: String(num(shipping)) });
                 fd.set('lines', JSON.stringify(lines));
+                if (num(deposit) > 0) fd.set('deposit', String(num(deposit)));
                 try {
                   const r = await fetch('/api/act', { method: 'POST', body: fd });
                   if (!r.ok) throw new Error('rejected');

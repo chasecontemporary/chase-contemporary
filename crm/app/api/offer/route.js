@@ -31,7 +31,7 @@ export async function POST(req) {
     purpose: 'acquire',
     source: 'Private selection',
     message: `Tapped "I'm interested" on ${a?.title || 'a work'} in ${o.title || 'a private selection'}.`,
-    owner: o.created_by || 'Sara',
+    owner: o.created_by || null,     // unclaimed if the selection had no recorded sender
     status: 'new',
   }).select().single();
   await db.from('offer_responses').insert({

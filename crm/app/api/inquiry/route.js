@@ -2,6 +2,7 @@ import { db } from '../../../lib/db';
 import { spillInquiry } from '../../../lib/spill';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { persist } from '../../../lib/capture';
+import { announceInquiry } from '../../../lib/notify';
 
 const ORIGINS = [
   'https://www.chasecontemporary.com',
@@ -44,40 +45,12 @@ export async function POST(req) {
   try {
     const result = await persist(p, email);
     if (result.subscribed) return json({ ok: true, subscribed: true });
-    notifyFloor(p, email, result).catch(() => {});
+    announceInquiry({ inquiry: result.inquiry, collector: result.collector, payload: p }).catch(() => {});
     return json({ ok: true, inquiry_id: result.inquiry.id });
   } catch (e) {
     // The database is unreachable or rejected the write — park it, don't drop it.
     const url = await spillInquiry(p, String(e?.message || e).slice(0, 300));
-    notifyFloor(p, email, null).catch(() => {});
+    announceInquiry({ inquiry: null, collector: null, payload: p, offline: true }).catch(() => {});
     return json({ ok: true, queued: true, saved: !!url });
   }
-}
-
-// Sales-floor ping. Fires whether or not the database took the write — if capture is
-// degraded the floor is told so explicitly, so a lead is never silently invisible.
-async function notifyFloor(p, email, result) {
-  if (!process.env.SLACK_WEBHOOK_URL) return;
-  let repeat = '';
-  if (result) {
-    try {
-      const prior = await db.from('inquiries')
-        .select('id', { count: 'exact', head: true }).eq('collector_id', result.collector.id);
-      if ((prior.count || 1) > 1) repeat = ` · REPEAT COLLECTOR (${prior.count} inquiries)`;
-    } catch {}
-  }
-  const head = result
-    ? `*NEW INQUIRY* — ${result.inquiry.artwork_title || result.inquiry.purpose || 'general'}${repeat}`
-    : `*NEW INQUIRY — SAVED OFFLINE* — ${p.artwork_title || p.artwork || 'general'}\n` +
-      `_The database was unreachable. This lead is safely parked and will appear in the pipeline once it is replayed from Today._`;
-  const lines = [
-    head,
-    `${p.first_name || ''} ${p.last_name || ''} · ${email}${p.phone ? ' · ' + p.phone : ''}${p.city ? ' · ' + p.city : ''}`,
-    [p.budget_range, p.timeframe, p.source].filter(Boolean).join(' · '),
-    p.page_journey ? `path: ${p.page_journey}` : '',
-  ].filter(Boolean).join('\n');
-  await fetch(process.env.SLACK_WEBHOOK_URL, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: lines }),
-  });
 }

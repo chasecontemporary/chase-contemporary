@@ -9,6 +9,7 @@ const isPublic = (p) =>
   p.startsWith('/api/inquiry') || p.startsWith('/api/visit') ||
   p.startsWith('/api/health') ||
   p.startsWith('/api/shopify-webhook') || p.startsWith('/api/stripe-webhook') ||
+  p.startsWith('/api/docusign-webhook') || p.startsWith('/api/cron/') ||
   p.startsWith('/login') || p.startsWith('/api/login') ||
   p.startsWith('/sign-in') || p.startsWith('/sign-up') || p.startsWith('/fonts') ||
   p === '/';

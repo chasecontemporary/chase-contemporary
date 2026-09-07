@@ -5,6 +5,27 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- SALES READINESS PASS 9/7 (docs/SALES-READINESS-PASS-2026-09-07.md): one synthetic collector
+  driven through production as Wyatt, site inquiry -> claim/call/note -> hold -> details link
+  -> private selection -> paper -> invoice (work + tax + shipping) -> PDF -> 50% deposit -> paid
+  in full -> undo; 16.4 s end to end, torn down after, money chain 18/18. Ten defects found by
+  USING it; D1-D3 gate the floor:
+  * D1 PAID SALE NEVER CLOSES THE LEAD: create_manual_invoice (0039) stores no inquiry_id on
+    invoices or sale_items, so closeOutInvoice moves nothing; card sits in Invoiced forever,
+    "Invoiced · awaiting payment" counts banked money.
+  * D2 details link: after submit the collector is redirected to the burned token and sees
+    "This link is no longer active" instead of thank-you.
+  * D3 SLACK_WEBHOOK_URL is NOT set in production: no one is told a lead arrived. The 3 real
+    leads were 16h old and unanswered at the time of the pass.
+  * D4 sold works stay for sale on the site (no Shopify sync, theme has no sold state).
+  * D5 invoice not payable from the invoice (WIRE_INSTRUCTIONS unset, no due date, no deposit
+    line). D6 collector timeline misses inquiry/invoice events. D7 Today vs Finance money
+    definitions differ (payments vs purchases). D8 /api/offer falls back to owner 'Sara'.
+    D9 only Sara has a commission rate; Bernie cannot set rates without a Clerk sign-in.
+    D10 polish list (tel: links, Answer-now deep link, "$11,265.5", run rate, wizard bar colour).
+  Build list (22 items, three gates) is in the doc; Gate 1 = alerting, D1/D2/D6/D8 fixes,
+  payable invoice, rates + real sign-ins, one-tap call, first reply from the engine.
+
 - INQUIRY TRIAGE 9/7 (migration 0041) — Joe Volpicelli exposed the problem: he was in the
   SALES pipeline as a lead, but his message is him offering to SELL the gallery a Peter
   Tunney. Every message landed on the sales board regardless of intent, inflating the

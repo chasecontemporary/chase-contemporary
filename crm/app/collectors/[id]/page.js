@@ -1,6 +1,7 @@
 import Shell from '../../../components/Shell';
 import BrandSelect from '../../../components/BrandSelect';
 import OfferComposer from '../../../components/OfferComposer';
+import EmailComposer from '../../../components/EmailComposer';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
@@ -16,14 +17,27 @@ export default async function Card({ params, searchParams }) {
   const dlink = (await searchParams)?.dlink;
   const { data: c } = await db.from('collectors').select('*').eq('id', id).single();
   if (!c) return <Shell active="collectors"><div className="empty">Not found</div></Shell>;
-  const [{ data: inqs }, { data: acts }, { data: buys }, { data: pins }, { data: offers }] = await Promise.all([
+  const [{ data: inqs }, { data: actsC }, { data: buys }, { data: pins }, { data: offers }, { data: msgs }, { data: docs }, { data: invRows }] = await Promise.all([
     db.from('inquiries').select('*').eq('collector_id', id).order('created_at', { ascending: false }),
-    db.from('activities').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(30),
+    db.from('activities').select('*').eq('entity_id', id).order('created_at', { ascending: false }).limit(40),
     db.from('purchases').select('*, artworks(image_url, handle, medium, product_type)').eq('collector_id', id).order('purchased_at', { ascending: false }),
     db.from('collector_interests').select('*').eq('collector_id', id).order('created_at'),
     db.from('offers').select('*, offer_responses(artwork_id)').eq('collector_id', id)
       .order('created_at', { ascending: false }).limit(10),
+    db.from('messages').select('id, channel, template, subject, body, status, error, created_by, created_at').eq('collector_id', id)
+      .order('created_at', { ascending: false }).limit(30),
+    db.from('documents').select('*').eq('collector_id', id).order('created_at', { ascending: false }).limit(20),
+    db.from('invoices').select('id, invoice_number').eq('collector_id', id).limit(50),
   ]);
+  // the whole person: what happened on their inquiries and invoices belongs on their card too
+  const relIds = [...(inqs || []).map(r => r.id), ...(invRows || []).map(r => r.id)];
+  const { data: actsR } = relIds.length
+    ? await db.from('activities').select('*').in('entity_id', relIds).order('created_at', { ascending: false }).limit(60)
+    : { data: [] };
+  const invNum = {}; (invRows || []).forEach(r => invNum[r.id] = String(r.invoice_number).padStart(4, '0'));
+  const acts = [...(actsC || []), ...(actsR || []).map(a => ({ ...a,
+    body: a.entity_type === 'invoice' ? `No. ${invNum[a.entity_id] || ''}${a.body ? ' · ' + a.body : ''}` : a.body }))]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 60);
   const taste = computeTaste(buys || [], inqs || [], pins || []);
   const purchases = buys || [];
   const lifetime = purchases.reduce((s, p) => s + (p.amount_cents || 0), 0);
@@ -66,8 +80,11 @@ export default async function Card({ params, searchParams }) {
         <div className="h1" style={{fontSize:18}}>Private selections</div>
         <div className="sub" style={{marginTop:2}}>Curated works sent just to them — you see when they open it</div>
       </div>
-      <OfferComposer collectorId={c.id}
-        collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}/>
+      <div style={{display:'flex', gap:8}}>
+        <EmailComposer collectorId={c.id} inquiryId={openInqs[0]?.id} defaultTemplate={openInqs[0] ? 'follow_up' : 'first_reply'} label="Write to them"/>
+        <OfferComposer collectorId={c.id}
+          collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}/>
+      </div>
     </div>
     {(offers || []).length > 0 && <div style={{background:'#fff', border:'1px solid #e3e3dd',
       borderRadius:3, boxShadow:'0 1px 2px rgba(0,0,0,.03)', marginTop:12}}>
@@ -245,6 +262,29 @@ export default async function Card({ params, searchParams }) {
         <td><span className="pill">{(r.status||'').replace('_',' ')}</span></td>
       </tr>)}
     </tbody></table></div>
+
+    {((msgs || []).length > 0 || (docs || []).length > 0) && <>
+      <div className="h1" style={{fontSize:18, marginTop:34}}>Messages &amp; documents</div>
+      <div className="sub">Everything the engine sent them, and everything they signed</div>
+      <div className="tblcard"><table className="tbl"><tbody>
+        {(docs || []).map(d => <tr key={d.id}>
+          <td style={{color:'#73736c', width:180}}>{new Date(d.created_at).toLocaleString()}</td>
+          <td><span className="pill" style={{background:'#f2f2ee'}}>{d.kind.replace(/_/g, ' ')} · DocuSign</span></td>
+          <td>{d.status === 'completed' ? <span style={{color:'#2e6b3f', fontWeight:650}}>Signed{d.signed_at ? ' ' + new Date(d.signed_at).toLocaleDateString() : ''}</span>
+            : d.status === 'declined' ? <span style={{color:'#c02d23', fontWeight:650}}>Declined</span>
+            : d.status === 'delivered' ? 'Opened, awaiting signature' : d.status === 'sent' ? 'Sent, not yet opened' : d.status}
+            {d.signed_pdf_url && <a href={d.signed_pdf_url} target="_blank" style={{marginLeft:10, color:'#2257c5'}}>Executed copy ↗</a>}</td>
+          <td style={{color:'#73736c'}}>{d.created_by}</td>
+        </tr>)}
+        {(msgs || []).map(m => <tr key={m.id}>
+          <td style={{color:'#73736c', width:180}}>{new Date(m.created_at).toLocaleString()}</td>
+          <td><span className="pill" style={{background: m.status === 'failed' ? '#fbeceb' : '#f2f2ee', color: m.status === 'failed' ? '#c02d23' : undefined}}>
+            {m.channel}{m.template && m.template !== 'custom' ? ' · ' + m.template.replace(/_/g, ' ') : ''}{m.status === 'failed' ? ' · failed' : ''}</span></td>
+          <td>{m.channel === 'sms' ? (m.body || '').slice(0, 140) : m.subject}{m.error ? <span style={{color:'#c02d23'}}> · {m.error}</span> : null}</td>
+          <td style={{color:'#73736c'}}>{m.created_by}</td>
+        </tr>)}
+      </tbody></table></div>
+    </>}
 
     <form method="POST" action="/api/act" className="inline-form" style={{marginTop:18}}>
       <input type="hidden" name="action" value="note"/>

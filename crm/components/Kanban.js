@@ -4,6 +4,7 @@ import SaleWizard from './SaleWizard';
 import OfferComposer from './OfferComposer';
 import DocPreview from './DocPreview';
 import ReserveControl from './ReserveControl';
+import EmailComposer from './EmailComposer';
 import { useEffect, useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
@@ -40,12 +41,18 @@ const fmtPhone = (p) => {
   return n.length === 10 ? `(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}` : p;
 };
 
-export default function Kanban({ initial, team = [] }) {
+export default function Kanban({ initial, team = [], openId = null }) {
   const [dlink, setDlink] = useState(null);
   const [leads, setLeads] = useState(initial);
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
-  const [openLead, setOpenLead] = useState(null);
+  // a deep link (?lead=id from Today or an alert) opens the drawer straight away
+  const [openLead, setOpenLead] = useState(() => openId ? initial.find(l => l.id === openId) || null : null);
+  const [naWhen, setNaWhen] = useState('');
+  const [naWhat, setNaWhat] = useState('');
+  const [naState, setNaState] = useState('idle');
+  const [lostOpen, setLostOpen] = useState(false);
+  const [lostReason, setLostReason] = useState('');
   const [note, setNote] = useState('');
   const [wizard, setWizard] = useState(false);
   const [noteState, setNoteState] = useState('idle');   // idle | saving | saved | failed
@@ -171,8 +178,11 @@ export default function Kanban({ initial, team = [] }) {
             {openLead.vip && <span className="badge" style={{background:'#1a1a18', color:'#fff'}}>VIP</span>}
             {openLead.inquiryCount > 1 && <span className="badge">{openLead.inquiryCount} open inquiries</span>}
             {c.trade ? <span className="badge">Trade</span> : null}</h2>
-          <div className="sub">{[c.email && !c.email.endsWith?.('import.chasecontemporary.com') ? c.email : null,
-            fmtPhone(c.phone)].filter(Boolean).join(' · ') || 'No contact details yet'}</div>
+          <div className="sub" style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+            {c.phone && <a href={'tel:' + String(c.phone).replace(/[^\d+]/g, '')} style={{color:'#2257c5', fontWeight:650}}>{fmtPhone(c.phone)}</a>}
+            {c.email && !c.email.endsWith?.('import.chasecontemporary.com') && <a href={'mailto:' + c.email} style={{color:'#2257c5'}}>{c.email}</a>}
+            {!c.phone && !(c.email && !c.email.endsWith?.('import.chasecontemporary.com')) && <span>No contact details yet</span>}
+          </div>
           <div style={{marginTop:12, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
             <BrandSelect options={STAGES.map(s => [s, LABEL[s]])} value={openLead.status}
               control pillColor={(v) => COLOR[v] || '#82827b'} onValue={(v) => move(openLead.id, v)}/>
@@ -327,6 +337,33 @@ export default function Kanban({ initial, team = [] }) {
         {openLead.page_journey && <div className="msg" style={{fontSize:12}}>
           <b style={{fontSize:11.5}}>Path through the site</b><br/>{openLead.page_journey}</div>}
 
+        <div style={secTitle}>Next action</div>
+        <div style={{border:'1px solid #e3e3dd', borderRadius:3, background:'#fff', padding:'12px 16px', fontSize:13.5}}>
+          {openLead.next_action_at && naState !== 'editing'
+            ? <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
+                <span><b>{openLead.next_action || 'Follow up'}</b>
+                  <span style={{color: openLead.next_action_at < new Date().toISOString().slice(0, 10) ? '#c02d23' : '#73736c'}}> · {new Date(openLead.next_action_at + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></span>
+                <button className="btn mini quiet" style={{marginLeft:'auto'}} onClick={() => { setNaWhen(openLead.next_action_at); setNaWhat(openLead.next_action || ''); setNaState('editing'); }}>Change</button>
+              </div>
+            : <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                {[[0,'Today'],[2,'2 days'],[7,'A week'],[21,'3 weeks']].map(([d, l]) => <button key={d} className="btn mini quiet"
+                  onClick={() => setNaWhen(new Date(Date.now() + d * 86400000).toISOString().slice(0, 10))}
+                  style={naWhen === new Date(Date.now() + d * 86400000).toISOString().slice(0, 10) ? {background:'#1a1a18', color:'#fff'} : {}}>{l}</button>)}
+                <input type="date" value={naWhen} onChange={e => setNaWhen(e.target.value)}
+                  style={{height:32, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:12.5, padding:'0 8px'}}/>
+                <input value={naWhat} onChange={e => setNaWhat(e.target.value)} placeholder="What: call back, send sizes, confirm with partner"
+                  style={{flex:'1 1 100%', height:32, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:12.5, padding:'0 10px'}}/>
+                <button className="btn mini" disabled={!naWhen || naState === 'saving'} onClick={async () => {
+                  setNaState('saving');
+                  const fd = new FormData(); fd.set('action','next_action'); fd.set('id', openLead.id); fd.set('when', naWhen); fd.set('what', naWhat); fd.set('back','json');
+                  const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json()).catch(() => ({}));
+                  if (r.ok) { setOpenLead(o => ({ ...o, next_action_at: naWhen, next_action: naWhat })); setLeads(ls => ls.map(l => l.id === openLead.id ? { ...l, next_action_at: naWhen, next_action: naWhat } : l)); setNaState('idle'); }
+                  else setNaState('failed');
+                }}>{naState === 'saving' ? 'Saving…' : 'Set'}</button>
+                {naState === 'failed' && <span style={{fontSize:12, color:'#c02d23', fontWeight:600}}>Not saved</span>}
+              </div>}
+        </div>
+
         <div style={secTitle}>Notes</div>
         <textarea placeholder="What happened on the call, what they responded to, what to do next — saves to the collector's record"
           value={note} onChange={e => setNote(e.target.value)} rows={3}
@@ -352,11 +389,26 @@ export default function Kanban({ initial, team = [] }) {
               first_called_at: l.first_called_at || new Date().toISOString(),
               status: l.status === 'new' ? 'contacted' : l.status } : l));
           }}>{openLead.first_called_at ? '✓ Called' : 'Log call'}</button>
+          <EmailComposer key={'em' + openLead.id} inquiryId={openLead.id} collectorId={openLead.collector_id}
+            defaultTemplate={openLead.contacted_at ? 'follow_up' : 'first_reply'} label={openLead.contacted_at ? 'Write' : 'Reply'}/>
           <OfferComposer key={openLead.id} quiet collectorId={openLead.collector_id}
             collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
             defaultWork={a && a.available ? a : null}/>
-          {!['invoice','paid'].includes(openLead.status) &&
-            <button className="btn mini" style={{marginLeft:'auto'}} onClick={() => setWizard(true)}>Start sale</button>}
+          {!['invoice','paid'].includes(openLead.status) && (lostOpen
+            ? <span style={{display:'flex', gap:6, alignItems:'center', marginLeft:'auto'}}>
+                <input value={lostReason} onChange={e => setLostReason(e.target.value)} placeholder="Why: price, went elsewhere, no reply…" autoFocus
+                  style={{height:32, width:200, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:12.5, padding:'0 10px'}}/>
+                <button className="btn mini quiet" style={{color:'#c02d23'}} onClick={async () => {
+                  const fd = new FormData(); fd.set('action','lost'); fd.set('id', openLead.id); fd.set('reason', lostReason); fd.set('back','json');
+                  const r = await fetch('/api/act', { method:'POST', body: fd }).then(x => x.json()).catch(() => ({}));
+                  if (r.ok) { setLeads(ls => ls.filter(l => l.id !== openLead.id)); setOpenLead(null); setLostOpen(false); }
+                }}>Confirm lost</button>
+                <button className="btn mini quiet" onClick={() => setLostOpen(false)}>Cancel</button>
+              </span>
+            : <>
+                <button className="btn mini quiet" style={{marginLeft:'auto', color:'#73736c'}} onClick={() => setLostOpen(true)}>Lost</button>
+                <button className="btn mini" onClick={() => setWizard(true)}>Start sale</button>
+              </>)}
         </div>
       </>}
     </div>
