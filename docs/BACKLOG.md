@@ -5,6 +5,19 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- 9/6 RECOVERED. Wyatt restored the Supabase project; data came back 100% intact (every
+  table matched the 8/28 export exactly). The service-role key survived the restore, so no
+  env changes were needed. Sequence run: verified schema+data -> replayed all 6 parked
+  inquiries (0 left) -> confirmed the 3 real collectors landed as Inbound -> purged the demo
+  cast + all test rows (12 synthetic collectors; $225k of fake sales and 2 fake buyers
+  removed; real book intact at 27,039 collectors / 1,000 buyers / $50.7M) -> re-tested the
+  live capture loop (writes straight to the DB now, no longer parking) -> fresh backup
+  (35,055 rows) taken and copied to Drive as the new baseline.
+  NOTE: scripts/verify-restore.py had a bug that cried wolf about 8 "missing" objects —
+  it queried select=id on views and visitor_links, which have no id column. Fixed to select=*.
+  STILL TO CONFIRM: that the project is actually on Pro now. If it is still on the free
+  tier it will pause again after ~7 days idle. Also still needed: a fresh sbp_ management
+  token (the old one is revoked, so migrations currently have to go through PostgREST).
 - 9/6: the outage screen now LISTS the parked leads with tap-to-call phone + email, so a
   database outage no longer blocks selling — captured is not the same as usable. Real leads
   are also exported to Drive ("Chase — inquiries captured during the database outage").

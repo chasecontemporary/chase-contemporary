@@ -36,7 +36,9 @@ def env():
 
 def count(base, key, table):
     """Exact count via the Content-Range header — not capped at 1000 like a row fetch."""
-    req = urllib.request.Request(f'{base}/rest/v1/{table}?select=id&limit=1',
+    # NB: views and some tables have no `id` column — select=* or PostgREST 400s and
+    # the check cries wolf about a perfectly healthy object.
+    req = urllib.request.Request(f'{base}/rest/v1/{table}?select=*&limit=1',
                                  headers={'apikey': key, 'Authorization': f'Bearer {key}',
                                           'Prefer': 'count=exact'})
     try:
