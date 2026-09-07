@@ -1,6 +1,10 @@
 import { db } from '../../../lib/db';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 
 export async function POST(req) {
+  const { ok } = await rateLimit(req, 'details', 40, 3600);
+  if (!ok) return tooMany(600);
+
   const form = await req.formData();
   const token = form.get('token');
   const { data: c } = await db.from('collectors')

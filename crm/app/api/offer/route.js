@@ -1,7 +1,11 @@
 import { db } from '../../../lib/db';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 
 // One-tap interest from a private-selection page. No auth — the token IS the auth.
 export async function POST(req) {
+  const { ok } = await rateLimit(req, 'offer', 40, 3600);
+  if (!ok) return tooMany(600);
+
   let p;
   try { p = await req.json(); } catch { return new Response(null, { status: 400 }); }
   const { data: o } = await db.from('offers')

@@ -1,5 +1,6 @@
 import { db } from '../../../lib/db';
 import { spillInquiry } from '../../../lib/spill';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { persist } from '../../../lib/capture';
 
 const ORIGINS = [
@@ -28,6 +29,11 @@ export async function POST(req) {
   const CORS = corsFor(req);
   const json = (body, status = 200) => new Response(JSON.stringify(body),
     { status, headers: { 'Content-Type': 'application/json', ...CORS } });
+
+  // A collector submits an inquiry once, maybe twice. Twenty an hour from one address is
+  // already far beyond any real behaviour.
+  const { ok } = await rateLimit(req, 'inquiry', 20, 3600);
+  if (!ok) return tooMany(600, CORS);
 
   let p;
   try { p = await req.json(); } catch { return json({ error: 'bad json' }, 400); }

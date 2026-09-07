@@ -21,7 +21,9 @@ export default async function Login({ searchParams }) {
 
       {bad && <div style={{background:'#fbeceb', border:'1px solid #e8c4c0', color:'#8f1f18',
         padding:'10px 12px', fontSize:13, fontWeight:600, marginBottom:16}}>
-        That code wasn&apos;t right. Try again.</div>}
+        {bad === 'slow'
+          ? 'Too many attempts. Wait a few minutes and try again.'
+          : 'That code wasn\u2019t right. Try again.'}</div>}
 
       <label style={label} htmlFor="code">Access code</label>
       <input id="code" name="code" type="password" autoFocus autoComplete="off"

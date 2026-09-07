@@ -1,9 +1,16 @@
 import { db } from '../../../lib/db';
+import { rateLimit } from '../../../lib/ratelimit';
 
 // Page-view beacon from the site. Sent via navigator.sendBeacon as a text/plain
 // simple request (no preflight, response never read — no CORS headers needed).
 // Anonymous until the visitor identifies (inquiry submit stitches the trail).
 export async function POST(req) {
+  // Fires on every page view, so this ceiling is deliberately high — it exists to stop a
+  // bot filling site_events, not to shape real browsing. Dropped silently: a refused
+  // beacon must never surface as an error on the gallery's website.
+  const { ok } = await rateLimit(req, 'visit', 400, 3600);
+  if (!ok) return new Response(null, { status: 204 });
+
   let p;
   try { p = JSON.parse(await req.text()); } catch { return new Response(null, { status: 400 }); }
   const v = String(p.v || '');
