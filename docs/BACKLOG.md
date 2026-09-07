@@ -5,6 +5,14 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- 9/6 ENGINE CLEANED TO REAL BUSINESS ONLY. Pipeline = 3 genuine inbound leads. Invoices,
+  payments, commissions, sales, holds, offers all at 0. Activity log down to 7 real entries.
+  Removed: a stale on-approval hold and its fabricated events, which sat on a REAL
+  collector's timeline (Michael Joseph Netsky, the $1.46M top buyer, appeared to have taken
+  a work on approval — he never did); 15 activities orphaned by the demo purge. Verified no
+  real collector carries test billing data, no live details tokens remain, and no runaway
+  internal estimates. Book intact: 27,039 collectors / 1,000 buyers / $50.7M / 1,440 works
+  available. site_events shows real anonymous traffic arriving now.
 - 9/6 RECOVERED. Wyatt restored the Supabase project; data came back 100% intact (every
   table matched the 8/28 export exactly). The service-role key survived the restore, so no
   env changes were needed. Sequence run: verified schema+data -> replayed all 6 parked
