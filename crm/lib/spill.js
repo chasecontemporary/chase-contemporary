@@ -14,11 +14,14 @@ const PREFIX = 'spill/inquiry/';
 
 export async function spillInquiry(payload, reason) {
   try {
+    // These files hold a real person's name, email, phone and message, and blob URLs are
+    // readable by anyone who has them. Name them with cryptographic randomness and let the
+    // store append its own secure suffix too — never Math.random() for anything guarding PII.
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const rand = Math.random().toString(36).slice(2, 8);
+    const rand = crypto.randomUUID().replace(/-/g, '');
     const blob = await put(`${PREFIX}${stamp}-${rand}.json`,
       JSON.stringify({ captured_at: new Date().toISOString(), reason, payload }, null, 2),
-      { access: 'public', contentType: 'application/json', addRandomSuffix: false });
+      { access: 'public', contentType: 'application/json', addRandomSuffix: true });
     return blob.url;
   } catch {
     return null;                        // last resort — the caller still returns 200

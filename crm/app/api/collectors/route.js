@@ -1,7 +1,12 @@
 import { db } from '../../../lib/db';
+import { isStaff } from '../../../lib/identity';
 
 // Collector search for pickers: top matches by name/email/company.
 export async function GET(req) {
+  // Signed in is not the same as staff — this endpoint returns real collector
+  // and inventory data, so it must never answer a stranger's account.
+  if (!(await isStaff())) return new Response('Not authorised', { status: 403 });
+
   const q = new URL(req.url).searchParams.get('q') || '';
   let sel = db.from('collector_index')
     .select('id, first_name, last_name, email, city, spend_cents')

@@ -1,6 +1,7 @@
 import { db } from '../../../lib/db';
 import { persist } from '../../../lib/capture';
 import { listSpill, readSpill, dropSpill, dbReachable } from '../../../lib/spill';
+import { isStaff } from '../../../lib/identity';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,10 @@ export const dynamic = 'force-dynamic';
 // login (middleware). Each one is only deleted from the parking store once it has landed
 // in the database, so a half-finished replay loses nothing and can simply be run again.
 export async function POST(req) {
+  // Signed in is not the same as staff — this endpoint returns real collector
+  // and inventory data, so it must never answer a stranger's account.
+  if (!(await isStaff())) return new Response('Not authorised', { status: 403 });
+
   const back = '/today';
   if (!(await dbReachable(db)))
     return redirect(req, back, 'The database is still unreachable — try again once it is back.');

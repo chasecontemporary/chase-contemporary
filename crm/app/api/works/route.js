@@ -1,7 +1,12 @@
 import { db } from '../../../lib/db';
+import { isStaff } from '../../../lib/identity';
 
 // Work search for pickers: available inventory by title or artist.
 export async function GET(req) {
+  // Signed in is not the same as staff — this endpoint returns real collector
+  // and inventory data, so it must never answer a stranger's account.
+  if (!(await isStaff())) return new Response('Not authorised', { status: 403 });
+
   const q = new URL(req.url).searchParams.get('q') || '';
   let sel = db.from('artworks')
     .select('id, title, artist, price_cents, internal_value_cents, image_url')
