@@ -44,6 +44,18 @@ export async function readSpill(url) {
   }
 }
 
+// Read every parked inquiry, newest last. Used to show real, callable leads on screen
+// during an outage — captured is not the same as usable.
+export async function readAllSpill() {
+  const blobs = await listSpill();
+  const out = [];
+  for (const b of blobs.sort((a, z) => a.pathname.localeCompare(z.pathname))) {
+    const rec = await readSpill(b.url);
+    if (rec?.payload) out.push({ at: rec.captured_at, p: rec.payload });
+  }
+  return out;
+}
+
 export async function dropSpill(url) {
   try { await del(url); return true; } catch { return false; }
 }

@@ -5,6 +5,18 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- 9/6: the outage screen now LISTS the parked leads with tap-to-call phone + email, so a
+  database outage no longer blocks selling — captured is not the same as usable. Real leads
+  are also exported to Drive ("Chase — inquiries captured during the database outage").
+- 9/6 BERNIE REQUEST — ALREADY SATISFIED, no action taken: "Andres Valencia Surreal Man has
+  to come off the website." Verified across all 199 published products: `surreal-man-2024`
+  returns 404, is in no collection and no search result. The ONLY live Valencia is
+  `untitled-2` "Untitled, 2024", which the image confirms is THE COUPLE — the piece Bernie
+  explicitly said can stay. DO NOT unpublish it (it is also the work Roni Sorondo inquired
+  about on 9/6). `alberto-the-clown-2024` (the print) is currently OFF (404).
+  OPEN QUESTION for Bernie: he said "only the Jeri Lynn piece can seat there and one print
+  that is there already" — we hold no work titled Jeri/Lynn by Valencia, and the Valencia
+  print is currently off. Worth one line back to him to confirm which piece and which print.
 - !! 9/4 OUTAGE: the Supabase project went unreachable (hostname NXDOMAINs from every
   resolver) — the free-tier auto-pause we flagged in the audit, hitting the day after
   go-live. The sbp_ management token is ALSO dead (401), and the Supabase MCP connector is

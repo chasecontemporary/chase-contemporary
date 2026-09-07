@@ -3,7 +3,7 @@ import Sla from '../../components/Sla';
 import Omnisearch from '../../components/Omnisearch';
 import { db } from '../../lib/db';
 import { cookies } from 'next/headers';
-import { dbReachable, listSpill } from '../../lib/spill';
+import { dbReachable, listSpill, readAllSpill } from '../../lib/spill';
 export const dynamic = 'force-dynamic';
 
 // The landing page. Three jobs, in order: what changed since you were last here,
@@ -49,6 +49,38 @@ export default async function Today() {
           ? `${parked.length} inquiry${parked.length === 1 ? '' : ' inquiries'} arrived while it has been down and ${parked.length === 1 ? 'is' : 'are'} waiting to be added.`
           : 'No inquiries have arrived while it has been down.'} Tell Devyn — the database needs to be woken up.</p>
     </div>
+    {parked.length > 0 && await (async () => {
+      const leads = (await readAllSpill())
+        .filter(l => !String(l.p.email || '').endsWith('import.chasecontemporary.com'));
+      if (!leads.length) return null;
+      return <>
+        <div style={{fontSize:11, fontWeight:650, letterSpacing:'.07em', textTransform:'uppercase',
+          color:'#73736c', margin:'30px 0 10px'}}>Call these people now</div>
+        <div style={{background:'#fff', border:'1px solid #e3e3dd', maxWidth:620}}>
+          {leads.map((l, i) => <div key={i} style={{padding:'13px 16px',
+            borderTop: i ? '1px solid #f0f0eb' : 'none', fontSize:13.5}}>
+            <div style={{fontWeight:650}}>
+              {[l.p.first_name, l.p.last_name].filter(Boolean).join(' ') || l.p.email}
+              <span style={{fontWeight:400, color:'#73736c'}}>
+                {' · '}{new Date(l.at).toLocaleString()}</span>
+            </div>
+            <div style={{marginTop:3}}>
+              {l.p.phone && <a href={'tel:' + l.p.phone} style={{color:'#2257c5', fontWeight:600}}>
+                {String(l.p.phone).replace(/\D/g,'').replace(/^1?(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3')}</a>}
+              {l.p.phone && l.p.email ? ' · ' : ''}
+              {l.p.email && <a href={'mailto:' + l.p.email} style={{color:'#2257c5'}}>{l.p.email}</a>}
+            </div>
+            <div style={{color:'#73736c', marginTop:3}}>
+              {[l.p.artwork_title && `${l.p.artwork_title}${l.p.artist ? ' · ' + l.p.artist : ''}`,
+                l.p.budget_range, l.p.city, l.p.source].filter(Boolean).join(' · ')}</div>
+            {l.p.message && <div style={{marginTop:5, fontStyle:'italic'}}>&ldquo;{l.p.message}&rdquo;</div>}
+          </div>)}
+        </div>
+        <p style={{fontSize:12.5, color:'#73736c', marginTop:10, maxWidth:620}}>
+          These are held safely and will load into the pipeline by themselves once the database
+          is back. Nothing here needs to be copied down.</p>
+      </>;
+    })()}
   </Shell>;
 
   const [
