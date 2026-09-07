@@ -6,7 +6,7 @@ export const metadata = { title: 'Sign in · Chase Engine' };
 
 export default function Page() {
   return <AuthFrame eyebrow="Sign in"
-    note="Use your gallery address. You'll get a link by email — there's no password to remember.">
+    note="Use your gallery address — the one on the team roster. Anything else can sign up but won't open the engine.">
     <SignIn appearance={authAppearance}/>
   </AuthFrame>;
 }

@@ -77,7 +77,12 @@ export const authAppearance = {
     },
     formResendCodeLink: { color: '#2257c5', fontSize: '12.5px', fontWeight: 600 },
 
-    // social/alternate methods, if any are ever turned on
+    // Google is enabled on the production instance but has no OAuth credentials of its
+    // own — Clerk only lends shared ones in development — so the button leads to Google's
+    // "Missing required parameter: client_id" error. Hidden until it is either configured
+    // with real credentials or turned off in the dashboard.
+    socialButtons: { display: 'none' },
+    dividerRow: { display: 'none' },
     socialButtonsBlockButton: {
       borderRadius: '2px', border: `1px solid ${HAIR}`, height: '38px',
       fontSize: '13px', color: INK, background: '#fff',
