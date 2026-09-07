@@ -5,6 +5,19 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- INQUIRY TRIAGE 9/7 (migration 0041) — Joe Volpicelli exposed the problem: he was in the
+  SALES pipeline as a lead, but his message is him offering to SELL the gallery a Peter
+  Tunney. Every message landed on the sales board regardless of intent, inflating the
+  pipeline and wasting a rep's attention. Root cause: the site form had no "selling to us"
+  option, so sellers picked "General inquiry".
+  * inquiries.kind = buying | selling | press | other, classified at capture from purpose
+    (lib/capture.js `classify()`), backfilled from existing data.
+  * Sales pipeline now queries kind='buying' ONLY. Its KPIs are finally honest.
+  * Today gained "Not a sale · still needs a reply" — the rest shown with tap-to-call phone,
+    email and the message inline, tagged OFFERING US WORK / PRESS / GENERAL, so nothing is
+    dropped, it just isn't a lead.
+  * Live site contact form now offers "SELLING A WORK TO THE GALLERY" so it is classified
+    at the source instead of guessed.
 - MADE IT ACTUALLY USABLE FOR WYATT 9/7 — walked the whole app signed in as him and fixed
   what a real user hits. Found by testing, not by reading code:
   * NOBODY HAD EVER SIGNED IN VIA CLERK (0 users, 0 invitations) — the entire auth path was

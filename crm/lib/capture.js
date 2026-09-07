@@ -4,6 +4,16 @@ import { db } from './db';
 // Unauthenticated callers reach this. Cap every stored string and refuse non-strings, so
 // a script cannot bury the real book under oversized junk or force a spill write via a
 // type error.
+// Not every message is a sales lead. Someone offering to sell us a work, or press asking
+// a question, should never sit on the sales board inflating the pipeline.
+export const classify = (purpose) => {
+  const t = String(purpose || '').toLowerCase();
+  if (/sell|consign|offer(ing)? (you|the gallery)|have a (work|piece|painting)/.test(t)) return 'selling';
+  if (/press|media|journalist|interview/.test(t)) return 'press';
+  if (/general/.test(t)) return 'other';
+  return 'buying';
+};
+
 const cap = (v, n) => (typeof v === 'string' ? v.slice(0, n) : v == null ? null : null);
 
 export async function persist(p, email) {
@@ -44,6 +54,7 @@ export async function persist(p, email) {
       artist: cap(p.artist || p.artist_interest, 200),
       price_band: cap(p.price_band, 60),
       purpose: cap(p.purpose, 40) || 'acquire',
+      kind: classify(p.purpose),
       outlet: cap(p.outlet, 80),
       budget_range: cap(p.budget_range, 60),
       timeframe: cap(p.timeframe, 80),

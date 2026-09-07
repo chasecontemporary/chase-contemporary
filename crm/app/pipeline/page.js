@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export default async function Pipeline() {
   // Three waves instead of nine sequential round trips. Everything in wave two depends
   // only on the inquiry rows, so it all goes at once; only the reserves need artwork ids.
-  const INQ_FIELDS = 'id, status, collector_id, artwork_handle, artwork_title, purpose, ' +
+  const INQ_FIELDS = 'id, status, kind, collector_id, artwork_handle, artwork_title, purpose, ' +
     'budget_range, timeframe, source, owner, message, page_journey, created_at, ' +
     'stage_changed_at, contacted_at, first_called_at';
   const ART_FIELDS = 'id, handle, title, artist, price_cents, internal_value_cents, ' +
@@ -15,6 +15,9 @@ export default async function Pipeline() {
   const [{ data: rows }, { data: team }] = await Promise.all([
     db.from('inquiries')
       .select(`${INQ_FIELDS}, collectors(id, first_name, last_name, email, phone, city, timezone, budget_range, trade, source, address_line1, state)`)
+      // Buying intent only. People offering to sell us work, press and general messages
+      // are answered from Today — they are not sales leads and must not inflate the board.
+      .eq('kind', 'buying')
       .neq('status', 'closed').order('created_at', { ascending: false }).limit(300),
     db.from('team_members').select('name').eq('active', true).order('name'),
   ]);

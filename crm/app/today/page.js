@@ -18,6 +18,11 @@ const ago = (t) => {
   const d = Math.floor(m / 1440);
   return d === 1 ? 'yesterday' : d + ' days ago';
 };
+const fmtPhone = (p) => {
+  const d = String(p || '').replace(/\D/g, '');
+  const n = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  return n.length === 10 ? `(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}` : p;
+};
 const nameOf = (c) => [c?.first_name, c?.last_name].filter(Boolean).join(' ') || 'Unknown';
 const pretty = (seg) => seg.replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
 
@@ -90,7 +95,7 @@ export default async function Today() {
   ] = await Promise.all([
     db.from('team_members').select('name, role'),
     db.from('inquiries')
-      .select('id, status, owner, created_at, stage_changed_at, first_called_at, contacted_at, artwork_title, purpose, collector_id, collectors(first_name, last_name)')
+      .select('id, status, kind, owner, created_at, stage_changed_at, first_called_at, contacted_at, artwork_title, purpose, message, collector_id, collectors(first_name, last_name, email, phone)')
       .in('status', ['new', 'contacted', 'in_conversation', 'hold']).order('created_at', { ascending: false }).limit(300),
     db.from('payments').select('amount_cents, settled_at, method, invoices(invoice_number, collectors(id, first_name, last_name))')
       .eq('status', 'settled').gte('settled_at', H48).order('settled_at', { ascending: false }).limit(20),
@@ -148,8 +153,14 @@ export default async function Today() {
   pulse.sort((a, b) => new Date(b.at) - new Date(a.at));
 
   // ---- needs attention ----
-  const answerNow = (inqs || []).filter(r => r.status === 'new');
-  const quiet = (inqs || []).filter(r => ['contacted', 'in_conversation'].includes(r.status)
+  const buying = (inqs || []).filter(r => (r.kind || 'buying') === 'buying');
+  const answerNow = buying.filter(r => r.status === 'new');
+  // Everything that isn't someone trying to buy: offers to sell us work, press, general
+  // questions. They still deserve a reply, they just aren't sales leads.
+  const otherMessages = (inqs || [])
+    .filter(r => (r.kind || 'buying') !== 'buying' && r.status === 'new')
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const quiet = buying.filter(r => ['contacted', 'in_conversation'].includes(r.status)
     && (r.stage_changed_at || r.created_at) < D5
     && (!personal || r.owner === viewer));
   const paidIn = {};
@@ -172,12 +183,12 @@ export default async function Today() {
   const holdsOut = (reserveRows || [])
     .filter(r => r.expires_at && new Date(r.expires_at).getTime() < soon)
     .sort((a, b) => new Date(a.expires_at) - new Date(b.expires_at));
-  const attentionCount = answerNow.length + quiet.length + chase.length + holdsOut.length;
+  const attentionCount = answerNow.length + quiet.length + chase.length + holdsOut.length + otherMessages.length;
 
   // ---- the numbers ----
   const collectedMonth = (paysMonth || []).reduce((s, p) => s + Number(p.amount_cents), 0);
   const owed = (openInv || []).reduce((s, i) => s + balance(i), 0);
-  const inMotion = (inqs || []).filter(r => ['contacted', 'in_conversation', 'hold'].includes(r.status)).length;
+  const inMotion = buying.filter(r => ['contacted', 'in_conversation', 'hold'].includes(r.status)).length;
   const respMins = (respRows || [])
     .map(r => (new Date(r.first_called_at) - new Date(r.created_at)) / 60000)
     .filter(m => m >= 0).sort((a, b) => a - b);
@@ -273,6 +284,33 @@ export default async function Today() {
             </a>; })}
         </div>}
       </div>}
+
+    {otherMessages.length > 0 && <>
+      <div style={sec}>Not a sale · still needs a reply</div>
+      <div style={card}>
+        <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
+          {otherMessages.length} message{otherMessages.length === 1 ? '' : 's'} that {otherMessages.length === 1 ? "isn't" : "aren't"} someone trying to buy —
+          kept off the sales board on purpose</div>
+        {otherMessages.slice(0, 6).map((r, i) => {
+          const c = r.collectors || {};
+          const label = r.kind === 'selling' ? 'Offering us work'
+            : r.kind === 'press' ? 'Press' : 'General';
+          const colour = r.kind === 'selling' ? '#9a551a' : r.kind === 'press' ? '#56599f' : '#73736c';
+          return <div key={r.id} style={{ ...rowSt(i), alignItems: 'flex-start' }}>
+            <span style={{fontSize: 10, fontWeight: 700, letterSpacing: '.05em',
+              textTransform: 'uppercase', color: colour, width: 104, flex: '0 0 auto',
+              paddingTop: 2}}>{label}</span>
+            <span style={{flex: 1, minWidth: 0}}>
+              <b>{nameOf(c)}</b>
+              {c.email && <a href={'mailto:' + c.email} style={{color: '#2257c5', marginLeft: 8}}>{c.email}</a>}
+              {c.phone && <a href={'tel:' + c.phone} style={{color: '#2257c5', marginLeft: 8}}>{fmtPhone(c.phone)}</a>}
+              {r.message && <div style={{color: '#3a3a35', marginTop: 3, lineHeight: 1.5}}>
+                {r.message.length > 200 ? r.message.slice(0, 200) + '…' : r.message}</div>}
+            </span>
+            <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>{ago(r.created_at)}</span>
+          </div>; })}
+      </div>
+    </>}
 
     <div style={sec}>Where the money stands</div>
     <div className="stats" style={{marginTop: 0}}>
