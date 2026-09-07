@@ -5,6 +5,20 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- ENGINE FINISHING PASS 9/6 (migration 0039): invoice creation is now ONE transactional
+  Postgres function (`create_manual_invoice`) — a mid-way failure used to orphan a sale
+  marked 'invoiced' with no invoice, invisible on every screen; "Mark paid in full" is now
+  REVERSIBLE (`unsettle_invoice` + an Undo payment button) — it was the only permanent
+  action in the system; Finance balances come from the `invoice_balances` view instead of
+  summing a payments fetch capped at 1000 rows (the money on screen would have started
+  drifting once the gallery passed a thousand payments).
+- Pipeline went from 9 SEQUENTIAL round trips to 3 waves and drops the fields the board
+  never renders (referrer, utm, device, seconds_on_page, price_band, outlet, visitor_id).
+  Sub-second warm.
+- scripts/test-money-chain.mjs: 18-assertion regression test over the real endpoints
+  (transactional create, no-collector refusal, negative-line refusal, balances, overpayment
+  refusal, partial payment, reserve conflict x2, settlement side-effects x4, undo x5,
+  teardown). 18/18 passing. Run it after touching invoicing, payments, settlement or holds.
 - RESERVES SHIPPED 9/6 (migration 0038). A hold sits on the WORK, not the lead, so two reps
   cannot promise the same canvas. Built on the existing holds table with kind='reserve'
   (+ placed_by, note, inquiry_id, released_at) and an `artwork_reserves` view that reports
@@ -169,6 +183,8 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - DECLINED 8/27: bulk-image request to Artcloud support (sold works stay imageless)
 
 ## Needs key (built, waiting)
+- ORDERING (Devyn 9/6): **SHOPIFY IS LAST.** Pay links, order webhooks and product push stay
+  dormant until everything else is done. Do not treat the missing token as a blocker.
 - Shopify pay links + product push: custom app token (scopes: write_products, read_products, write_draft_orders, read_draft_orders, read_orders) + API secret key — Devyn
 - Wire instructions paragraph for invoice PDFs — Kristine
 - Campaign sends: KLAVIYO account (pivot 8/27) + private API key + Shopify connect + DNS auth + CAN-SPAM address — Wyatt/Kristine; then build audience->List sync + campaign push

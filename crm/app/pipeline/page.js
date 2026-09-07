@@ -4,37 +4,54 @@ import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 
 export default async function Pipeline() {
-  const { data: rows } = await db.from('inquiries')
-    .select('*, collectors(id, first_name, last_name, email, phone, city, timezone, budget_range, trade, source, address_line1, state)')
-    .neq('status', 'closed').order('created_at', { ascending: false }).limit(300);
+  // Three waves instead of nine sequential round trips. Everything in wave two depends
+  // only on the inquiry rows, so it all goes at once; only the reserves need artwork ids.
+  const INQ_FIELDS = 'id, status, collector_id, artwork_handle, artwork_title, purpose, ' +
+    'budget_range, timeframe, source, owner, message, page_journey, created_at, ' +
+    'stage_changed_at, contacted_at, first_called_at';
+  const ART_FIELDS = 'id, handle, title, artist, price_cents, internal_value_cents, ' +
+    'image_url, medium, dims_h_in, dims_w_in, available';
+
+  const [{ data: rows }, { data: team }] = await Promise.all([
+    db.from('inquiries')
+      .select(`${INQ_FIELDS}, collectors(id, first_name, last_name, email, phone, city, timezone, budget_range, trade, source, address_line1, state)`)
+      .neq('status', 'closed').order('created_at', { ascending: false }).limit(300),
+    db.from('team_members').select('name').eq('active', true).order('name'),
+  ]);
+
   const handles = [...new Set((rows || []).map(r => r.artwork_handle).filter(Boolean))];
-  let artMap = {};
-  if (handles.length) {
-    const { data: arts } = await db.from('artworks')
-      .select('id, handle, title, artist, price_cents, internal_value_cents, image_url, medium, dims_h_in, dims_w_in, available')
-      .in('handle', handles);
-    (arts || []).forEach(a => { artMap[a.handle] = a; });
-  }
+  const titles = [...new Set((rows || []).map(r => r.artwork_title).filter(Boolean))];
   const collectorIds = [...new Set((rows || []).map(r => r.collector_id).filter(Boolean))];
-  let saleMap = {};
-  if (collectorIds.length) {
-    const { data: sales } = await db.from('sales')
-      .select('*, sale_items(*)').eq('status', 'open').in('collector_id', collectorIds);
-    (sales || []).forEach(s => { saleMap[s.collector_id] = s; });
-  }
-  let ltvMap = {}, invoiceMap = {}, journeyMap = {};
-  if (collectorIds.length) {
-    const { data: idx } = await db.from('collector_index')
-      .select('id, spend_cents, works, tags').in('id', collectorIds);
-    (idx || []).forEach(x => ltvMap[x.id] = x);
-    const { data: jn } = await db.from('collector_journey')
-      .select('*').in('collector_id', collectorIds);
-    (jn || []).forEach(j => journeyMap[j.collector_id] = j);
-    const { data: openInv } = await db.from('invoices')
+  const none = Promise.resolve({ data: [] });
+
+  const [{ data: byHandle }, { data: byTitle }, { data: sales }, { data: idx },
+         { data: jn }, { data: openInv }] = await Promise.all([
+    handles.length ? db.from('artworks').select(ART_FIELDS).in('handle', handles) : none,
+    titles.length  ? db.from('artworks').select(ART_FIELDS).in('title', titles)  : none,
+    collectorIds.length ? db.from('sales').select('*, sale_items(*)').eq('status', 'open').in('collector_id', collectorIds) : none,
+    collectorIds.length ? db.from('collector_index').select('id, spend_cents, works, tags').in('id', collectorIds) : none,
+    collectorIds.length ? db.from('collector_journey').select('*').in('collector_id', collectorIds) : none,
+    collectorIds.length ? db.from('invoices')
       .select('id, invoice_number, amount_cents, tax_cents, shipping_cents, collector_id, pdf_url')
-      .eq('status', 'open').in('collector_id', collectorIds);
-    (openInv || []).forEach(i => invoiceMap[i.collector_id] = i);
+      .eq('status', 'open').in('collector_id', collectorIds) : none,
+  ]);
+
+  const artMap = {}, titleMap = {}, saleMap = {}, ltvMap = {}, journeyMap = {}, invoiceMap = {};
+  (byHandle || []).forEach(a => { artMap[a.handle] = a; });
+  (byTitle  || []).forEach(a => { titleMap[a.title] = a; });
+  (sales    || []).forEach(x => { saleMap[x.collector_id] = x; });
+  (idx      || []).forEach(x => { ltvMap[x.id] = x; });
+  (jn       || []).forEach(j => { journeyMap[j.collector_id] = j; });
+  (openInv  || []).forEach(i => { invoiceMap[i.collector_id] = i; });
+
+  // reserves are the only thing that needs the artwork ids
+  const artIds = [...new Set([...Object.values(artMap), ...Object.values(titleMap)].map(a => a.id))];
+  const reserveMap = {};
+  if (artIds.length) {
+    const { data: res } = await db.from('artwork_reserves').select('*').in('artwork_id', artIds);
+    (res || []).forEach(r => { if (!r.lapsed) reserveMap[r.artwork_id] = r; });
   }
+
   const counts = {};
   (rows || []).forEach(r => { counts[r.collector_id] = (counts[r.collector_id] || 0) + 1; });
   // competition: other active leads on the same work; and whether the work is committed (hold/invoice/paid)
@@ -54,23 +71,6 @@ export default async function Pipeline() {
           stage: committed.status } : null };
     });
   });
-  const missingTitles = [...new Set((rows || [])
-    .filter(r => !artMap[r.artwork_handle] && r.artwork_title)
-    .map(r => r.artwork_title))];
-  let titleMap = {};
-  if (missingTitles.length) {
-    const { data: byTitle } = await db.from('artworks')
-      .select('id, handle, title, artist, price_cents, internal_value_cents, image_url, medium, dims_h_in, dims_w_in, available')
-      .in('title', missingTitles);
-    (byTitle || []).forEach(a => { titleMap[a.title] = a; });
-  }
-  // reserves on the works in play — so the drawer can show who a work is promised to
-  const artIds = [...new Set(Object.values(artMap).concat(Object.values(titleMap)).map(a => a.id))];
-  let reserveMap = {};
-  if (artIds.length) {
-    const { data: res } = await db.from('artwork_reserves').select('*').in('artwork_id', artIds);
-    (res || []).forEach(r => { if (!r.lapsed) reserveMap[r.artwork_id] = r; });
-  }
   const leads = (rows || []).map(r => ({ ...r,
     artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
     openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1,
@@ -81,7 +81,6 @@ export default async function Pipeline() {
     reserve: (artMap[r.artwork_handle] || titleMap[r.artwork_title])
       ? reserveMap[(artMap[r.artwork_handle] || titleMap[r.artwork_title]).id] || null : null,
     competition: competition[r.id] || { others: 0, committed: null } }));
-  const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
 
   // the owner's read of the board, in four numbers
   const BUDGET_MID = { 'Under $10,000': 500000, '$10,000-25,000': 1750000, '$25,000-50,000': 3750000,
