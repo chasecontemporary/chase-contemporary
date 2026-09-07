@@ -1,5 +1,6 @@
 import Shell from '../../components/Shell';
 import Sel from '../../components/Sel';
+import ConfirmButton from '../../components/ConfirmButton';
 import { db } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
@@ -27,6 +28,7 @@ export default async function Collectors({ searchParams }) {
     db.from('artist_stats').select('artist, sold').gt('sold', 0).order('sold', { ascending: false }).limit(40),
   ]);
   const rows = list || [];
+  const { data: dupes } = seg === 'dupes' ? await db.from('collector_dupes').select('*').limit(60) : { data: [] };
   const ids = rows.map(r => r.id);
   const pins = {}, boughtArtists = {};
   if (ids.length) {
@@ -40,7 +42,7 @@ export default async function Collectors({ searchParams }) {
       t[b.artist] = (t[b.artist] || 0) + b.amount_cents; } });
   }
   const s = bookStats || {};
-  const segs = [['all','All'],['buyers','Buyers'],['active','Active pipeline'],['vip','VIP'],['trade','Trade'],['news','Newsletter']];
+  const segs = [['all','All'],['buyers','Buyers'],['active','Active pipeline'],['vip','VIP'],['trade','Trade'],['news','Newsletter'],['dupes','Possible duplicates']];
   const MINS = [['','Any lifetime'],['10000','$10k+'],['50000','$50k+'],['100000','$100k+'],['250000','$250k+']];
   const href = (over) => {
     const p = new URLSearchParams();
@@ -89,7 +91,25 @@ export default async function Collectors({ searchParams }) {
       </div>
     </div>
 
-    <div className="tblcard" style={{marginTop:14}}>
+    {seg === 'dupes' && <div className="tblcard" style={{marginTop:14}}>
+      <div style={{padding:'10px 18px', fontSize:12, color:'#73736c', borderBottom:'1px solid #eeeee9'}}>
+        {(dupes || []).length} possible pair{(dupes || []).length === 1 ? '' : 's'} · same phone, same name in the same city, or the same email name. Merge keeps the left record and moves everything from the right one onto it.</div>
+      {(dupes || []).map(d => <div key={d.keep_id + d.drop_id} style={{display:'grid', gridTemplateColumns:'1fr 1fr 150px auto', gap:16, alignItems:'center', padding:'12px 18px', borderBottom:'1px solid #f2f2ee', fontSize:13}}>
+        <a href={'/collectors/' + d.keep_id} style={{fontWeight:650}}>{[d.a_first, d.a_last].filter(Boolean).join(' ') || d.a_email}
+          <span style={{display:'block', fontSize:11.5, color:'#73736c', fontWeight:400}}>{[d.a_email?.endsWith('import.chasecontemporary.com') ? 'no email' : d.a_email, d.a_phone, d.a_city].filter(Boolean).join(' · ')}</span></a>
+        <a href={'/collectors/' + d.drop_id} style={{fontWeight:650}}>{[d.b_first, d.b_last].filter(Boolean).join(' ') || d.b_email}
+          <span style={{display:'block', fontSize:11.5, color:'#73736c', fontWeight:400}}>{[d.b_email?.endsWith('import.chasecontemporary.com') ? 'no email' : d.b_email, d.b_phone, d.b_city].filter(Boolean).join(' · ')}</span></a>
+        <span className="pill" style={{background:'#fdf3e3', color:'#9a551a', fontSize:10.5, fontWeight:700}}>{d.why.toUpperCase()}</span>
+        <form method="POST" action="/api/act">
+          <input type="hidden" name="action" value="collector_merge"/>
+          <input type="hidden" name="keep_id" value={d.keep_id}/>
+          <input type="hidden" name="drop_id" value={d.drop_id}/>
+          <ConfirmButton className="btn mini quiet" message={`Merge these two records into one?\n\nEverything on the right-hand record (inquiries, purchases, invoices, notes) moves to the left one, and the right one is removed. This cannot be undone.`}>Merge →</ConfirmButton>
+        </form>
+      </div>)}
+      {!(dupes || []).length && <div className="empty">No likely duplicates found.</div>}
+    </div>}
+    {seg !== 'dupes' && <div className="tblcard" style={{marginTop:14}}>
       <div style={{padding:'10px 18px', fontSize:12, color:'#73736c', borderBottom:'1px solid #eeeee9'}}>
         {rows.length} shown{filtered ? ' · filtered' : ' · top of the book'} · the save box turns this exact view into an email audience</div>
       {rows.map(c => {
@@ -131,7 +151,7 @@ export default async function Collectors({ searchParams }) {
           </div>
         </a>; })}
       {!rows.length && <div className="empty">No collectors match.</div>}
-    </div>
+    </div>}
 
     <form method="POST" action="/api/act" className="inline-form" style={{marginTop:20, flexWrap:'wrap'}}>
       <input type="hidden" name="action" value="collector_add"/>

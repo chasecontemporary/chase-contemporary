@@ -1,7 +1,7 @@
 import { db } from '../../../lib/db';
 import { spillInquiry } from '../../../lib/spill';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { persist } from '../../../lib/capture';
+import { persist, emailFor } from '../../../lib/capture';
 import { announceInquiry } from '../../../lib/notify';
 
 const ORIGINS = [
@@ -39,8 +39,8 @@ export async function POST(req) {
   let p;
   try { p = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
 
-  const email = (p.email || '').trim().toLowerCase();
-  if (!email) return json({ error: 'email required' }, 400);
+  const email = emailFor(p);
+  if (!email) return json({ error: 'email or phone required' }, 400);
 
   try {
     const result = await persist(p, email);

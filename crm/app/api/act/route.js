@@ -802,6 +802,54 @@ async function handle(req, form) {
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'reissued', body: `as No. ${String(nu.invoice_number).padStart(4, '0')}`, actor: rep });
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: nu.id, kind: 'issued', body: `replaces No. ${String(inv.invoice_number).padStart(4, '0')}`, actor: rep });
     if (form.get('back') === 'json') return Response.json({ ok: true, invoice_number: nu.invoice_number });
+  } else if (action === 'artworks_bulk_location') {
+    // Data hygiene: "these 40 are all at Hangman." One location for a filtered set.
+    const to = (form.get('to') || '').trim().slice(0, 120);
+    const ids = form.getAll('ids').filter(Boolean).slice(0, 200);
+    if (!to) throw new Error('Type the location.');
+    if (!ids.length) throw new Error('Nothing selected.');
+    const { data: arts } = await db.from('artworks').select('id, location').in('id', ids);
+    for (const a of (arts || [])) {
+      if (a.location === to) continue;
+      await db.from('artwork_moves').insert({ artwork_id: a.id, from_location: a.location || null, to_location: to, reason: 'storage', moved_by: rep, note: 'bulk update' });
+    }
+    must(await db.from('artworks').update({ location: to }).in('id', ids));
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: ids[0], kind: 'bulk_moved', body: `${ids.length} works → ${to}`, actor: rep });
+  } else if (action === 'collector_merge') {
+    // Two records, one person. Everything the dropped record owns moves to the kept one;
+    // blanks on the kept record fill from the dropped one; the dropped record goes.
+    const keep = form.get('keep_id'), drop = form.get('drop_id');
+    if (!keep || !drop || keep === drop) throw new Error('Choose two different records.');
+    const [{ data: K }, { data: D }] = await Promise.all([
+      db.from('collectors').select('*').eq('id', keep).single(), db.from('collectors').select('*').eq('id', drop).single()]);
+    if (!K || !D) throw new Error('One of those records no longer exists.');
+    const tables = ['inquiries', 'purchases', 'invoices', 'sales', 'offers', 'holds', 'messages', 'documents', 'shipments', 'visitor_links', 'site_events'];
+    for (const t of tables) must(await db.from(t).update({ collector_id: keep }).eq('collector_id', drop));
+    // interests: move what the kept record lacks, drop the rest (unique on collector+label)
+    const { data: dInt } = await db.from('collector_interests').select('id, label, kind').eq('collector_id', drop);
+    const { data: kInt } = await db.from('collector_interests').select('label').eq('collector_id', keep);
+    const have = new Set((kInt || []).map(x => x.label));
+    for (const i of (dInt || [])) {
+      if (have.has(i.label)) await db.from('collector_interests').delete().eq('id', i.id);
+      else await db.from('collector_interests').update({ collector_id: keep }).eq('id', i.id);
+    }
+    must(await db.from('activities').update({ entity_id: keep }).eq('entity_type', 'collector').eq('entity_id', drop));
+    const fill = {};
+    for (const f of ['first_name', 'last_name', 'phone', 'city', 'state', 'zip', 'country', 'address_line1', 'address_line2', 'company', 'salutation',
+      'shipping_line1', 'shipping_line2', 'shipping_city', 'shipping_state', 'shipping_zip', 'shipping_country', 'budget_range', 'source', 'timezone', 'locale', 'notes', 'job_title'])
+      if (!K[f] && D[f]) fill[f] = D[f];
+    if (K.email?.endsWith('import.chasecontemporary.com') && D.email && !D.email.endsWith('import.chasecontemporary.com')) fill.email = D.email;
+    fill.tags = [...new Set([...(K.tags || []), ...(D.tags || [])])];
+    fill.trade = K.trade || D.trade; fill.newsletter = K.newsletter || D.newsletter;
+    fill.notes = [K.notes, D.notes].filter(Boolean).join('\n') || null;
+    // free the dropped email before the kept record can take it
+    must(await db.from('collectors').update({ email: 'merged+' + Date.now() + '@import.chasecontemporary.com' }).eq('id', drop));
+    must(await db.from('collectors').update(fill).eq('id', keep));
+    must(await db.from('collectors').delete().eq('id', drop));
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: keep, kind: 'merged',
+      body: `absorbed ${[D.first_name, D.last_name].filter(Boolean).join(' ') || D.email}${D.email ? ' · ' + D.email : ''}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true, id: keep });
+    return Response.redirect(new URL('/collectors/' + keep, req.url), 303);
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }

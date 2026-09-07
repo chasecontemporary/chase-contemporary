@@ -16,6 +16,15 @@ export const classify = (purpose) => {
 
 const cap = (v, n) => (typeof v === 'string' ? v.slice(0, n) : v == null ? null : null);
 
+// A phone with no email is still a lead. Mint a synthetic address so the record exists and
+// the drawer says "no email on file"; the composer then offers Text only.
+export const emailFor = (p) => {
+  const e = String(p.email || '').trim().toLowerCase();
+  if (e) return e;
+  const d = String(p.phone || '').replace(/\D/g, '');
+  return d.length >= 7 ? `phone+${d}@import.chasecontemporary.com` : null;
+};
+
 export async function persist(p, email) {
   const { data: collector, error: cErr } = await db
     .from('collectors')

@@ -19,6 +19,7 @@ export default async function Inventory({ searchParams }) {
   const loc = sp.loc || '';
   const artist = sp.artist || '';
   const view = sp.view || 'available';       // available | sold | all
+  const gap = sp.gap || '';                  // location | price | image | ready
   const page = Math.max(1, Number(sp.page) || 1);
 
   let query = db.from('artworks').select('*', { count: 'exact' });
@@ -28,10 +29,18 @@ export default async function Inventory({ searchParams }) {
   if (artist) query = query.eq('artist', artist);
   if (loc === 'Unassigned') query = query.or('location.is.null,location.eq.');
   else if (loc) query = query.eq('location', loc);
+  if (gap === 'location') query = query.or('location.is.null,location.eq.');
+  if (gap === 'price') query = query.is('price_cents', null).is('internal_value_cents', null);
+  if (gap === 'image') query = query.is('image_url', null);
   query = query.order('image_url', { ascending: false, nullsFirst: false })
     .order('price_cents', { ascending: false, nullsFirst: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
 
+  const [{ count: gapLoc }, { count: gapPrice }, { count: gapImage }] = await Promise.all([
+    db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true).or('location.is.null,location.eq.'),
+    db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true).is('price_cents', null).is('internal_value_cents', null),
+    db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true).is('image_url', null),
+  ]);
   const [{ data: rows, count: matchCount }, { count: availableCount }, { count: soldCount }, { data: byLoc }, { data: allArtists }] = await Promise.all([
     query,
     db.from('artworks').select('id', { count: 'exact', head: true }).eq('available', true),
@@ -56,7 +65,7 @@ export default async function Inventory({ searchParams }) {
   const locs = (byLoc || []).filter(l => l.available > 0);
   const pages = Math.max(1, Math.ceil((matchCount || 0) / PAGE));
   const href = (over) => {
-    const p = new URLSearchParams({ view, ...(q && { q }), ...(loc && { loc }), ...(artist && { artist }), ...over });
+    const p = new URLSearchParams({ view, ...(q && { q }), ...(loc && { loc }), ...(artist && { artist }), ...(gap && { gap }), ...over });
     return '/inventory?' + p.toString();
   };
   const VIEWS = [['available', `On hand · ${Number(availableCount || 0).toLocaleString()}`],
@@ -87,6 +96,21 @@ export default async function Inventory({ searchParams }) {
         {artist && <input type="hidden" name="artist" value={artist}/>}
         <input className="search" style={{marginTop:0}} name="q" defaultValue={q} placeholder="Search title, artist, medium" />
       </form>
+    </div>
+
+    <div style={{display:'flex', gap:8, marginTop:12, alignItems:'center', flexWrap:'wrap'}}>
+      <span style={{fontSize:11, fontWeight:650, letterSpacing:'.06em', textTransform:'uppercase', color:'#73736c'}}>Fix the record</span>
+      {[['location', `No location · ${Number(gapLoc || 0).toLocaleString()}`], ['price', `No price or estimate · ${Number(gapPrice || 0).toLocaleString()}`], ['image', `No image · ${Number(gapImage || 0).toLocaleString()}`]].map(([k, l]) =>
+        <a key={k} href={gap === k ? href({ gap: '', page: 1 }).replace('&gap=', '') : href({ gap: k, page: 1, view: 'available' })} className="pill"
+          style={gap === k ? {background:'#9a551a', color:'#fff'} : {background:'#fdf3e3', color:'#9a551a'}}>{l}</a>)}
+      {gap === 'location' && works.length > 0 && <form method="POST" action="/api/act" style={{display:'flex', gap:6, alignItems:'center', marginLeft:'auto'}}>
+        <input type="hidden" name="action" value="artworks_bulk_location"/>
+        <input type="hidden" name="back" value={href({ page })}/>
+        {works.map(w => <input key={w.id} type="hidden" name="ids" value={w.id}/>)}
+        <input name="to" list="bulk-locs" placeholder="Set location for these…" required style={{height:34, width:240, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:13, padding:'0 10px'}}/>
+        <datalist id="bulk-locs">{locs.map(l => <option key={l.location} value={l.location}/>)}</datalist>
+        <button className="btn mini">Apply to the {works.length} shown</button>
+      </form>}
     </div>
 
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:14, marginTop:18}}>
