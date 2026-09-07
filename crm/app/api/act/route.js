@@ -370,16 +370,16 @@ async function handle(req, form) {
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
   } else if (action === 'invoice_manual') {
-    // line-item invoice: works create a sale underneath (thesis), shipping/tax/service are lines
+    // One database function, one transaction: either the whole invoice exists or none of
+    // it does. Before this, a failure midway left an orphan sale on no screen at all.
     const collectorId = form.get('collector_id') || null;
-    // Without a collector no sale row is created, so paying the invoice would never
-    // mark the work sold or write a commission. Refuse rather than corrupt the book.
-    if (!collectorId) throw new Error('Choose a collector from the list before creating the invoice.');
     let lines = [];
     try { lines = JSON.parse(form.get('lines') || '[]'); } catch {}
     const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
-    if (lines.some(l => cents(l.amount) < 0)) throw new Error('An amount is negative. Check the line items.');
-    // The whole point of a reserve: refuse to invoice a work another rep is holding.
+    lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
+    if (!lines.length) throw new Error('Add at least one line to the invoice.');
+
+    // refuse to invoice a work another rep is holding
     const wantIds = lines.filter(l => l.kind === 'work' && l.artwork_id).map(l => l.artwork_id);
     if (wantIds.length) {
       const { data: heldBy } = await db.from('holds')
@@ -391,49 +391,29 @@ async function handle(req, form) {
         const who = [clash.collectors?.first_name, clash.collectors?.last_name].filter(Boolean).join(' ') || 'another collector';
         throw new Error(`${clash.artworks?.title || 'That work'} is on hold for ${who} until ${new Date(clash.expires_at).toLocaleDateString()}${clash.placed_by ? ' (placed by ' + clash.placed_by + ')' : ''}. Speak to them before invoicing it.`);
       }
-      // invoicing for the collector who holds it closes the hold out
-      const mine = (heldBy || []).filter(h => h.collector_id === collectorId);
-      for (const h of mine)
-        await db.from('holds').update({ status: 'converted', released_at: new Date().toISOString() })
-          .eq('artwork_id', h.artwork_id).eq('kind', 'reserve').eq('status', 'active');
     }
-    lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
-    const workLines = lines.filter(l => l.kind === 'work' && l.artwork_id);
-    const svcLines = lines.filter(l => l.kind === 'service');
-    const shipC = lines.filter(l => l.kind === 'shipping').reduce((s, l) => s + cents(l.amount), 0);
-    const taxC = lines.filter(l => l.kind === 'tax').reduce((s, l) => s + cents(l.amount), 0);
-    const artC = workLines.reduce((s, l) => s + cents(l.amount), 0) + svcLines.reduce((s, l) => s + cents(l.amount), 0);
-    if (artC + shipC + taxC > 0 || workLines.length) {
-      let saleId = null;
-      if (collectorId && workLines.length) {
-        const { data: sale } = await db.from('sales').insert({ collector_id: collectorId, owner: rep }).select().single();
-        saleId = sale?.id;
-        for (const l of workLines)
-          await db.from('sale_items').insert({ sale_id: saleId, artwork_id: l.artwork_id,
-            title: l.title, artist: l.artist, agreed_cents: cents(l.amount) });
-        if (saleId) await db.from('sales').update({ status: 'invoiced' }).eq('id', saleId);
-      }
-      const first = workLines[0] || svcLines[0] || {};
-      const title = workLines.length > 1 ? `${workLines.length} works · ` + workLines.map(l => l.title).join(', ').slice(0, 110)
-        : (first.title || 'Sale');
-      const { data: inv } = await db.from('invoices').insert({ collector_id: collectorId, sale_id: saleId,
-        title, artist: workLines.length === 1 ? first.artist : null,
-        amount_cents: artC, tax_cents: taxC, shipping_cents: shipC,
-        due_at: form.get('due') || null, notes: 'manual invoice' }).select().single();
-      if (inv) {
-        let sort = 0;
-        for (const l of lines)
-          await db.from('invoice_lines').insert({ invoice_id: inv.id, kind: l.kind,
-            artwork_id: l.artwork_id || null, title: l.title || null, artist: l.artist || null,
-            amount_cents: cents(l.amount), sort: sort++ });
-        if (form.get('inquiry_id')) {
-          await db.from('inquiries').update({ status: 'invoice', stage_changed_at: new Date().toISOString() })
-            .eq('id', form.get('inquiry_id'));
-          await db.from('activities').insert({ entity_type: 'inquiry', entity_id: form.get('inquiry_id'),
-            kind: 'invoice_generated', body: `#${String(inv.invoice_number).padStart(4,'0')}`, actor: rep });
-        }
-      }
-    }
+
+    const { data: inv, error: invErr } = await db.rpc('create_manual_invoice', {
+      p_collector_id: collectorId,
+      p_lines: lines.map(l => ({ kind: l.kind, artwork_id: l.artwork_id || null,
+        title: l.title || null, artist: l.artist || null, amount_cents: cents(l.amount) })),
+      p_owner: rep === 'rep' ? null : rep,
+      p_due: form.get('due') || null,
+      p_inquiry_id: form.get('inquiry_id') || null,
+    });
+    if (invErr) throw new Error(invErr.message.replace(/^.*?:\s*/, ''));
+
+    // invoicing for the collector who holds a work closes that hold out
+    if (wantIds.length)
+      await db.from('holds').update({ status: 'converted', released_at: new Date().toISOString() })
+        .in('artwork_id', wantIds).eq('kind', 'reserve').eq('status', 'active')
+        .eq('collector_id', collectorId);
+
+    if (inv && form.get('inquiry_id'))
+      await db.from('activities').insert({ entity_type: 'inquiry', entity_id: form.get('inquiry_id'),
+        kind: 'invoice_generated', body: `#${String(inv.invoice_number).padStart(4,'0')}`, actor: rep });
+    if (form.get('back') === 'json')
+      return Response.json({ ok: true, invoice_number: inv?.invoice_number });
   } else if (action === 'invoice_add') {
     const cents = Math.round(Number(form.get('amount') || 0) * 100);
     await db.from('invoices').insert({
@@ -492,6 +472,13 @@ async function handle(req, form) {
         body: '$' + (amt / 100).toLocaleString() + (r.closed ? ' · settled in full' : ' · balance $' + ((r.total - r.received) / 100).toLocaleString()),
         actor: rep });
     }
+  } else if (action === 'invoice_unsettle') {
+    // The one action that used to be permanent. Puts the works back, removes the purchases
+    // and commissions the settlement created, and reopens the invoice.
+    const { error } = await db.rpc('unsettle_invoice', { p_invoice_id: id });
+    if (error) throw new Error(error.message);
+    await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
+      kind: 'payment_undone', body: 'settlement reversed', actor: rep });
   } else if (action === 'invoice_paid') {
     const inv = await settleInvoice(id, form.get('method') || null);
     if (inv) await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,

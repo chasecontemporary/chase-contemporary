@@ -37,12 +37,18 @@ export default async function Finance({ searchParams }) {
   const open = all.filter(i => i.status === 'open');
   const paid = all.filter(i => i.status === 'paid');
   const tot = (i) => i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0);
-  const paidIn = {}, payHist = {};
-  (payRows || []).forEach(p => {
-    paidIn[p.invoice_id] = (paidIn[p.invoice_id] || 0) + Number(p.amount_cents);
-    (payHist[p.invoice_id] = payHist[p.invoice_id] || []).push(p);
+  // Balances come from the database, not from summing a capped payments fetch in here —
+  // past a thousand payments that sum silently went wrong and the money on screen drifted.
+  const { data: balRows } = await db.from('invoice_balances')
+    .select('invoice_id, received_cents, balance_cents')
+    .in('invoice_id', all.map(i => i.id).slice(0, 1000));
+  const paidIn = {}, payHist = {}, balMap = {};
+  (balRows || []).forEach(b => {
+    paidIn[b.invoice_id] = Number(b.received_cents || 0);
+    balMap[b.invoice_id] = Number(b.balance_cents || 0);
   });
-  const balance = (i) => Math.max(0, tot(i) - (paidIn[i.id] || 0));
+  (payRows || []).forEach(p => { (payHist[p.invoice_id] = payHist[p.invoice_id] || []).push(p); });
+  const balance = (i) => balMap[i.id] ?? Math.max(0, tot(i) - (paidIn[i.id] || 0));
   const ar = open.reduce((s, i) => s + balance(i), 0);
   const now = Date.now();
   const bucketOf = (i) => {
@@ -289,6 +295,14 @@ export default async function Finance({ searchParams }) {
                   message={`Mark invoice No. ${String(i.invoice_number).padStart(4,'0')} paid in full?\n\nThis records ${usd(balance(i))}, marks the work sold, books it to the collector, and writes the commission. Only do this once the money is actually in the bank.`}>
                   {paidIn[i.id] ? 'Record final ' + usd(balance(i)) : 'Mark paid in full'}</ConfirmButton>
               </form>
+              {i.status === 'paid' && <form method="POST" action="/api/act">
+                <input type="hidden" name="action" value="invoice_unsettle"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <ConfirmButton className="btn mini quiet"
+                  message={`Undo the payment on invoice No. ${String(i.invoice_number).padStart(4,'0')}?\n\nThis removes the recorded payments and the commission, puts the work back on sale, and reopens the invoice. Use this when it was marked paid by mistake.`}>
+                  Undo payment</ConfirmButton>
+              </form>}
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_void"/>
                 <input type="hidden" name="id" value={i.id}/>
