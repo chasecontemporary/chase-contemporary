@@ -24,8 +24,9 @@ email / mobile is on the Team page.
 
 | Variable | Notes |
 |---|---|
-| `RESEND_API_KEY` | resend.com, API Keys, full access |
-| `MAIL_FROM` | `Chase Contemporary <sales@chasecontemporary.com>`; the domain must be verified in Resend: add the SPF, DKIM and DMARC records it gives you in GoDaddy (Kristine) |
+| `RESEND_API_KEY` | resend.com, API Keys. SET 9/7 (sending-only key) |
+| `MAIL_FROM` | Default sender, `Chase Contemporary <info@chasecontemporary.com>`. Letters to collectors are sent FROM THE REP who owns the deal (`Wyatt at Chase Contemporary <wyatt@chasecontemporary.com>`) whenever the rep's Team email is on the verified domain; replies always go to the rep. Set this only once the domain is verified in Resend (SPF, DKIM, DMARC in GoDaddy via Kristine); until then composers keep the draft path |
+| `MAIL_DOMAIN` | Optional, default taken from MAIL_FROM |
 | `MAIL_REPLY_TO` | Optional, default info@chasecontemporary.com |
 | `MAIL_BCC` | Optional. A mailbox that receives a copy of every collector email (the audit copy) |
 

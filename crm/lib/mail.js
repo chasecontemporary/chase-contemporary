@@ -12,6 +12,20 @@ import { db } from './db';
 export const mailReady = () => !!process.env.RESEND_API_KEY && !!process.env.MAIL_FROM;
 export const MAIL_FROM = () => process.env.MAIL_FROM || 'Chase Contemporary <info@chasecontemporary.com>';
 export const REPLY_TO = () => process.env.MAIL_REPLY_TO || 'info@chasecontemporary.com';
+export const MAIL_DOMAIN = () => (process.env.MAIL_DOMAIN || (MAIL_FROM().match(/@([^>]+)/) || [])[1] || 'chasecontemporary.com').toLowerCase();
+
+// Letters to collectors come from the salesperson, not from a mailbox. If the rep's own
+// address is on the gallery's verified domain it is the From; otherwise the gallery sends
+// and replies go to the rep.
+export const senderFor = (rep) => {
+  const email = String(rep?.email || '').toLowerCase();
+  const onDomain = email && email.endsWith('@' + MAIL_DOMAIN());
+  const first = (rep?.name || '').split(' ')[0];
+  return {
+    from: onDomain ? `${first ? first + ' at ' : ''}Chase Contemporary <${email}>` : MAIL_FROM(),
+    replyTo: email || REPLY_TO(),
+  };
+};
 
 const synthetic = (e) => !e || String(e).endsWith('import.chasecontemporary.com');
 
@@ -47,7 +61,7 @@ export async function sendMail(m) {
   }
 
   const payload = {
-    from: MAIL_FROM(), to, subject: m.subject, html: m.html, text: m.text || undefined,
+    from: m.from || MAIL_FROM(), to, subject: m.subject, html: m.html, text: m.text || undefined,
     reply_to: m.replyTo || REPLY_TO(),
     bcc: m.bcc && m.bcc.length ? m.bcc : undefined,
     attachments: (m.attachments || []).map(a => ({

@@ -8,7 +8,7 @@ import { klaviyoReady, ensureList, syncMembers, pushCampaign } from '../../../li
 import { renderCampaignEmail } from '../../../lib/email';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
 import { buildTearSheet, buildCoa } from '../../../lib/collateralPdf';
-import { sendMail, fetchAttachment, mailReady } from '../../../lib/mail';
+import { sendMail, fetchAttachment, mailReady, senderFor } from '../../../lib/mail';
 import { sendSms } from '../../../lib/sms';
 import { renderTemplate } from '../../../lib/templates';
 import { buildContext } from '../../../lib/emailContext';
@@ -571,7 +571,9 @@ async function handle(req, form) {
     }
     if (template === 'first_reply' && ctx.artwork?.tearsheet_url && form.get('attach_tearsheet'))
       attachments.push(await fetchAttachment(ctx.artwork.tearsheet_url, 'Tear-Sheet.pdf'));
+    const sender = senderFor(ctx.rep);
     const r = await sendMail({ to: ctx.collector.email, subject, html: out.html, text: out.text, attachments,
+      from: sender.from, replyTo: sender.replyTo,
       template, collectorId: ctx.collector.id,
       entityType: ctx.invoice ? 'invoice' : ctx.inquiry ? 'inquiry' : 'collector',
       entityId: ctx.invoice?.id || ctx.inquiry?.id || ctx.collector.id, actor: rep,
