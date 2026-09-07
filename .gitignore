@@ -10,3 +10,6 @@ backups/
 
 # agent tooling, not product code
 .agents/
+
+# local Claude session settings
+.claude/
