@@ -5,6 +5,37 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- BUILD PLAN 2, WORKSTREAMS A B E F G H SHIPPED 9/7 evening (docs/BUILD-PLAN-2.md; migrations
+  0044-0047; money chain 25/25; all verified live with synthetic rows, torn down):
+  * A AFTER THE MONEY: shipments per work (carrier YSDS/Hangman/SBA/FedEx/UPS/courier/pickup,
+    quote, tracking + link, ETA, packed/shipped/delivered/installed with dates); the work's
+    location follows (In transit, With collector) and writes artwork_moves; COA marked signed
+    and sent with the work; shipping_confirmation + delivered_thank_you letters in the
+    composer; Close the sale once all delivered (sales.fulfilment_status to_ship/shipped/
+    delivered/done, closed_at, thanked_at). Fulfilment block on paid invoices in Finance and
+    "On its way" on the collector card; Today "Sold, not yet delivered".
+  * B INVOICE CARE: Edit lines on an open invoice (work/service/shipping/tax/credit) until
+    money lands (then locked, with the reason); sale items follow work lines; hold guard;
+    PDF cleared for regeneration. Re-issue = void + clone under a new number
+    (replaces_invoice_id); Void keeps a reason.
+  * E LOCATION + MOVES: artwork_moves table; "Where it is" on the work page with a Move form
+    (known locations datalist, reason, note) and the log.
+  * F HYGIENE: collector_dupes view (same phone / same name+city / same email name; rewritten
+    as hashable joins after the OR-join timed out on 27k rows) on Collectors > Possible
+    duplicates with one-click Merge (collector_merge re-points 11 tables + activities +
+    interests, fills blanks, unions tags, frees the email, deletes the drop). Real book:
+    13 same-phone, 14 same-name+city, ~970 same-email-name pairs (noisy; phone/name first).
+    Phone-only inquiries now captured (synthetic phone+<digits>@import email).
+  * G SCORECARDS: Team page per rep, 30/90 days: open now (+quiet), claimed, median first
+    response, holds, invoiced ($), collected, won/lost, close rate, top lost reasons; email +
+    mobile editable inline.
+  * H HYGIENE TOOLING: Inventory "Fix the record" chips (No location 208 / No price or
+    estimate 272 / No image 20) as filters + bulk "Set location for the N shown" (writes moves).
+  REMAINING from Build plan 2: C lead routing + claim-from-Slack (needs a Slack app with
+  signing secret), D purchase-agreement / on-approval templates + COA signature image (needs
+  Kristine/Sara practice + counsel + Bernie signature PNG), I keys (Devyn), J mobile pass on a
+  real phone + training manual refresh.
+
 - THE FULL STACK, ENV-GATED 9/7 PM (docs/INTEGRATIONS.md = every key, where it goes, what it
   switches on). Deployed and dormant until each key lands in Vercel; verified live, money
   chain 20/20 (two new D1 assertions). Migration 0042 (documents, messages, next_action,
