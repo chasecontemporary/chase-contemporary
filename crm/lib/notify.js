@@ -9,17 +9,30 @@ import { smsReady, sendSms } from './sms';
 // Nothing here throws to its caller: an alert that fails must never fail the thing it is
 // announcing (a captured lead, a settled payment).
 
-export const slackReady = () => !!process.env.SLACK_WEBHOOK_URL;
+export const slackReady = () => !!process.env.SLACK_WEBHOOK_URL || (!!process.env.SLACK_BOT_TOKEN && !!process.env.SLACK_CHANNEL);
 const APP = () => process.env.APP_URL || 'https://chase-engine.vercel.app';
 
-export async function slack(text, blocks) {
+// Post to the floor channel. Prefers the bot token (chat.postMessage: threads, buttons, a
+// channel id that survives renames); falls back to an incoming webhook. Returns the
+// message ts when the API gave one, so a follow-up can land in the thread.
+export async function slack(text, blocks, { thread_ts } = {}) {
   if (!slackReady()) return false;
   try {
-    const r = await fetch(process.env.SLACK_WEBHOOK_URL, { method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(blocks ? { text, blocks } : { text }) });
+    let ok = false, ts = null, err = null;
+    if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL) {
+      const r = await fetch('https://slack.com/api/chat.postMessage', { method: 'POST',
+        headers: { Authorization: 'Bearer ' + process.env.SLACK_BOT_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: process.env.SLACK_CHANNEL, text, ...(blocks ? { blocks } : {}), ...(thread_ts ? { thread_ts } : {}), unfurl_links: false }) });
+      const j = await r.json().catch(() => ({}));
+      ok = !!j.ok; ts = j.ts || null; err = j.error || null;
+    } else {
+      const r = await fetch(process.env.SLACK_WEBHOOK_URL, { method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(blocks ? { text, blocks } : { text }) });
+      ok = r.ok; err = ok ? null : String(r.status);
+    }
     await db.from('messages').insert({ channel: 'slack', template: 'alert', to_addr: 'floor', body: text,
-      provider: 'slack', status: r.ok ? 'sent' : 'failed', error: r.ok ? null : String(r.status) });
-    return r.ok;
+      provider: 'slack', provider_id: ts, status: ok ? 'sent' : 'failed', error: err });
+    return ok ? (ts || true) : false;
   } catch { return false; }
 }
 

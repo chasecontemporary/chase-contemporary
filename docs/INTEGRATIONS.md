@@ -11,7 +11,9 @@ Set with: `cd crm && vercel env add NAME production` (paste value) then `vercel 
 
 | Variable | Switches on | Where to get it |
 |---|---|---|
-| `SLACK_WEBHOOK_URL` | Floor channel: every inquiry (with claim link), 15-minute unclaimed escalation, money in, morning digest | Slack: the gallery workspace, Apps, Incoming Webhooks, pick the sales channel |
+| `SLACK_BOT_TOKEN` + `SLACK_CHANNEL` | Floor channel via the Chase Engine app (chat.postMessage: threads, buttons, survives a rename). SET 9/7: app B0C034VDAFQ, channel C0C06NXK2AV | api.slack.com/apps, OAuth & Permissions, Bot User OAuth Token; channel id from the channel's About panel |
+| `SLACK_WEBHOOK_URL` | Fallback lane if no bot token | Slack: Incoming Webhooks |
+| `SLACK_SIGNING_SECRET` | Verifies the Claim button posts to `/api/slack/action` (workstream C) | Basic Information, Signing Secret |
 | `CRON_SECRET` | The two cron jobs (`/api/cron/escalate` every 10 min, `/api/cron/digest` 08:00 ET Mon to Sat). Vercel sends it as `Authorization: Bearer` | Any long random string; Vercel reads the same variable |
 | `APP_URL` | Links inside alerts and emails (default https://chase-engine.vercel.app) | Set when the engine gets its own domain |
 
