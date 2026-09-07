@@ -183,26 +183,20 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - DECLINED 8/27: bulk-image request to Artcloud support (sold works stay imageless)
 
 ## Needs key (built, waiting)
-- CLERK (per-person sign-in) — BUILT 9/6, env-gated, needs the app + keys:
-  1. Create a Clerk application under the GALLERY identity (transferable, not MOA/personal).
-  2. Enable **Email link (magic link)** as the sign-in method; turn OFF public sign-ups so
-     only invited people can get in.
-  3. Invite: wyatt@chasecontemporary.com, sara@chasecontemporary.com,
-     devyn@magnumopus.agency, and Bernie — **Bernie has NO email in team_members, we need it**
-     (his row must carry the same address he signs in with, or he gets in with no role).
-  4. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY in Vercel, redeploy.
-  5. Everyone signs in once, THEN remove CRM_ACCESS_CODE and the /login + RepPicker fallback.
-  Identity lives in ONE place now (crm/lib/identity.js `whoami()`): with Clerk it is verified
-  from the signed-in mailbox and mapped to team_members for name+role; without it, the old
-  self-picked name still works but is marked unverified, so pay stays hidden and actions log
-  as unattributed. Middleware runs Clerk when keys exist and the shared code when they don't,
-  so there is no lockout window.
-- ORDERING (Devyn 9/6): **SHOPIFY IS LAST.** Pay links, order webhooks and product push stay
-  dormant until everything else is done. Do not treat the missing token as a blocker.
-- Shopify pay links + product push: custom app token (scopes: write_products, read_products, write_draft_orders, read_draft_orders, read_orders) + API secret key — Devyn
-- Wire instructions paragraph for invoice PDFs — Kristine
-- Campaign sends: KLAVIYO account (pivot 8/27) + private API key + Shopify connect + DNS auth + CAN-SPAM address — Wyatt/Kristine; then build audience->List sync + campaign push
-- Stripe ACH lane: parked account, revisit when mid-band online closes are frequent
+- CLERK — WIRED 9/6, keys live in Vercel, sign-in enforced on production.
+  App "Chase Contemporary" app_3Iymy9uMJ9X4CtIO4nBKxPaUENR, owned by
+  wyatt@chasecontemporary.com (gallery identity, transferable). All four team_members now
+  carry the email Clerk will match on: bernie@ / sara@ / wyatt@chasecontemporary.com and
+  devyn@magnumopus.agency.
+  STILL TO DO (all dashboard-side, Devyn/Wyatt):
+  1. Set sign-in method to **Email link** and DISABLE public sign-ups.
+  2. Invite the four addresses above.
+  3. **Create the PRODUCTION instance** — we are on development keys (pk_test/sk_test,
+     ins_3IymyDjYTQmOdQgLZUE5BjiBcqy). Dev instances have a SEPARATE USER POOL, so anyone
+     who signs in before the switch has to sign in again after. Do this before telling
+     Sara and Bernie to start using it.
+  4. Once all four have signed in successfully: remove CRM_ACCESS_CODE, the /login page and
+     RepPicker. Until then the shared code still works on purpose — no lockout window.
 
 ## Housekeeping
 - PURGE DEMO DATA before go-live: full cascade on collectors where email like 'demo-%@import.chasecontemporary.com' (Bernie-demo cast seeded 8/28: Ellison/Fontaine/Park/Reyes/Petrov/Cho/Voss/Shah, invoices 0009-0011, Sara commissions $14,880 Aug, offer + site_events for Ellison). ALSO: restore artworks marked sold by demo settlements (Elena Voss 'bought' the already-sold McCrow AK47 - delete the dup purchase row) and re-set inquiries/holds. The 8/27 purge SQL pattern is in the session log.
