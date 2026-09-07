@@ -10,6 +10,7 @@ Private until shared from each page's share menu.
   https://claude.ai/code/artifact/054e216c-2e0c-4e93-b510-c3dc8c44e27c
 - **Sales readiness pass (9/7)** — inquiry-to-paid pass as a rep: what works, 10 defects, gated build list.
   https://claude.ai/code/artifact/19c5831d-822f-43fb-9111-71f691c2af71
+- **Integrations runbook** is a repo doc, not an artifact: docs/INTEGRATIONS.md (every key, what it switches on).
 - **System map** — the build map of the whole engine (Devyn-facing, not for the team).
   https://claude.ai/code/artifact/43fe766b-4084-4b7b-8f76-d56916249847
 

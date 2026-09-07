@@ -5,6 +5,42 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- THE FULL STACK, ENV-GATED 9/7 PM (docs/INTEGRATIONS.md = every key, where it goes, what it
+  switches on). Deployed and dormant until each key lands in Vercel; verified live, money
+  chain 20/20 (two new D1 assertions). Migration 0042 (documents, messages, next_action,
+  lost_reason, team phone, invoice sent_at/deposit, D1 fix in create_manual_invoice +
+  unsettle) and 0043 (pg_cron: escalate */10 min, digest 08:00 ET Mon-Sat; Vercel Hobby only
+  allows daily crons, so scheduling lives in Postgres via pg_net).
+  * Alerts (lib/notify.js): Slack floor channel on every inquiry with a claim link, unclaimed
+    escalation after 15 min (once, stamps escalated_at), money in, morning digest per rep
+    (due today, unclaimed, quiet, holds lapsing, money to chase). Email/SMS lanes to reps
+    need RESEND/TWILIO + email/phone on Team (team_phone action, editable on /team).
+  * Email (lib/mail.js, Resend REST, lib/templates.js): first reply, follow-up, hold
+    confirmed, selection, details link, invoice with PDF attached, receipt. EmailComposer on
+    the drawer (Reply/Write), collector card, Finance (Send invoice replaces FollowUp when
+    connected). Preview via /api/email, send via act email_send; every send logged in
+    `messages` + activities; falls back to a mailto draft until the key exists. Nothing
+    sends to a collector without a person pressing Send.
+  * SMS (lib/sms.js, Twilio): Text lane in the composer for links; rep alerts.
+  * DocuSign (lib/docusign.js, JWT grant, no SDK): Send for signature inside any DocPreview
+    (invoice, COA), documents table, Connect webhook /api/docusign-webhook (HMAC), executed
+    PDF stored on completion, status on the collector card. Demo base until promoted.
+  * Shopify sold-sync: settle hides the product (status draft), undo relists; site_status on
+    artworks. Pay links / product push unchanged (need token).
+  * Tax (lib/tax.js): suggested in the wizard review step from the ship-to state, nexus
+    from TAX_NEXUS_STATES, optional overrides / TaxJar. Deposit expected field -> invoice +
+    PDF terms line. Default due date = 7 days.
+  * Leads: next_action date + text (drawer, quick 0/2/7/21), Today "Due today" list, Lost
+    with reason (status closed), tap-to-call/email in the drawer header and on Today rows,
+    deep links /pipeline?lead=<id> open the drawer (alerts + Today use them).
+  * Fixed from the pass: D1, D2 (/p/thanks?details=1), D6 (card unions inquiry + invoice
+    activities, shows messages + documents), D8, D10 (money formatting, wizard bar black).
+  STILL NEEDS KEYS (Devyn, today): SLACK_WEBHOOK_URL, RESEND_API_KEY + MAIL_FROM (+ GoDaddy
+  DNS via Kristine), TWILIO_*, DOCUSIGN_*, KLAVIYO_API_KEY + MAILING_ADDRESS,
+  SHOPIFY_ADMIN_TOKEN + SHOPIFY_API_SECRET, WIRE_INSTRUCTIONS, TAX_NEXUS_STATES; Bernie +
+  Sara Clerk sign-ins; commission rates. CRON_SECRET is set.
+  NOT BUILT (Gate 2/3 remainder): shipping/delivery states after paid, invoice line edits,
+  lead routing rules, purchase-agreement template, artwork movement log, duplicate merge.
 - SALES READINESS PASS 9/7 (docs/SALES-READINESS-PASS-2026-09-07.md): one synthetic collector
   driven through production as Wyatt, site inquiry -> claim/call/note -> hold -> details link
   -> private selection -> paper -> invoice (work + tax + shipping) -> PDF -> 50% deposit -> paid
