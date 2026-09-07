@@ -23,6 +23,11 @@ export default async function Unit({ params, searchParams }) {
   const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
   const suggested = area && ppsi ? Math.round((ppsi * area) / 10000) * 100 : 0;   // dollars, nearest $100
   const { data: resRows } = await db.from('artwork_reserves').select('*').eq('artwork_id', a.id);
+  const [{ data: moves }, { data: locRows }] = await Promise.all([
+    db.from('artwork_moves').select('*').eq('artwork_id', a.id).order('moved_at', { ascending: false }).limit(20),
+    db.from('inventory_by_location').select('location').order('available', { ascending: false }).limit(30),
+  ]);
+  const knownLocs = [...new Set((locRows || []).map(l => l.location).filter(l => l && l !== 'Unassigned'))];
   const reserve = (resRows || []).find(r => !r.lapsed) || null;
   const [{ data: inqs }, { data: buys }] = await Promise.all([
     a.handle ? db.from('inquiries').select('*, collectors(id, first_name, last_name, budget_range)')
@@ -93,7 +98,7 @@ export default async function Unit({ params, searchParams }) {
           <Row k="Size">{a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null}</Row>
           <Row k="Type">{a.product_type}</Row>
           <Row k="Edition">{a.edition}</Row>
-          <Row k="Location">{a.location || (a.shopify_product_id ? 'Site' : null)}</Row>
+          <Row k="Location">{a.location || (a.shopify_product_id ? 'Site' : 'Unassigned')}</Row>
           <Row k="Inventory №">{a.artcloud_id && !a.artcloud_id.includes(':') ? a.artcloud_id : null}</Row>
           <Row k="Acquired">{a.acquired_at ? new Date(a.acquired_at).toLocaleDateString('en-US', { month:'long', year:'numeric' }) : null}</Row>
           <Row k="Website">{a.handle
@@ -185,6 +190,30 @@ export default async function Unit({ params, searchParams }) {
             <button className="btn mini quiet">Save</button>
           </form>
         </div>}
+
+        <div className="card">
+          <div className="cardtitle">Where it is</div>
+          <div style={{fontSize:14, fontWeight:600, marginBottom:10}}>{a.location || <span style={{color:'#9a551a'}}>Unassigned</span>}</div>
+          <form method="POST" action="/api/act" style={{display:'grid', gridTemplateColumns:'1.4fr 1fr 1fr auto', gap:8, alignItems:'center'}}>
+            <input type="hidden" name="action" value="artwork_move"/>
+            <input type="hidden" name="id" value={a.id}/>
+            <input type="hidden" name="back" value={back}/>
+            <input name="to" list={'locs-' + a.id} placeholder="Move to…" required style={{height:36, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:13, padding:'0 10px'}}/>
+            <datalist id={'locs-' + a.id}>{knownLocs.map(l => <option key={l} value={l}/>)}<option value="Framer"/><option value="Photographer"/><option value="Gallery"/></datalist>
+            <select name="reason" defaultValue="storage" style={{height:36, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:13, padding:'0 8px', background:'#fff'}}>
+              {[['storage','Storage'],['gallery','Gallery'],['framer','Framer'],['photographer','Photographer'],['fair','Fair'],['returned','Returned'],['other','Other']].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+            <input name="note" placeholder="Note" style={{height:36, border:'1px solid #e3e3dd', borderRadius:2, fontFamily:'inherit', fontSize:13, padding:'0 10px'}}/>
+            <button className="btn mini quiet">Move</button>
+          </form>
+          {(moves || []).length > 0 && <div style={{marginTop:12, fontSize:12.5}}>
+            {(moves || []).map(m => <div key={m.id} style={{display:'flex', gap:10, padding:'5px 0', borderTop:'1px solid #f2f2ee'}}>
+              <span style={{color:'#73736c', width:90, flex:'0 0 auto'}}>{new Date(m.moved_at).toLocaleDateString()}</span>
+              <span style={{flex:1}}>{m.from_location || 'unassigned'} → <b>{m.to_location}</b>{m.reason ? <span style={{color:'#73736c'}}> · {m.reason}</span> : null}{m.note ? <span style={{color:'#73736c'}}> · {m.note}</span> : null}</span>
+              <span style={{color:'#73736c'}}>{m.moved_by}</span>
+            </div>)}
+          </div>}
+        </div>
 
         {a.available && <div className="card">
           <div className="cardtitle">Is this work spoken for?</div>

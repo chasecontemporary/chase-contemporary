@@ -7,6 +7,7 @@ import BrandSelect from '../../components/BrandSelect';
 import NewInvoice from '../../components/NewInvoice';
 import EmailComposer from '../../components/EmailComposer';
 import Fulfilment from '../../components/Fulfilment';
+import InvoiceLines from '../../components/InvoiceLines';
 import { db } from '../../lib/db';
 import { mailReady } from '../../lib/mail';
 import { docusignReady } from '../../lib/docusign';
@@ -49,6 +50,9 @@ export default async function Finance({ searchParams }) {
   const saleById = {}; (fSales || []).forEach(s => saleById[s.id] = s);
   const worksBySale = {}; (fItems || []).forEach(it => { if (it.artworks) (worksBySale[it.sale_id] = worksBySale[it.sale_id] || []).push(it.artworks); });
   const shipsBySale = {}; (fShips || []).forEach(s => (shipsBySale[s.sale_id] = shipsBySale[s.sale_id] || []).push(s));
+  const openIds = open.map(i => i.id);
+  const { data: openLines } = openIds.length ? await db.from('invoice_lines').select('*').in('invoice_id', openIds).order('sort') : { data: [] };
+  const linesBy = {}; (openLines || []).forEach(l => (linesBy[l.invoice_id] = linesBy[l.invoice_id] || []).push(l));
   const { data: signedDocs } = await db.from('documents').select('invoice_id, kind, status, signed_pdf_url').not('invoice_id', 'is', null).limit(500);
   const signedBy = {}; (signedDocs || []).forEach(d => { if (d.status === 'completed' && d.signed_pdf_url) signedBy[d.invoice_id + ':' + d.kind] = d.signed_pdf_url; });
   const all = invs || [];
@@ -313,6 +317,15 @@ export default async function Finance({ searchParams }) {
               {!paidIn[i.id] && <ConfirmButton className="btn mini quiet" name="fraction" value="0.5">50% deposit · {usd(Math.round(tot(i) / 2))}</ConfirmButton>}
             </form>
             <div style={{marginLeft:'auto', display:'flex', gap:14, alignItems:'center'}}>
+              <InvoiceLines invoice={i} lines={linesBy[i.id] || []} locked={!!paidIn[i.id]} lockedWhy="Money has landed on this invoice: re-issue it instead of editing."/>
+              <form method="POST" action="/api/act">
+                <input type="hidden" name="action" value="invoice_reissue"/>
+                <input type="hidden" name="id" value={i.id}/>
+                <input type="hidden" name="back" value="/finance"/>
+                <ConfirmButton className="btn mini quiet"
+                  message={`Re-issue invoice No. ${String(i.invoice_number).padStart(4,'0')}?\n\nThis voids it and creates a new invoice with the same lines under a new number. Any payments already recorded stay on the old one.`}>
+                  Re-issue</ConfirmButton>
+              </form>
               <form method="POST" action="/api/act">
                 <input type="hidden" name="action" value="invoice_paid"/>
                 <input type="hidden" name="id" value={i.id}/>

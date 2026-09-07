@@ -531,7 +531,8 @@ async function handle(req, form) {
         kind: 'paylink_created', body: url, actor: rep });
     }
   } else if (action === 'invoice_void') {
-    await db.from('invoices').update({ status: 'void' }).eq('id', id);
+    must(await db.from('invoices').update({ status: 'void', void_reason: (form.get('reason') || '').slice(0, 200) || null }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'voided', body: form.get('reason') || null, actor: rep });
   } else if (action === 'purchase_add') {
     await db.from('purchases').insert({
       collector_id: id, title: form.get('title'), artist: form.get('artist'),
@@ -682,8 +683,14 @@ async function handle(req, form) {
     else must(await db.from('shipments').insert({ sale_id: saleId, invoice_id: form.get('invoice_id') || null, artwork_id: artworkId,
       collector_id: sale.collector_id, created_by: rep, ...patch }));
     // the work has left the building
-    if (artworkId && stamps.shipped_at) await db.from('artworks').update({ location: 'In transit to collector' }).eq('id', artworkId);
-    if (artworkId && stamps.delivered_at) await db.from('artworks').update({ location: 'With collector' }).eq('id', artworkId);
+    if (artworkId && stamps.shipped_at) {
+      await db.from('artwork_moves').insert({ artwork_id: artworkId, from_location: art?.location || null, to_location: 'In transit to collector', reason: 'shipped', moved_by: rep });
+      await db.from('artworks').update({ location: 'In transit to collector' }).eq('id', artworkId);
+    }
+    if (artworkId && stamps.delivered_at) {
+      await db.from('artwork_moves').insert({ artwork_id: artworkId, from_location: stamps.shipped_at ? 'In transit to collector' : (art?.location || null), to_location: 'With collector', reason: 'delivered', moved_by: rep });
+      await db.from('artworks').update({ location: 'With collector' }).eq('id', artworkId);
+    }
     // the sale's own status follows the furthest work behind
     const { data: all } = await db.from('shipments').select('status').eq('sale_id', saleId);
     const { data: items } = await db.from('sale_items').select('artwork_id').eq('sale_id', saleId);
@@ -714,6 +721,87 @@ async function handle(req, form) {
     must(await db.from('sales').update({ fulfilment_status: 'done', closed_at: new Date().toISOString() }).eq('id', id));
     await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id, kind: 'sale_closed', body: 'delivered and done', actor: rep });
     if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'artwork_move') {
+    // "It went to the framer." One field plus a log.
+    const to = (form.get('to') || '').trim().slice(0, 120);
+    if (!to) throw new Error('Where did it go?');
+    const { data: art } = await db.from('artworks').select('id, title, location').eq('id', id).single();
+    if (!art) throw new Error('That work no longer exists.');
+    must(await db.from('artwork_moves').insert({ artwork_id: id, from_location: art.location || null, to_location: to,
+      reason: form.get('reason') || 'other', moved_by: rep, note: (form.get('note') || '').slice(0, 300) || null,
+      moved_at: form.get('when') ? new Date(form.get('when')).toISOString() : new Date().toISOString() }));
+    must(await db.from('artworks').update({ location: to }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id, kind: 'moved',
+      body: `${art.location || 'unassigned'} → ${to}${form.get('reason') ? ' · ' + form.get('reason') : ''}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'invoice_lines_set') {
+    // Change what an open invoice says, as long as no money has landed on it.
+    const { data: inv } = await db.from('invoices').select('*').eq('id', id).single();
+    if (!inv) throw new Error('That invoice no longer exists.');
+    if (inv.status !== 'open') throw new Error('Only an open invoice can be edited. Re-issue it instead.');
+    const { data: paid } = await db.from('payments').select('id').eq('invoice_id', id).eq('status', 'settled').limit(1);
+    if (paid?.length) throw new Error('Money has already landed on this invoice. Re-issue it instead of editing.');
+    let lines = [];
+    try { lines = JSON.parse(form.get('lines') || '[]'); } catch {}
+    const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
+    lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id)).map(l => ({ ...l, amount_cents: cents(l.amount) }));
+    if (!lines.length) throw new Error('An invoice needs at least one line.');
+    if (lines.some(l => l.amount_cents < 0)) throw new Error('An amount is negative. Use a credit line instead.');
+    const works = lines.filter(l => l.kind === 'work' && l.artwork_id);
+    // a work held for someone else cannot be added
+    if (works.length) {
+      const { data: heldBy } = await db.from('holds').select('artwork_id, collector_id, expires_at, collectors(first_name, last_name)')
+        .in('artwork_id', works.map(w => w.artwork_id)).eq('kind', 'reserve').eq('status', 'active');
+      const clash = (heldBy || []).find(h => h.collector_id !== inv.collector_id && (!h.expires_at || new Date(h.expires_at) > new Date()));
+      if (clash) throw new Error(`That work is on hold for ${[clash.collectors?.first_name, clash.collectors?.last_name].filter(Boolean).join(' ') || 'another collector'}.`);
+    }
+    const art = lines.filter(l => !['tax', 'shipping', 'credit'].includes(l.kind)).reduce((s, l) => s + l.amount_cents, 0)
+      - lines.filter(l => l.kind === 'credit').reduce((s, l) => s + l.amount_cents, 0);
+    const tax = lines.filter(l => l.kind === 'tax').reduce((s, l) => s + l.amount_cents, 0);
+    const ship = lines.filter(l => l.kind === 'shipping').reduce((s, l) => s + l.amount_cents, 0);
+    if (art < 0) throw new Error('Credits exceed the art subtotal.');
+    // sale items follow the work lines
+    let saleId = inv.sale_id;
+    if (works.length && !saleId) {
+      const { data: s } = await db.from('sales').insert({ collector_id: inv.collector_id, owner: rep, status: 'invoiced' }).select().single();
+      saleId = s?.id;
+    }
+    if (saleId) {
+      const { data: existing } = await db.from('sale_items').select('id, artwork_id').eq('sale_id', saleId);
+      for (const it of (existing || [])) {
+        const w = works.find(x => x.artwork_id === it.artwork_id);
+        if (w) await db.from('sale_items').update({ agreed_cents: w.amount_cents, title: w.title, artist: w.artist }).eq('id', it.id);
+        else if (it.artwork_id) await db.from('sale_items').delete().eq('id', it.id);
+      }
+      for (const w of works) if (!(existing || []).find(x => x.artwork_id === w.artwork_id))
+        await db.from('sale_items').insert({ sale_id: saleId, inquiry_id: inv.inquiry_id || null, artwork_id: w.artwork_id, title: w.title, artist: w.artist, agreed_cents: w.amount_cents });
+    }
+    must(await db.from('invoice_lines').delete().eq('invoice_id', id));
+    must(await db.from('invoice_lines').insert(lines.map((l, i) => ({ invoice_id: id, kind: l.kind, artwork_id: l.artwork_id || null,
+      title: l.title || null, artist: l.artist || null, amount_cents: l.amount_cents, sort: i, note: l.note || null }))));
+    const first = works[0];
+    must(await db.from('invoices').update({ amount_cents: art, tax_cents: tax, shipping_cents: ship, sale_id: saleId || inv.sale_id,
+      title: works.length > 1 ? `${works.length} works` : (first?.title || inv.title), artist: works.length === 1 ? first?.artist : (works.length ? null : inv.artist),
+      pdf_url: null }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'lines_edited',
+      body: `${lines.length} line${lines.length === 1 ? '' : 's'} · $${Math.round((art + tax + ship) / 100).toLocaleString()}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'invoice_reissue') {
+    // Void this one, clone it under a new number with the same lines. Payments already
+    // settled stay on the old invoice as history; the new one starts clean.
+    const { data: inv } = await db.from('invoices').select('*').eq('id', id).single();
+    if (!inv || inv.status === 'void') throw new Error('That invoice cannot be re-issued.');
+    const { data: lines } = await db.from('invoice_lines').select('*').eq('invoice_id', id).order('sort');
+    const { data: nu, error: nErr } = await db.from('invoices').insert({ collector_id: inv.collector_id, sale_id: inv.sale_id, inquiry_id: inv.inquiry_id,
+      title: inv.title, artist: inv.artist, amount_cents: inv.amount_cents, tax_cents: inv.tax_cents, shipping_cents: inv.shipping_cents,
+      due_at: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), deposit_cents: inv.deposit_cents, notes: `re-issue of ${String(inv.invoice_number).padStart(4, '0')}`,
+      replaces_invoice_id: inv.id }).select().single();
+    if (nErr || !nu) throw new Error('Could not create the new invoice.');
+    if (lines?.length) await db.from('invoice_lines').insert(lines.map(l => ({ invoice_id: nu.id, kind: l.kind, artwork_id: l.artwork_id, title: l.title, artist: l.artist, amount_cents: l.amount_cents, sort: l.sort, note: l.note })));
+    must(await db.from('invoices').update({ status: 'void', void_reason: `re-issued as ${String(nu.invoice_number).padStart(4, '0')}` }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'reissued', body: `as No. ${String(nu.invoice_number).padStart(4, '0')}`, actor: rep });
+    await db.from('activities').insert({ entity_type: 'invoice', entity_id: nu.id, kind: 'issued', body: `replaces No. ${String(inv.invoice_number).padStart(4, '0')}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true, invoice_number: nu.invoice_number });
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }

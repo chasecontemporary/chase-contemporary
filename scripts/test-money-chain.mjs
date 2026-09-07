@@ -73,6 +73,13 @@ const negative = await act({ action: 'invoice_manual', collector_id: collector.i
   lines: JSON.stringify([{ kind: 'service', title: 'x', amount: '-500' }]) });
 check('negative line item is refused', negative.body?.ok === false);
 
+// ---------- 1b. invoice care ----------
+const edited = await act({ action: 'invoice_lines_set', id: inv.id, lines: JSON.stringify([
+  { kind: 'work', artwork_id: work.id, title: work.title, amount: '9500' }, { kind: 'service', title: 'Framing', amount: '500' }, { kind: 'credit', title: 'Courtesy', amount: '200' }]) });
+const [invE] = await rest(`invoices?id=eq.${inv.id}&select=amount_cents,pdf_url`);
+check('lines can be edited before money lands', edited.body?.ok === true && invE.amount_cents === 980000, `amount ${invE.amount_cents}`);
+await act({ action: 'invoice_lines_set', id: inv.id, lines: lines(10000) });   // back to the plain case
+
 // ---------- 2. balances ----------
 const bal = async () => (await rest(`invoice_balances?invoice_id=eq.${inv.id}&select=*`))[0];
 check('balance starts at the full total', (await bal()).balance_cents === 1000000);
@@ -86,6 +93,9 @@ const afterPart = await bal();
 check('partial payment leaves the right balance',
       afterPart.received_cents === 400000 && afterPart.balance_cents === 600000,
       `received ${afterPart.received_cents} balance ${afterPart.balance_cents}`);
+
+const lockedEdit = await act({ action: 'invoice_lines_set', id: inv.id, lines: lines(1) });
+check('lines are locked once money has landed', lockedEdit.body?.ok === false);
 
 // ---------- 3. reserves block a competing sale ----------
 const other = (await rest('collectors', {
@@ -149,6 +159,7 @@ if (invs?.length) {
   const l = invs.map(i => i.id).join(',');
   await del(`commissions?invoice_id=in.(${l})`); await del(`payments?invoice_id=in.(${l})`);
   await del(`invoice_lines?invoice_id=in.(${l})`); await del(`activities?entity_id=in.(${l})`);
+  await rest(`invoices?id=in.(${l})`, { method: 'PATCH', body: JSON.stringify({ replaces_invoice_id: null }) });
   await del(`invoices?id=in.(${l})`);
 }
 if (sales?.length) {
@@ -162,6 +173,7 @@ await del(`holds?artwork_id=eq.${work.id}&kind=eq.reserve`);
 await del(`purchases?collector_id=in.(${ids})`);
 await del(`activities?entity_id=in.(${ids})`);
 await del(`activities?entity_id=eq.${work.id}`);
+await del(`artwork_moves?artwork_id=eq.${work.id}`);
 await rest(`artworks?id=eq.${work.id}`, { method: 'PATCH', body: JSON.stringify({ available: true, location: workLocation, coa_signed_at: null, coa_sent_at: null }) });
 await del(`collectors?id=in.(${ids})`);
 
