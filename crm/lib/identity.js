@@ -55,6 +55,17 @@ export async function whoami() {
   };
 }
 
+// Signing in is not the same as being allowed in. Clerk will happily create an account
+// for anyone who reaches the sign-in page; only people on the gallery's team may use the
+// engine. Enforced in code so a dashboard setting can never be the only thing standing
+// between a stranger and 27,000 collector records.
+export async function isStaff() {
+  if (!clerkReady()) return true;                 // pre-Clerk: the shared code is the gate
+  const me = await whoami();
+  if (!me.verified) return true;                  // transition fallback, still shared-code gated
+  return me.onTeam;
+}
+
 // The name stamped on notes, calls and invoices. Null when we genuinely don't know, so the
 // record says "unattributed" instead of inventing an actor.
 export async function actorName() {

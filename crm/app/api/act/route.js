@@ -1,5 +1,5 @@
 import { db } from '../../../lib/db';
-import { actorName } from '../../../lib/identity';
+import { actorName, isStaff } from '../../../lib/identity';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
@@ -35,6 +35,8 @@ export async function POST(req) {
 const must = (r) => { if (r?.error) throw new Error(r.error.message); return r; };
 
 async function handle(req, form) {
+  // The UI gate isn't enough — nothing may write through the API either.
+  if (!(await isStaff())) throw new Error('This account is not on the gallery team.');
   // Who gets the credit (or the blame) on this action. Null when we genuinely don't know,
   // so the record reads "unattributed" rather than naming a person who may not have done it.
   const rep = await actorName();

@@ -1,7 +1,14 @@
 import RepPicker from './RepPicker';
+import NotStaff from './NotStaff';
+import { isStaff, whoami } from '../lib/identity';
 import ErrBanner from './ErrBanner';
 import { Suspense } from 'react';
-export default function Shell({ active, children, counts = {} }) {
+export default async function Shell({ active, children, counts = {} }) {
+  // Every page renders through here, so this is the one gate nothing gets past.
+  if (!(await isStaff())) {
+    const me = await whoami();
+    return <NotStaff email={me.email}/>;
+  }
   const emailOpen = ['audiences', 'campaigns'].includes(active);
   const items = [['today','Today'],['pipeline','Sales pipeline'],['collectors','Collectors'],
                  ['inventory','Inventory'],['artists','Artists'],['finance','Finance'],['commissions','Commissions'],

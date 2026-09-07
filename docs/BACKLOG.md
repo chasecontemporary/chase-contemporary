@@ -183,20 +183,22 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - DECLINED 8/27: bulk-image request to Artcloud support (sold works stay imageless)
 
 ## Needs key (built, waiting)
-- CLERK — WIRED 9/6, keys live in Vercel, sign-in enforced on production.
-  App "Chase Contemporary" app_3Iymy9uMJ9X4CtIO4nBKxPaUENR, owned by
-  wyatt@chasecontemporary.com (gallery identity, transferable). All four team_members now
-  carry the email Clerk will match on: bernie@ / sara@ / wyatt@chasecontemporary.com and
-  devyn@magnumopus.agency.
-  STILL TO DO (all dashboard-side, Devyn/Wyatt):
-  1. Set sign-in method to **Email link** and DISABLE public sign-ups.
-  2. Invite the four addresses above.
-  3. **Create the PRODUCTION instance** — we are on development keys (pk_test/sk_test,
-     ins_3IymyDjYTQmOdQgLZUE5BjiBcqy). Dev instances have a SEPARATE USER POOL, so anyone
-     who signs in before the switch has to sign in again after. Do this before telling
-     Sara and Bernie to start using it.
-  4. Once all four have signed in successfully: remove CRM_ACCESS_CODE, the /login page and
-     RepPicker. Until then the shared code still works on purpose — no lockout window.
+- CLERK — PRODUCTION LIVE 9/6. App "Chase Contemporary" app_3Iymy9uMJ9X4CtIO4nBKxPaUENR,
+  owned by wyatt@chasecontemporary.com. **pk_live/sk_live are set in Vercel.** Clerk bound
+  production to `clerk.chase-engine.vercel.app` and serves it through the `/__clerk` proxy
+  path, so NO DNS was needed (a custom domain was briefly added to Vercel then removed).
+  All four team_members carry the email Clerk matches on (bernie@ added 9/6).
+  !! TWO DASHBOARD SETTINGS STILL WRONG — read from the live instance:
+    a) `sign_up mode = public` — anyone reaching /sign-in can create an account.
+       CODE NOW BLOCKS THEM (see below), but turn it to restricted/invite-only anyway.
+    b) `password = required`, `email verifications = ['email_code']` — it is asking for a
+       PASSWORD, not the email link Devyn wanted. Switch the sign-in method to **Email link**.
+  Defence in depth added 9/6: `isStaff()` in crm/lib/identity.js — a signed-in account whose
+  email is not in team_members is refused by `Shell` (every page renders through it, shows a
+  plain "this account isn't on the team" screen) AND by /api/act, so a stranger who signs up
+  cannot read or write anything. A dashboard toggle is never the only thing protecting 27k
+  collector records.
+  LAST STEP once all four have signed in: remove CRM_ACCESS_CODE, /login and RepPicker.
 
 ## Housekeeping
 - PURGE DEMO DATA before go-live: full cascade on collectors where email like 'demo-%@import.chasecontemporary.com' (Bernie-demo cast seeded 8/28: Ellison/Fontaine/Park/Reyes/Petrov/Cho/Voss/Shah, invoices 0009-0011, Sara commissions $14,880 Aug, offer + site_events for Ellison). ALSO: restore artworks marked sold by demo settlements (Elena Voss 'bought' the already-sold McCrow AK47 - delete the dup purchase row) and re-set inquiries/holds. The 8/27 purge SQL pattern is in the session log.
