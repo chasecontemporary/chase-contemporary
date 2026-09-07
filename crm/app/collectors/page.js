@@ -28,7 +28,7 @@ export default async function Collectors({ searchParams }) {
     db.from('artist_stats').select('artist, sold').gt('sold', 0).order('sold', { ascending: false }).limit(40),
   ]);
   const rows = list || [];
-  const { data: dupes } = seg === 'dupes' ? await db.from('collector_dupes').select('*').limit(60) : { data: [] };
+  const { data: dupes } = seg === 'dupes' ? await db.from('collector_dupes').select('*').order('why', { ascending: false }).limit(80) : { data: [] };
   const ids = rows.map(r => r.id);
   const pins = {}, boughtArtists = {};
   if (ids.length) {
