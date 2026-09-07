@@ -55,7 +55,11 @@ export async function persist(p, email) {
       seconds_on_page: parseInt(p.seconds_on_page) || null,
       device: cap(p.device, 120),
       visitor_id: /^v-[a-z0-9]{8,40}$/.test(p.visitor_id || '') ? p.visitor_id : null,
-      owner: 'Sara',
+      // Deliberately unclaimed. A new inquiry belongs to the floor until someone takes it:
+      // hard-coding one salesperson made every other rep's personalised views empty and
+      // forced them to reassign by hand. "Answer now" on Today shows unclaimed leads to
+      // everyone; once a rep is set, it becomes theirs.
+      owner: null,
     })
     .select()
     .single();

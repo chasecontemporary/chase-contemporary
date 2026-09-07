@@ -232,7 +232,8 @@ export default async function Today() {
           {answerNow.slice(0, 5).map((r, i) => <a key={r.id} href="/pipeline" style={rowSt(i)}>
             <Sla createdAt={r.created_at} contactedAt={r.contacted_at}/>
             <span style={{flex: 1}}><b>{nameOf(r.collectors)}</b>
-              <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}</span></span>
+              <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}</span>
+              {!r.owner && <span style={{color:'#9a551a', fontWeight:650}}> · unclaimed</span>}</span>
             <span style={{fontSize: 12, color: '#2257c5', fontWeight: 650}}>Open in Pipeline →</span>
           </a>)}
         </div>}

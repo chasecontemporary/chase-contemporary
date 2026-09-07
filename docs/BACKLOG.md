@@ -5,6 +5,24 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- MADE IT ACTUALLY USABLE FOR WYATT 9/7 — walked the whole app signed in as him and fixed
+  what a real user hits. Found by testing, not by reading code:
+  * NOBODY HAD EVER SIGNED IN VIA CLERK (0 users, 0 invitations) — the entire auth path was
+    untested. Created wyatt@chasecontemporary.com (user_3J0Q8x8aJcosbpn3w29sVOUGwjS) and
+    signed in as him end to end. Identity mapping WORKS: Today reads "showing Wyatt's
+    follow-ups", Commissions is rep-scoped to him.
+  * BLOCKER: Clerk Organizations were enabled, so signing in dumped the user on a "create an
+    organization" screen. We don't use Clerk orgs at all — roles come from team_members.
+    Disabled via the Backend API (organization_settings enabled:false).
+  * The sidebar still showed the old self-selected name picker reading "Choose…" while Clerk
+    already knew who he was, and there was NO WAY TO SIGN OUT. Replaced with a real
+    identity block (name, Owner/Salesperson, Sign out) whenever the session is verified.
+  * Every inquiry was hard-coded `owner: 'Sara'`, so any other rep's personalised views were
+    permanently empty and they'd have to reassign by hand. New inquiries now arrive
+    UNCLAIMED; the board and Today show "Unclaimed" in amber, and the drawer's Salesperson
+    dropdown claims it. The three real leads were auto-stamped Sara by that default and had
+    no first response after 14h, so they were reset to unclaimed — reassign if that's wrong.
+  Sign-in flow as it stands: email -> password -> 6-digit emailed code on each new device.
 - RATE LIMITING 9/6 (migration 0040) — the last open finding from our own security audit.
   Counted in Postgres via bump_rate_limit(), not memory: serverless instances reset
   in-memory counters on every cold start, so a per-instance limiter is no limiter at all.

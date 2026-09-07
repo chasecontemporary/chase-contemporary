@@ -149,7 +149,8 @@ export default function Kanban({ initial, team = [] }) {
               : <span style={{color: ageDays(l.stage_changed_at || l.created_at) >= 5 ? '#8f6f14' : '#73736c'}}>
                   {ageDays(l.stage_changed_at || l.created_at)}d</span>}
           </div>
-          {l.owner && <div className="s">{l.owner}</div>}
+          <div className="s" style={l.owner ? {} : {color:'#9a551a', fontWeight:650}}>
+            {l.owner || 'Unclaimed'}</div>
           {failed === l.id && <div style={{fontSize:11, fontWeight:700, color:'#c02d23', marginTop:6}}>
             Not saved — check your connection and try again</div>}
           {touch && <div onClick={e => e.stopPropagation()} style={{marginTop:8}}>
