@@ -144,6 +144,7 @@ const ids = [collector.id, other.id];
 const invs = await rest(`invoices?collector_id=in.(${ids})&select=id`);
 const sales = await rest(`sales?collector_id=in.(${ids})&select=id`);
 const del = (p) => rest(p, { method: 'DELETE' });
+await del(`shipments?collector_id=in.(${ids})`);   // references invoices + sales: first
 if (invs?.length) {
   const l = invs.map(i => i.id).join(',');
   await del(`commissions?invoice_id=in.(${l})`); await del(`payments?invoice_id=in.(${l})`);
@@ -152,7 +153,6 @@ if (invs?.length) {
 }
 if (sales?.length) {
   const l = sales.map(s => s.id).join(',');
-  await del(`shipments?sale_id=in.(${l})`);
   await del(`sale_items?sale_id=in.(${l})`); await del(`sales?id=in.(${l})`);
 }
 await del(`messages?collector_id=in.(${ids})`);
