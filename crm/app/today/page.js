@@ -91,7 +91,7 @@ export default async function Today() {
     { data: team }, { data: inqs }, { data: paysNew }, { data: formsDone }, { data: visits },
     { data: offersViewed },
     { data: chaseInv }, { data: openInv }, { data: paysAll }, { data: paysMonth },
-    { data: respRows }, { data: reserveRows }, { data: agingRows },
+    { data: respRows }, { data: reserveRows }, { data: toShip }, { data: agingRows },
   ] = await Promise.all([
     db.from('team_members').select('name, role'),
     db.from('inquiries')
@@ -112,6 +112,8 @@ export default async function Today() {
     db.from('payments').select('amount_cents').eq('status', 'settled').gte('settled_at', monthStart.toISOString()).limit(2000),
     db.from('inquiries').select('created_at, first_called_at').gte('created_at', D30).not('first_called_at', 'is', null).limit(500),
     db.from('artwork_reserves').select('*'),
+    db.from('sales').select('id, owner, collector_id, fulfilment_status, created_at, collectors(first_name, last_name), sale_items(title)')
+      .eq('status', 'paid').in('fulfilment_status', ['to_ship', 'shipped']).order('created_at').limit(50),
     db.from('artworks').select('id, title, artist, price_cents, internal_value_cents, image_url, acquired_at')
       .eq('available', true).lt('acquired_at', cutoff)
       .order('price_cents', { ascending: false, nullsFirst: false }).limit(6),
@@ -186,7 +188,8 @@ export default async function Today() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const dueToday = buying.filter(r => r.next_action_at && r.next_action_at <= todayStr && (!personal || r.owner === viewer))
     .sort((a, b) => a.next_action_at.localeCompare(b.next_action_at));
-  const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length + holdsOut.length + otherMessages.length;
+  const shipping = (toShip || []).filter(s => !personal || s.owner === viewer);
+  const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length + holdsOut.length + otherMessages.length + shipping.length;
 
   // ---- the numbers ----
   const collectedMonth = (paysMonth || []).reduce((s, p) => s + Number(p.amount_cents), 0);
@@ -285,6 +288,16 @@ export default async function Today() {
             <span style={{flex: 1}}><b>№{String(v.invoice_number).padStart(4, '0')} · {nameOf(v.collectors)}</b>
               <span style={{color: '#9a551a'}}> · {v.why}</span></span>
             <span style={{fontWeight: 700, fontVariantNumeric: 'tabular-nums'}}>{usd(balance(v))}</span>
+          </a>)}
+        </div>}
+        {shipping.length > 0 && <div style={card}>
+          <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
+            Sold, not yet delivered — {shipping.length} sale{shipping.length === 1 ? '' : 's'} to get to the collector</div>
+          {shipping.slice(0, 6).map((s, i) => <a key={s.id} href={'/finance?view=paid'} style={rowSt(i)}>
+            <span style={{flex: 1}}><b>{nameOf(s.collectors)}</b>
+              <span style={{color: '#73736c'}}> · {(s.sale_items || []).map(x => x.title).join(', ')}{s.owner ? ' · ' + s.owner : ''}</span></span>
+            <span style={{fontSize: 12.5, fontWeight: 650, color: s.fulfilment_status === 'shipped' ? '#2257c5' : '#9a551a'}}>
+              {s.fulfilment_status === 'shipped' ? 'on its way' : 'paid ' + Math.floor((Date.now() - new Date(s.created_at)) / 86400000) + 'd ago, not shipped'}</span>
           </a>)}
         </div>}
         {holdsOut.length > 0 && <div style={card}>

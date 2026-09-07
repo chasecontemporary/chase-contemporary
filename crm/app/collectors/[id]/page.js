@@ -2,6 +2,8 @@ import Shell from '../../../components/Shell';
 import BrandSelect from '../../../components/BrandSelect';
 import OfferComposer from '../../../components/OfferComposer';
 import EmailComposer from '../../../components/EmailComposer';
+import Fulfilment from '../../../components/Fulfilment';
+import { mailReady } from '../../../lib/mail';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
 export const dynamic = 'force-dynamic';
@@ -35,6 +37,15 @@ export default async function Card({ params, searchParams }) {
     ? await db.from('activities').select('*').in('entity_id', relIds).order('created_at', { ascending: false }).limit(60)
     : { data: [] };
   const invNum = {}; (invRows || []).forEach(r => invNum[r.id] = String(r.invoice_number).padStart(4, '0'));
+  // paid sales still on their way
+  const { data: openSales } = await db.from('sales').select('id, status, fulfilment_status, closed_at, thanked_at')
+    .eq('collector_id', id).eq('status', 'paid').neq('fulfilment_status', 'done').limit(5);
+  const openSaleIds = (openSales || []).map(s => s.id);
+  const [{ data: osItems }, { data: osShips }, { data: osInv }] = openSaleIds.length ? await Promise.all([
+    db.from('sale_items').select('sale_id, artworks(id, title, artist, image_url, location, coa_url, coa_signed_at, coa_sent_at)').in('sale_id', openSaleIds),
+    db.from('shipments').select('*').in('sale_id', openSaleIds),
+    db.from('invoices').select('id, sale_id, invoice_number').in('sale_id', openSaleIds),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
   const acts = [...(actsC || []), ...(actsR || []).map(a => ({ ...a,
     body: a.entity_type === 'invoice' ? `No. ${invNum[a.entity_id] || ''}${a.body ? ' · ' + a.body : ''}` : a.body }))]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 60);
@@ -225,6 +236,17 @@ export default async function Card({ params, searchParams }) {
       <input readOnly defaultValue={dlink} onFocus={undefined} style={{flex:1, fontSize:12, border:'1px solid #e3e3dd',
         borderRadius:2, padding:'6px 10px', fontFamily:'inherit', color:'#2257c5'}}/>
     </div>}
+
+    {(openSales || []).length > 0 && <>
+      <div className="h1" style={{fontSize:18, marginTop:34}}>On its way</div>
+      <div className="sub">Paid, not yet delivered and closed</div>
+      <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:12}}>
+        {(openSales || []).map(s => <Fulfilment key={s.id} sale={s} collector={c} mailReady={mailReady()}
+          invoice={(osInv || []).find(x => x.sale_id === s.id) || null}
+          works={(osItems || []).filter(x => x.sale_id === s.id && x.artworks).map(x => x.artworks)}
+          shipments={(osShips || []).filter(x => x.sale_id === s.id)}/>)}
+      </div>
+    </>}
 
     <div className="h1" style={{fontSize:18, marginTop:34}}>Collection</div>
     <div className="sub">What they own — the heart of the record</div>

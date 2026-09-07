@@ -582,6 +582,8 @@ async function handle(req, form) {
       if (ctx.inquiry.status === 'new') { patch.status = 'contacted'; patch.stage_changed_at = new Date().toISOString(); }
       await db.from('inquiries').update(patch).eq('id', ctx.inquiry.id);
     }
+    if (ctx.invoice?.sale_id && template === 'delivered_thank_you')
+      await db.from('sales').update({ thanked_at: new Date().toISOString() }).eq('id', ctx.invoice.sale_id);
     if (ctx.invoice && template === 'invoice') {
       const st = ctx.invoice.ar_status || 'issued';
       const NEXT = { issued: 'sent', sent: 'fu1', fu1: 'fu2', fu2: 'fu3', fu3: 'fu3' };
@@ -647,6 +649,71 @@ async function handle(req, form) {
       await db.from('artworks').update({ site_status: 'live' }).eq('id', id);
       await db.from('activities').insert({ entity_type: 'artwork', entity_id: id, kind: 'site_relisted', actor: rep });
     }
+  } else if (action === 'shipment_set') {
+    // Where the work is on its way. One row per work per sale, upserted; the step buttons
+    // stamp the dates; shipped moves the work's location, delivered flips the sale.
+    const saleId = form.get('sale_id'), artworkId = form.get('artwork_id') || null;
+    if (!saleId) throw new Error('No sale to ship.');
+    const { data: sale } = await db.from('sales').select('id, status, collector_id, fulfilment_status').eq('id', saleId).single();
+    if (!sale) throw new Error('That sale no longer exists.');
+    if (sale.status !== 'paid') throw new Error('The work ships once the invoice is paid in full.');
+    const status = form.get('status') || 'pending';
+    if (!['pending', 'packed', 'shipped', 'delivered', 'installed'].includes(status)) throw new Error('Unknown shipping step.');
+    const quote = Math.round(Number(String(form.get('quote') || '0').replace(/[$,\s]/g, '')) * 100) || null;
+    const tracking = (form.get('tracking') || '').trim() || null;
+    const trackingUrl = tracking && /^https?:\/\//.test(tracking) ? tracking : null;
+    const { data: col } = await db.from('collectors').select('shipping_line1, shipping_line2, shipping_city, shipping_state, shipping_zip, shipping_country, address_line1, city, state, zip, country').eq('id', sale.collector_id).single();
+    const shipTo = col ? [col.shipping_line1 || col.address_line1, col.shipping_line2, [col.shipping_city || col.city, col.shipping_state || col.state, col.shipping_zip || col.zip].filter(Boolean).join(' '), col.shipping_country || col.country].filter(Boolean).join(', ') : null;
+    const { data: art } = artworkId ? await db.from('artworks').select('id, title, location').eq('id', artworkId).single() : { data: null };
+    let q = db.from('shipments').select('*').eq('sale_id', saleId);
+    q = artworkId ? q.eq('artwork_id', artworkId) : q.is('artwork_id', null);
+    const { data: existing } = await q.maybeSingle();
+    const now = new Date().toISOString();
+    const stamps = {};
+    const ORDER = ['packed', 'shipped', 'delivered', 'installed'];
+    for (const st of ORDER) {
+      if (ORDER.indexOf(status) >= ORDER.indexOf(st) && !(existing?.[st + '_at'])) stamps[st + '_at'] = now;
+    }
+    const patch = { carrier: form.get('carrier') || existing?.carrier || null, quote_cents: quote ?? existing?.quote_cents ?? null,
+      tracking: tracking ?? existing?.tracking ?? null, tracking_url: trackingUrl ?? existing?.tracking_url ?? null,
+      eta: form.get('eta') || existing?.eta || null, status, ship_to: existing?.ship_to || shipTo,
+      ship_from: existing?.ship_from || art?.location || null, updated_at: now, ...stamps };
+    if (existing) must(await db.from('shipments').update(patch).eq('id', existing.id));
+    else must(await db.from('shipments').insert({ sale_id: saleId, invoice_id: form.get('invoice_id') || null, artwork_id: artworkId,
+      collector_id: sale.collector_id, created_by: rep, ...patch }));
+    // the work has left the building
+    if (artworkId && stamps.shipped_at) await db.from('artworks').update({ location: 'In transit to collector' }).eq('id', artworkId);
+    if (artworkId && stamps.delivered_at) await db.from('artworks').update({ location: 'With collector' }).eq('id', artworkId);
+    // the sale's own status follows the furthest work behind
+    const { data: all } = await db.from('shipments').select('status').eq('sale_id', saleId);
+    const { data: items } = await db.from('sale_items').select('artwork_id').eq('sale_id', saleId);
+    const rank = (s) => ['pending', 'packed', 'shipped', 'delivered', 'installed'].indexOf(s || 'pending');
+    const need = (items || []).filter(i => i.artwork_id).length || 1;
+    const rows = all || [];
+    const slowest = rows.length >= need ? Math.min(...rows.map(r => rank(r.status))) : 0;
+    const fs = slowest >= 3 ? 'delivered' : slowest >= 2 ? 'shipped' : 'to_ship';
+    if (sale.fulfilment_status !== 'done') await db.from('sales').update({ fulfilment_status: fs }).eq('id', saleId);
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id, kind: 'shipment_' + status,
+      body: `${art?.title || 'the work'}${patch.carrier ? ' · ' + patch.carrier : ''}${tracking ? ' · ' + tracking : ''}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true, fulfilment_status: fs });
+  } else if (action === 'coa_mark') {
+    const what = form.get('what');
+    const patch = what === 'signed' ? { coa_signed_at: new Date().toISOString() } : what === 'unsigned' ? { coa_signed_at: null }
+      : what === 'sent' ? { coa_sent_at: new Date().toISOString() } : what === 'unsent' ? { coa_sent_at: null } : null;
+    if (!patch) throw new Error('Unknown certificate step.');
+    must(await db.from('artworks').update(patch).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id, kind: 'coa_' + what, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'sale_close') {
+    const { data: sale } = await db.from('sales').select('id, status, collector_id').eq('id', id).single();
+    if (!sale || sale.status !== 'paid') throw new Error('Only a paid sale can be closed.');
+    const { data: items } = await db.from('sale_items').select('artwork_id').eq('sale_id', id);
+    const { data: ships } = await db.from('shipments').select('artwork_id, status').eq('sale_id', id);
+    const undelivered = (items || []).filter(i => i.artwork_id && !(ships || []).find(s => s.artwork_id === i.artwork_id && ['delivered', 'installed'].includes(s.status)));
+    if (undelivered.length) throw new Error('Every work has to be delivered before the sale closes.');
+    must(await db.from('sales').update({ fulfilment_status: 'done', closed_at: new Date().toISOString() }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id, kind: 'sale_closed', body: 'delivered and done', actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }

@@ -15,6 +15,9 @@ export async function buildContext({ inquiryId, collectorId, invoiceId, note, ex
     const { data: it } = await db.from('sale_items').select('artwork_id').eq('sale_id', invoice.sale_id).limit(1).maybeSingle();
     if (it?.artwork_id) ({ data: artwork } = await db.from('artworks').select('*').eq('id', it.artwork_id).single());
   }
+  let shipment = null;
+  if (invoice?.sale_id) ({ data: shipment } = await db.from('shipments').select('*').eq('sale_id', invoice.sale_id)
+    .order('updated_at', { ascending: false }).limit(1).maybeSingle());
   const { data: repRow } = me.name ? await db.from('team_members').select('name, email, phone').eq('name', me.name).maybeSingle() : { data: null };
   const rep = repRow || { name: me.name };
   const links = { ...extraLinks };
@@ -29,5 +32,5 @@ export async function buildContext({ inquiryId, collectorId, invoiceId, note, ex
     if (collector.details_token && !collector.details_completed_at)
       links.details = (process.env.APP_URL || 'https://chase-engine.vercel.app') + '/d/' + collector.details_token;
   }
-  return { inquiry, collector, artwork, invoice, rep, links, note };
+  return { inquiry, collector, artwork, invoice, rep, links, note, shipment };
 }

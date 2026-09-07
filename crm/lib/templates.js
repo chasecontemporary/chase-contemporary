@@ -165,6 +165,41 @@ export const TEMPLATES = {
   },
 };
 
+TEMPLATES.shipping_confirmation = {
+  label: 'Shipped · tracking and what to expect',
+  needs: ['invoice'],
+  build: (x) => {
+    const first = x.collector?.first_name || 'there';
+    const a = x.artwork; const sh = x.shipment || {};
+    const eta = sh.eta ? new Date(sh.eta + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : null;
+    const body = [
+      P(`Dear ${esc(first)},`),
+      P(`<i>${esc(a?.title || 'Your work')}</i>${a?.artist ? ' by ' + esc(a.artist) : ''} is on its way to you${sh.carrier ? ' with ' + esc(sh.carrier) : ''}${eta ? ', expected ' + esc(eta) : ''}.`),
+      workBlock(a, null),
+      sh.tracking ? P(`Tracking: ${sh.tracking_url ? link(sh.tracking_url, esc(sh.tracking)) : '<b>' + esc(sh.tracking) + '</b>'}.`) : '',
+      P(`The certificate of authenticity travels with the work. Please inspect the crate on arrival and note anything on the delivery receipt; call me the same day if anything is not right and we will take care of it.`),
+    ].join('');
+    return { subject: `${a?.title || 'Your work'} is on its way`, html: shell(body, { signature: signatureFor(x.rep) }),
+      text: `Dear ${first},\n\n${a?.title || 'Your work'} is on its way${sh.carrier ? ' with ' + sh.carrier : ''}${eta ? ', expected ' + eta : ''}.${sh.tracking ? '\nTracking: ' + (sh.tracking_url || sh.tracking) : ''}\n\nThe certificate of authenticity travels with the work. Please inspect the crate on arrival and call me the same day if anything is not right.\n\nWarm regards,\n${x.rep?.name || 'Chase Contemporary'}` };
+  },
+};
+TEMPLATES.delivered_thank_you = {
+  label: 'Delivered · thank you',
+  needs: ['invoice'],
+  build: (x) => {
+    const first = x.collector?.first_name || 'there';
+    const a = x.artwork;
+    const body = [
+      P(`Dear ${esc(first)},`),
+      P(`I hope <i>${esc(a?.title || 'the work')}</i> has found its place. It was a pleasure helping you bring it home, and I would love to see it installed if you feel like sending a photo.`),
+      workBlock(a, null),
+      P(`Your certificate of authenticity is with the work; keep it with your records. If you ever want the work photographed, reframed, insured or moved, we can arrange all of it. And when something new arrives by ${esc(a?.artist || 'the artists you love')}, you will hear from me first.`),
+    ].join('');
+    return { subject: `Thank you, ${first}`, html: shell(body, { signature: signatureFor(x.rep) }),
+      text: `Dear ${first},\n\nI hope ${a?.title || 'the work'} has found its place. It was a pleasure helping you bring it home.\n\nYour certificate of authenticity is with the work. When something new arrives by ${a?.artist || 'the artists you love'}, you will hear from me first.\n\nWarm regards,\n${x.rep?.name || 'Chase Contemporary'}` };
+  },
+};
+
 export const templateList = () => Object.entries(TEMPLATES).map(([k, t]) => ({ key: k, label: t.label, needs: t.needs }));
 export const renderTemplate = (key, ctx) => {
   const t = TEMPLATES[key];

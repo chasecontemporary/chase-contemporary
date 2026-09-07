@@ -45,7 +45,8 @@ const check = (name, ok, detail = '') => {
 };
 
 // ---------- setup ----------
-const [work] = await rest('artworks?available=eq.true&price_cents=gt.0&select=id,title&limit=1');
+const [work] = await rest('artworks?available=eq.true&price_cents=gt.0&select=id,title,location&limit=1');
+const workLocation = work.location;
 const collector = (await rest('collectors', {
   method: 'POST', headers: { Prefer: 'return=representation' },
   body: JSON.stringify({ email: EMAIL, first_name: 'Money', last_name: 'Chain' }),
@@ -111,6 +112,18 @@ check('settling writes a commission', comm.length >= 1);
 const leadAfter = await rest(`inquiries?id=eq.${lead.id}&select=status`);
 check('settling closes the lead (D1)', leadAfter[0]?.status === 'paid', `status ${leadAfter[0]?.status}`);
 
+// ---------- 4b. after the money ----------
+const early = await act({ action: 'sale_close', id: inv.sale_id });
+check('a sale cannot close before delivery', early.body?.ok === false);
+await act({ action: 'shipment_set', sale_id: inv.sale_id, invoice_id: inv.id, artwork_id: work.id, status: 'shipped', carrier: 'FedEx', quote: '450', tracking: '123456789012' });
+const [saleShip] = await rest(`sales?id=eq.${inv.sale_id}&select=fulfilment_status`);
+const [artShip] = await rest(`artworks?id=eq.${work.id}&select=location`);
+check('shipping moves the sale and the work', saleShip.fulfilment_status === 'shipped' && artShip.location === 'In transit to collector', `${saleShip.fulfilment_status} / ${artShip.location}`);
+await act({ action: 'shipment_set', sale_id: inv.sale_id, invoice_id: inv.id, artwork_id: work.id, status: 'delivered', carrier: 'FedEx', tracking: '123456789012' });
+const closed = await act({ action: 'sale_close', id: inv.sale_id });
+const [saleDone] = await rest(`sales?id=eq.${inv.sale_id}&select=fulfilment_status,closed_at`);
+check('delivered sale closes', closed.body?.ok === true && saleDone.fulfilment_status === 'done' && !!saleDone.closed_at);
+
 // ---------- 5. undo ----------
 await act({ action: 'invoice_unsettle', id: inv.id });
 const reopened = await rest(`invoices?id=eq.${inv.id}&select=status`);
@@ -139,6 +152,7 @@ if (invs?.length) {
 }
 if (sales?.length) {
   const l = sales.map(s => s.id).join(',');
+  await del(`shipments?sale_id=in.(${l})`);
   await del(`sale_items?sale_id=in.(${l})`); await del(`sales?id=in.(${l})`);
 }
 await del(`messages?collector_id=in.(${ids})`);
@@ -148,7 +162,7 @@ await del(`holds?artwork_id=eq.${work.id}&kind=eq.reserve`);
 await del(`purchases?collector_id=in.(${ids})`);
 await del(`activities?entity_id=in.(${ids})`);
 await del(`activities?entity_id=eq.${work.id}`);
-await rest(`artworks?id=eq.${work.id}`, { method: 'PATCH', body: JSON.stringify({ available: true }) });
+await rest(`artworks?id=eq.${work.id}`, { method: 'PATCH', body: JSON.stringify({ available: true, location: workLocation, coa_signed_at: null, coa_sent_at: null }) });
 await del(`collectors?id=in.(${ids})`);
 
 const leftover = await rest(`collectors?email=like.moneychain-*&select=id`);

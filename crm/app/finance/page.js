@@ -6,6 +6,7 @@ import FollowUp from '../../components/FollowUp';
 import BrandSelect from '../../components/BrandSelect';
 import NewInvoice from '../../components/NewInvoice';
 import EmailComposer from '../../components/EmailComposer';
+import Fulfilment from '../../components/Fulfilment';
 import { db } from '../../lib/db';
 import { mailReady } from '../../lib/mail';
 import { docusignReady } from '../../lib/docusign';
@@ -38,6 +39,16 @@ export default async function Finance({ searchParams }) {
     db.from('payments').select('invoice_id, amount_cents, method, settled_at').eq('status', 'settled').not('invoice_id', 'is', null).order('settled_at').limit(1000),
     db.from('sale_items').select('sale_id, title, artworks(tearsheet_url, coa_url, title)').not('sale_id', 'is', null).limit(400),
   ]);
+  // fulfilment for every paid sale on screen
+  const paidSaleIds = all.filter(i => i.status === 'paid' && i.sale_id).map(i => i.sale_id);
+  const [{ data: fSales }, { data: fItems }, { data: fShips }] = paidSaleIds.length ? await Promise.all([
+    db.from('sales').select('id, status, fulfilment_status, closed_at, thanked_at').in('id', paidSaleIds),
+    db.from('sale_items').select('sale_id, artwork_id, artworks(id, title, artist, image_url, location, coa_url, coa_signed_at, coa_sent_at)').in('sale_id', paidSaleIds),
+    db.from('shipments').select('*').in('sale_id', paidSaleIds),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
+  const saleById = {}; (fSales || []).forEach(s => saleById[s.id] = s);
+  const worksBySale = {}; (fItems || []).forEach(it => { if (it.artworks) (worksBySale[it.sale_id] = worksBySale[it.sale_id] || []).push(it.artworks); });
+  const shipsBySale = {}; (fShips || []).forEach(s => (shipsBySale[s.sale_id] = shipsBySale[s.sale_id] || []).push(s));
   const { data: signedDocs } = await db.from('documents').select('invoice_id, kind, status, signed_pdf_url').not('invoice_id', 'is', null).limit(500);
   const signedBy = {}; (signedDocs || []).forEach(d => { if (d.status === 'completed' && d.signed_pdf_url) signedBy[d.invoice_id + ':' + d.kind] = d.signed_pdf_url; });
   const all = invs || [];
@@ -278,6 +289,10 @@ export default async function Finance({ searchParams }) {
               </div>
             </div>
           </div>
+          {i.status === 'paid' && i.sale_id && saleById[i.sale_id] && <div style={{padding:'0 20px 16px'}}>
+            <Fulfilment sale={saleById[i.sale_id]} invoice={i} collector={c} works={worksBySale[i.sale_id] || []}
+              shipments={shipsBySale[i.sale_id] || []} mailReady={canMail}/>
+          </div>}
           {isOpen && <div style={{display:'flex', gap:8, alignItems:'center', padding:'12px 20px',
             borderTop:'1px solid #eeeee9', background:'#fbfbfd'}}>
             {canMail
