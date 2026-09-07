@@ -1,4 +1,5 @@
 import Shell from '../../../components/Shell';
+import ReserveControl from '../../../components/ReserveControl';
 import { db } from '../../../lib/db';
 import { listingGaps } from '../../../lib/readiness';
 import DocPreview from '../../../components/DocPreview';
@@ -21,6 +22,8 @@ export default async function Unit({ params, searchParams }) {
   const area = a.dims_h_in > 0 && a.dims_w_in > 0 ? a.dims_h_in * a.dims_w_in : 0;
   const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
   const suggested = area && ppsi ? Math.round((ppsi * area) / 10000) * 100 : 0;   // dollars, nearest $100
+  const { data: resRows } = await db.from('artwork_reserves').select('*').eq('artwork_id', a.id);
+  const reserve = (resRows || []).find(r => !r.lapsed) || null;
   const [{ data: inqs }, { data: buys }] = await Promise.all([
     a.handle ? db.from('inquiries').select('*, collectors(id, first_name, last_name, budget_range)')
       .eq('artwork_handle', a.handle).order('created_at', { ascending: false }) : { data: [] },
@@ -65,7 +68,8 @@ export default async function Unit({ params, searchParams }) {
         <div>
           <div style={{display:'flex', gap:10, alignItems:'center'}}>
             <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase'}}>{a.artist || 'Unknown artist'}</span>
-            {a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
+            {reserve ? <span className="pill" style={{background:'#b7791f', color:'#fff', fontSize:10, fontWeight:700}}>ON HOLD</span>
+              : a.available ? <span className="pill green" style={{fontSize:10, fontWeight:700}}>AVAILABLE</span>
               : <span className="pill" style={{fontSize:10, fontWeight:700}}>SOLD</span>}
           </div>
           <div className="h1" style={{fontSize:27, marginTop:4, letterSpacing:'-.02em'}}>{a.title}</div>
@@ -180,6 +184,17 @@ export default async function Unit({ params, searchParams }) {
             </label>
             <button className="btn mini quiet">Save</button>
           </form>
+        </div>}
+
+        {a.available && <div className="card">
+          <div className="cardtitle">Is this work spoken for?</div>
+          <ReserveControl artworkId={a.id} artworkTitle={a.title}
+            collectorId={reserve?.collector_id || null}
+            collectorName={reserve ? [reserve.first_name, reserve.last_name].filter(Boolean).join(' ') : null}
+            reserve={reserve}/>
+          {!reserve && <div style={{fontSize:12.5, color:'#73736c', marginTop:8}}>
+            Holds are placed from a collector&apos;s lead in the pipeline, so the work is always
+            held <i>for</i> someone.</div>}
         </div>}
 
         {(buys||[]).length > 0 && <div className="card">

@@ -28,7 +28,6 @@ export default async function Today() {
   const D5 = new Date(Date.now() - 5 * 86400000).toISOString();
   const D7 = new Date(Date.now() - 7 * 86400000).toISOString();
   const D30 = new Date(Date.now() - 30 * 86400000).toISOString();
-  const H60 = new Date(Date.now() - 60 * 3600000).toISOString();
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
@@ -87,7 +86,7 @@ export default async function Today() {
     { data: team }, { data: inqs }, { data: paysNew }, { data: formsDone }, { data: visits },
     { data: offersViewed },
     { data: chaseInv }, { data: openInv }, { data: paysAll }, { data: paysMonth },
-    { data: respRows }, { data: agingRows },
+    { data: respRows }, { data: reserveRows }, { data: agingRows },
   ] = await Promise.all([
     db.from('team_members').select('name, role'),
     db.from('inquiries')
@@ -107,6 +106,7 @@ export default async function Today() {
     db.from('payments').select('invoice_id, amount_cents').eq('status', 'settled').not('invoice_id', 'is', null).limit(2000),
     db.from('payments').select('amount_cents').eq('status', 'settled').gte('settled_at', monthStart.toISOString()).limit(2000),
     db.from('inquiries').select('created_at, first_called_at').gte('created_at', D30).not('first_called_at', 'is', null).limit(500),
+    db.from('artwork_reserves').select('*'),
     db.from('artworks').select('id, title, artist, price_cents, internal_value_cents, image_url, acquired_at')
       .eq('available', true).lt('acquired_at', cutoff)
       .order('price_cents', { ascending: false, nullsFirst: false }).limit(6),
@@ -167,7 +167,11 @@ export default async function Today() {
     }
     return null;
   }).filter(Boolean);
-  const holdsOut = (inqs || []).filter(r => r.status === 'hold' && (r.stage_changed_at || r.created_at) < H60);
+  // real reserves on works: what lapses (or has lapsed) needs a decision today
+  const soon = Date.now() + 24 * 3600000;
+  const holdsOut = (reserveRows || [])
+    .filter(r => r.expires_at && new Date(r.expires_at).getTime() < soon)
+    .sort((a, b) => new Date(a.expires_at) - new Date(b.expires_at));
   const attentionCount = answerNow.length + quiet.length + chase.length + holdsOut.length;
 
   // ---- the numbers ----
@@ -253,13 +257,19 @@ export default async function Today() {
         </div>}
         {holdsOut.length > 0 && <div style={card}>
           <div style={{padding: '12px 16px 4px', fontSize: 13, fontWeight: 700}}>
-            Holds running out — decide: invoice or release</div>
-          {holdsOut.slice(0, 5).map((r, i) => <a key={r.id} href="/pipeline" style={rowSt(i)}>
-            <span style={{flex: 1}}><b>{nameOf(r.collectors)}</b>
-              <span style={{color: '#73736c'}}> · {r.artwork_title || r.purpose}</span></span>
-            <span style={{fontSize: 12.5, color: '#c02d23', fontWeight: 650}}>
-              held {Math.floor((Date.now() - new Date(r.stage_changed_at || r.created_at).getTime()) / 3600000)}h</span>
-          </a>)}
+            Holds running out — invoice it or let the work go back on sale</div>
+          {holdsOut.slice(0, 6).map((r, i) => {
+            const until = new Date(r.expires_at);
+            const lapsed = until < new Date();
+            return <a key={r.id} href={'/inventory/' + r.artwork_id} style={rowSt(i)}>
+              <span style={{flex: 1}}>
+                <b>{[r.first_name, r.last_name].filter(Boolean).join(' ') || 'A collector'}</b>
+                <span style={{color: '#73736c'}}> · {r.artwork_title}
+                  {r.placed_by ? ` · held by ${r.placed_by}` : ''}</span></span>
+              <span style={{fontSize: 12.5, fontWeight: 650, color: lapsed ? '#c02d23' : '#9a551a'}}>
+                {lapsed ? 'lapsed ' + until.toLocaleDateString()
+                        : 'until ' + until.toLocaleDateString()}</span>
+            </a>; })}
         </div>}
       </div>}
 

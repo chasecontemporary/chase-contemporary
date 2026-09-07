@@ -3,6 +3,7 @@ import BrandSelect from './BrandSelect';
 import SaleWizard from './SaleWizard';
 import OfferComposer from './OfferComposer';
 import DocPreview from './DocPreview';
+import ReserveControl from './ReserveControl';
 import { useEffect, useState } from 'react';
 
 const STAGES = ['new','contacted','in_conversation','hold','invoice','paid','nurture'];
@@ -254,6 +255,14 @@ export default function Kanban({ initial, team = [] }) {
             </div>)}
           </div>;
         })()}
+
+        {a && <>
+          <div style={secTitle}>Is this work spoken for?</div>
+          <ReserveControl artworkId={a.id} artworkTitle={a.title}
+            collectorId={openLead.collector_id}
+            collectorName={[c.first_name, c.last_name].filter(Boolean).join(' ')}
+            inquiryId={openLead.id} reserve={openLead.reserve} compact/>
+        </>}
 
         <div style={secTitle}>This inquiry</div>
         {(() => {

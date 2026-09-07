@@ -64,6 +64,13 @@ export default async function Pipeline() {
       .in('title', missingTitles);
     (byTitle || []).forEach(a => { titleMap[a.title] = a; });
   }
+  // reserves on the works in play — so the drawer can show who a work is promised to
+  const artIds = [...new Set(Object.values(artMap).concat(Object.values(titleMap)).map(a => a.id))];
+  let reserveMap = {};
+  if (artIds.length) {
+    const { data: res } = await db.from('artwork_reserves').select('*').in('artwork_id', artIds);
+    (res || []).forEach(r => { if (!r.lapsed) reserveMap[r.artwork_id] = r; });
+  }
   const leads = (rows || []).map(r => ({ ...r,
     artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
     openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1,
@@ -71,6 +78,8 @@ export default async function Pipeline() {
     vip: (ltvMap[r.collector_id]?.tags || []).includes('VIP list'),
     openInvoice: invoiceMap[r.collector_id] || null,
     journey: journeyMap[r.collector_id] || null,
+    reserve: (artMap[r.artwork_handle] || titleMap[r.artwork_title])
+      ? reserveMap[(artMap[r.artwork_handle] || titleMap[r.artwork_title]).id] || null : null,
     competition: competition[r.id] || { others: 0, committed: null } }));
   const { data: team } = await db.from('team_members').select('name').eq('active', true).order('name');
 

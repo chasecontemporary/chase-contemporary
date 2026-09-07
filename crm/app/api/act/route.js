@@ -168,6 +168,47 @@ async function handle(req, form) {
     if (form.get('back') === 'json')
       return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     return Response.redirect(new URL((form.get('back') || '/collectors/' + id) + '?dlink=' + encodeURIComponent(url), req.url), 303);
+  } else if (action === 'reserve_create') {
+    // Hold a WORK for a collector until a stated time, so two reps can't promise the
+    // same canvas. Refuses if someone else already has it — that refusal is the point.
+    const days = Math.min(30, Math.max(1, Number(form.get('days')) || 3));
+    const { data: existing } = await db.from('holds')
+      .select('id, collector_id, expires_at, placed_by, collectors(first_name, last_name)')
+      .eq('artwork_id', id).eq('kind', 'reserve').eq('status', 'active');
+    const live = (existing || []).find(h => !h.expires_at || new Date(h.expires_at) > new Date());
+    const collectorId = form.get('collector_id') || null;
+    if (!collectorId) throw new Error('Choose the collector this is being held for.');
+    if (live && live.collector_id !== collectorId) {
+      const who = [live.collectors?.first_name, live.collectors?.last_name].filter(Boolean).join(' ') || 'another collector';
+      throw new Error(`This work is already on hold for ${who} until ${new Date(live.expires_at).toLocaleDateString()}${live.placed_by ? ', placed by ' + live.placed_by : ''}. Release that hold first.`);
+    }
+    if (live) {   // same collector — extend rather than stack duplicates
+      must(await db.from('holds').update({
+        expires_at: new Date(Date.now() + days * 86400000).toISOString(),
+        note: form.get('note') || live.note || null,
+      }).eq('id', live.id));
+    } else {
+      must(await db.from('holds').insert({
+        artwork_id: id, collector_id: collectorId, kind: 'reserve', status: 'active',
+        inquiry_id: form.get('inquiry_id') || null,
+        placed_by: rep === 'rep' ? null : rep,
+        note: form.get('note') || null,
+        expires_at: new Date(Date.now() + days * 86400000).toISOString(),
+      }));
+    }
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+      kind: 'reserved', body: `held ${days} day${days === 1 ? '' : 's'}`, actor: rep });
+    await db.from('activities').insert({ entity_type: 'collector', entity_id: collectorId,
+      kind: 'reserved', body: form.get('artwork_title') || 'a work', actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
+  } else if (action === 'reserve_release') {
+    must(await db.from('holds')
+      .update({ status: form.get('outcome') === 'sold' ? 'converted' : 'released',
+                released_at: new Date().toISOString() })
+      .eq('id', form.get('hold_id')));
+    if (id) await db.from('activities').insert({ entity_type: 'artwork', entity_id: id,
+      kind: form.get('outcome') === 'sold' ? 'reserve_converted' : 'reserve_released', actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true });
   } else if (action === 'offer_create') {
     const items = JSON.parse(form.get('items') || '[]')
       .filter(x => x.id).slice(0, 10)
@@ -338,6 +379,24 @@ async function handle(req, form) {
     try { lines = JSON.parse(form.get('lines') || '[]'); } catch {}
     const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
     if (lines.some(l => cents(l.amount) < 0)) throw new Error('An amount is negative. Check the line items.');
+    // The whole point of a reserve: refuse to invoice a work another rep is holding.
+    const wantIds = lines.filter(l => l.kind === 'work' && l.artwork_id).map(l => l.artwork_id);
+    if (wantIds.length) {
+      const { data: heldBy } = await db.from('holds')
+        .select('artwork_id, collector_id, expires_at, placed_by, artworks(title), collectors(first_name, last_name)')
+        .in('artwork_id', wantIds).eq('kind', 'reserve').eq('status', 'active');
+      const clash = (heldBy || []).find(h =>
+        h.collector_id !== collectorId && (!h.expires_at || new Date(h.expires_at) > new Date()));
+      if (clash) {
+        const who = [clash.collectors?.first_name, clash.collectors?.last_name].filter(Boolean).join(' ') || 'another collector';
+        throw new Error(`${clash.artworks?.title || 'That work'} is on hold for ${who} until ${new Date(clash.expires_at).toLocaleDateString()}${clash.placed_by ? ' (placed by ' + clash.placed_by + ')' : ''}. Speak to them before invoicing it.`);
+      }
+      // invoicing for the collector who holds it closes the hold out
+      const mine = (heldBy || []).filter(h => h.collector_id === collectorId);
+      for (const h of mine)
+        await db.from('holds').update({ status: 'converted', released_at: new Date().toISOString() })
+          .eq('artwork_id', h.artwork_id).eq('kind', 'reserve').eq('status', 'active');
+    }
     lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
     const workLines = lines.filter(l => l.kind === 'work' && l.artwork_id);
     const svcLines = lines.filter(l => l.kind === 'service');

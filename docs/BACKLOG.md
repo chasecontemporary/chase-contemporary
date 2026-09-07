@@ -5,6 +5,19 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- RESERVES SHIPPED 9/6 (migration 0038). A hold sits on the WORK, not the lead, so two reps
+  cannot promise the same canvas. Built on the existing holds table with kind='reserve'
+  (+ placed_by, note, inquiry_id, released_at) and an `artwork_reserves` view that reports
+  lapsed-vs-active on read, so an expired hold stops blocking with no cron job.
+  Guards (the actual value, all verified live): invoicing a work held for someone else is
+  REFUSED with a message naming who holds it, until when, and which rep placed it; a second
+  hold for a different collector is refused; invoicing for the rightful holder succeeds and
+  auto-converts the hold. Surfaces: pipeline drawer ("Is this work spoken for?" — hold for
+  1/3/7/14 days with a reason), work page (ON HOLD pill + who/why/release), and Today's
+  "Holds running out" now driven by real work reserves instead of the lead stage.
+- Migrations work again WITHOUT the revoked management token: scripts/migrate.mjs connects
+  straight to Postgres through the shared pooler using SUPABASE_DB_PASSWORD from
+  SECRETS.local.md (per-project host vanishes when a project pauses; the pooler does not).
 - 9/6 ENGINE CLEANED TO REAL BUSINESS ONLY. Pipeline = 3 genuine inbound leads. Invoices,
   payments, commissions, sales, holds, offers all at 0. Activity log down to 7 real entries.
   Removed: a stale on-approval hold and its fabricated events, which sat on a REAL
@@ -136,7 +149,6 @@ Phase 3 — before the book gets big (time bombs, nothing wrong today — verifi
 - No tests anywhere — settlement chain is the highest-consequence code in the app.
 
 ## Queued (ordered per 8/28 competitive discovery — highest leverage first)
-- Reserves/holds on works with expiry: "holding until Friday" as a status + auto-release, prevents double-selling with multiple reps. (Distinct from the killed take-home trials — this is a work-level sales reserve, work never leaves the gallery.)
 - Email logging to collector records: BCC dropbox (crm@ address) that files sent mail onto the contact timeline. ARTERNAL's core insight: deal history lives in the inbox.
 - Artwork location field + movement log: "where is this piece right now" (wall / rack / framer / shipped) — one field + history, not a WMS.
 - Artist sold-works statement PDF: read-only per-artist report off existing sale lines (what sold, what's owed) — prevents spreadsheet regression without rebuilding consignment accounting.
