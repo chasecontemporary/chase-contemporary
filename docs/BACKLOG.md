@@ -5,6 +5,65 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- 9/17 FINANCE WAS DOWN AND NOBODY KNEW. /finance returned a 500 on every view (open, paid,
+  payments, all) since the fulfilment work shipped on 9/7: the page read `all`, `open` and
+  `paid` in the fulfilment and invoice-lines blocks placed ABOVE the lines that declared
+  them, so it threw before rendering a row. Ten days with the money page dead, invisible
+  because nobody had opened it. Fixed, and `scripts/test-pages.mjs` now signs in and loads
+  every page including the detail pages and the two public surfaces (23/23), because neither
+  the build nor the money chain can catch a page that only throws when a person opens it.
+- 9/17 CAPTURE HARDENED AGAINST BOTS. Three bursts of six identical submissions (10th, 11th,
+  15th) had put 18 fake leads in the book and had the morning digest telling the floor there
+  were 22 unclaimed inquiries. Now: a honeypot field on all three site forms (live on
+  chasecontemporary.com), a score over random-letter names, the gmail dot trick, no vowels
+  and sub-three-second submits, and anything over the line is PARKED in `spam_submissions`
+  rather than stored: not in the book, not on the board, never announced, and the caller
+  still gets a 200 so a script learns nothing. Today lists what was quarantined with a
+  one-click "Not spam" that replays it through the normal capture path. Same person, same
+  form, inside 30 minutes is now one lead with a note instead of six. The 18 bot rows, their
+  3 collectors and Sara's 2 test inquiries were purged; the book is back to the 3 real leads.
+  Migration 0050. `scripts/test-capture.mjs` 15/15.
+- 9/17 THE SIGNING PROCESS (docs/SIGNING.md). The DocuSign rail existed but nothing said what
+  had to be signed and nothing showed what was out. The policy now lives in
+  `crm/lib/signing.js`: invoice as the bill of sale on every sale, certificate with the work,
+  purchase agreement required over SIGNING_THRESHOLD_CENTS (default $50,000) or on any
+  payment plan whatever the total, approval agreement before a work leaves on approval. A new
+  Signing page lists sales that still need paper, what is out and how long it has sat, what
+  came back declined or voided, and the executed file; Remind and Void act on the envelope and
+  land on the collector. Today gained "Paper the gallery is waiting on". Migration 0051.
+  `scripts/test-signing.mjs` 14/14 on production: real work at $195k invoiced, policy named
+  it, agreement generated as a 2MB PDF on the record with the counsel watermark, send lane
+  refused honestly. STILL NEEDS: a DocuSign account + the 8 keys, counsel to read the
+  templates (AGREEMENTS_REVIEWED), Bernie's signature PNG.
+- 9/17 WORKSTREAM D, AGREEMENTS AND THE CERTIFICATE. Purchase agreement and on approval
+  agreement generated in the gallery register from the sale record, with invisible DocuSign
+  anchors at every signature and date line and a draft watermark until counsel signs off. No
+  consignment or resale clause: the gallery owns its inventory. COA gained year, issue date,
+  certificate number and Bernie's signature when the PNG lands. Two money bugs in the paper
+  fixed: credit lines and received lines printed with no minus sign (Nimbus has no glyph for
+  U+2212). docs/AGREEMENT-TEMPLATES.md has every clause and the open questions for counsel.
+- 9/17 WORKSTREAM C, ROUTING AND CLAIM FROM SLACK. Routing rules on the Team page assign a new
+  lead by artist, source, budget, location or round robin among on-duty reps; nothing matching
+  still stays unclaimed for the floor. The Slack alert carries a Claim this lead button that
+  assigns the lead and rewrites the message. Migration 0048. NEEDS SLACK_SIGNING_SECRET in
+  Vercel and the app reinstalled for users:read and users:read.email.
+- 9/17 An invoice that comes to nothing is refused. A work line survives with no price so a
+  rep can pick the piece first, but issuing it took an invoice number, moved the lead to
+  invoiced and showed no money owed.
+- 9/17 Finance and Today now count collected money the same way (settled payments, tax and
+  shipping included). They quietly disagreed, which was D7 from the 9/7 pass.
+- 9/17 Clerk: production is live and is what chase-engine.vercel.app serves (pk_live for
+  clerk.chase-engine.vercel.app, verified). SECRETS.local.md said development only and was
+  wrong. The production secret key is sensitive in Vercel and cannot be read back, so the
+  production user list and sign-in settings can only be seen from the Clerk dashboard.
+- 9/17 ARTWORK DESCRIPTIONS WERE CUT OFF, flagged by the gallery. 11 works (the Pelé
+  photography and the Liu Bolin) carry 1,200 to 1,600 character curatorial essays and the
+  product template truncated them at 200 characters. The template now keeps the spec lines in
+  the small type beside the image and renders the writing below under ABOUT THIS WORK at a
+  readable measure. Verified against all 199 live descriptions before touching the template;
+  en dashes in scores like 4-1 are left alone where em dashes become commas. WAITING ON A
+  SHOPIFY CLI LOGIN to push.
+
 - BUILD PLAN 2, WORKSTREAMS A B E F G H SHIPPED 9/7 evening (docs/BUILD-PLAN-2.md; migrations
   0044-0047; money chain 25/25; all verified live with synthetic rows, torn down):
   * A AFTER THE MONEY: shipments per work (carrier YSDS/Hangman/SBA/FedEx/UPS/courier/pickup,
