@@ -407,6 +407,11 @@ async function handle(req, form) {
     const cents = (x) => Math.round(Number(String(x || '0').replace(/[$,\s]/g, '')) * 100);
     lines = lines.filter(l => cents(l.amount) > 0 || (l.kind === 'work' && l.artwork_id));
     if (!lines.length) throw new Error('Add at least one line to the invoice.');
+    // A work line is kept even with no price, so the rep can pick the piece first. It must
+    // not be possible to then issue the invoice: a work priced at nothing takes an invoice
+    // number, marks the lead invoiced and shows the gallery no money owed.
+    const lineTotal = lines.reduce((s, l) => s + cents(l.amount), 0);
+    if (lineTotal <= 0) throw new Error('This invoice comes to nothing. Put a price on the work before issuing it.');
 
     // refuse to invoice a work another rep is holding
     const wantIds = lines.filter(l => l.kind === 'work' && l.artwork_id).map(l => l.artwork_id);
