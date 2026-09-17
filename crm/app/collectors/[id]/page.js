@@ -3,6 +3,7 @@ import BrandSelect from '../../../components/BrandSelect';
 import OfferComposer from '../../../components/OfferComposer';
 import EmailComposer from '../../../components/EmailComposer';
 import Fulfilment from '../../../components/Fulfilment';
+import DocPreview from '../../../components/DocPreview';
 import { mailReady } from '../../../lib/mail';
 import { db } from '../../../lib/db';
 import { computeTaste } from '../../../lib/taste';
@@ -37,6 +38,15 @@ export default async function Card({ params, searchParams }) {
     ? await db.from('activities').select('*').in('entity_id', relIds).order('created_at', { ascending: false }).limit(60)
     : { data: [] };
   const invNum = {}; (invRows || []).forEach(r => invNum[r.id] = String(r.invoice_number).padStart(4, '0'));
+  // what each document is actually about, so the row reads as a name and not as a row id
+  const docArtIds = [...new Set((docs || []).map(d => d.artwork_id).filter(Boolean))];
+  const { data: docArts } = docArtIds.length
+    ? await db.from('artworks').select('id, title, artist').in('id', docArtIds) : { data: [] };
+  const artName = {}; (docArts || []).forEach(a => artName[a.id] = [a.artist, a.title].filter(Boolean).join(', '));
+  const DOC_LABEL = { invoice: 'Invoice', purchase_agreement: 'Purchase agreement', approval: 'On approval agreement',
+    coa: 'Certificate of authenticity', tearsheet: 'Tear sheet', consignment: 'Consignment agreement' };
+  const docName = (d) => d.invoice_id && invNum[d.invoice_id] ? 'Invoice No. ' + invNum[d.invoice_id]
+    : d.artwork_id && artName[d.artwork_id] ? artName[d.artwork_id] : 'Chase Contemporary';
   // paid sales still on their way
   const { data: openSales } = await db.from('sales').select('id, status, fulfilment_status, closed_at, thanked_at')
     .eq('collector_id', id).eq('status', 'paid').neq('fulfilment_status', 'done').limit(5);
@@ -291,15 +301,21 @@ export default async function Card({ params, searchParams }) {
       <div className="tblcard"><table className="tbl"><tbody>
         {(docs || []).map(d => <tr key={d.id}>
           <td style={{color:'#73736c', width:180}}>{new Date(d.created_at).toLocaleString()}</td>
-          <td><span className="pill" style={{background:'#f2f2ee'}}>{d.kind.replace(/_/g, ' ')} · DocuSign</span></td>
+          <td style={{width:56}}>{d.pdf_url
+            ? <DocPreview thumb url={d.pdf_url} label={(DOC_LABEL[d.kind] || d.kind.replace(/_/g, ' ')) + ' · ' + docName(d)}/>
+            : <span style={{display:'block', width:42, height:54, borderRadius:2, border:'1px dashed #e3e3dd'}}/>}</td>
+          <td><span className="pill" style={{background:'#f2f2ee'}}>{DOC_LABEL[d.kind] || d.kind.replace(/_/g, ' ')}</span>
+            <div style={{fontSize:12, color:'#73736c', marginTop:3}}>{docName(d)}</div></td>
           <td>{d.status === 'completed' ? <span style={{color:'#2e6b3f', fontWeight:650}}>Signed{d.signed_at ? ' ' + new Date(d.signed_at).toLocaleDateString() : ''}</span>
             : d.status === 'declined' ? <span style={{color:'#c02d23', fontWeight:650}}>Declined</span>
-            : d.status === 'delivered' ? 'Opened, awaiting signature' : d.status === 'sent' ? 'Sent, not yet opened' : d.status}
+            : d.status === 'delivered' ? 'Opened, awaiting signature' : d.status === 'sent' ? 'Sent, not yet opened'
+            : d.status === 'draft' ? 'Made, not sent' : d.status}
             {d.signed_pdf_url && <a href={d.signed_pdf_url} target="_blank" style={{marginLeft:10, color:'#2257c5'}}>Executed copy ↗</a>}</td>
           <td style={{color:'#73736c'}}>{d.created_by}</td>
         </tr>)}
         {(msgs || []).map(m => <tr key={m.id}>
           <td style={{color:'#73736c', width:180}}>{new Date(m.created_at).toLocaleString()}</td>
+          <td style={{width:56}}></td>
           <td><span className="pill" style={{background: m.status === 'failed' ? '#fbeceb' : '#f2f2ee', color: m.status === 'failed' ? '#c02d23' : undefined}}>
             {m.channel}{m.template && m.template !== 'custom' ? ' · ' + m.template.replace(/_/g, ' ') : ''}{m.status === 'failed' ? ' · failed' : ''}</span></td>
           <td>{m.channel === 'sms' ? (m.body || '').slice(0, 140) : m.subject}{m.error ? <span style={{color:'#c02d23'}}> · {m.error}</span> : null}</td>

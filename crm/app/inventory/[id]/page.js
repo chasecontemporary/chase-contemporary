@@ -23,10 +23,16 @@ export default async function Unit({ params, searchParams }) {
   const ppsi = comps ? Number((comps.n_recent >= 5 && comps.recent_ppsi_cents) || comps.median_ppsi_cents) : 0;
   const suggested = area && ppsi ? Math.round((ppsi * area) / 10000) * 100 : 0;   // dollars, nearest $100
   const { data: resRows } = await db.from('artwork_reserves').select('*').eq('artwork_id', a.id);
-  const [{ data: moves }, { data: locRows }] = await Promise.all([
+  const [{ data: moves }, { data: locRows }, { data: apprHolds }, { data: artDocs }] = await Promise.all([
     db.from('artwork_moves').select('*').eq('artwork_id', a.id).order('moved_at', { ascending: false }).limit(20),
     db.from('inventory_by_location').select('location').order('available', { ascending: false }).limit(30),
+    db.from('holds').select('*, collectors(id, first_name, last_name)').eq('artwork_id', a.id)
+      .eq('kind', 'approval').eq('status', 'active').order('placed_at', { ascending: false }).limit(1),
+    db.from('documents').select('id, kind, pdf_url, status, created_at').eq('artwork_id', a.id)
+      .order('created_at', { ascending: false }).limit(20),
   ]);
+  const approval = (apprHolds || [])[0] || null;
+  const approvalDoc = (artDocs || []).find(d => d.kind === 'approval' && d.pdf_url) || null;
   const knownLocs = [...new Set((locRows || []).map(l => l.location).filter(l => l && l !== 'Unassigned'))];
   const reserve = (resRows || []).find(r => !r.lapsed) || null;
   const [{ data: inqs }, { data: buys }] = await Promise.all([
@@ -159,6 +165,25 @@ export default async function Unit({ params, searchParams }) {
           {(a.tearsheet_url || a.coa_url) && <div style={{display:'flex', gap:12, flexWrap:'wrap', marginTop:14}}>
             {a.tearsheet_url && <DocPreview url={a.tearsheet_url} label="Tear sheet"/>}
             {a.coa_url && <DocPreview url={a.coa_url} label="Certificate of Authenticity"/>}
+          </div>}
+          {approval && <div style={{marginTop:16, paddingTop:14, borderTop:'1px solid #eeeee9'}}>
+            <div style={{fontSize:12.5, marginBottom:8}}>
+              <span className="pill" style={{fontSize:10, fontWeight:700, background:'#b7791f', color:'#fff', marginRight:8}}>ON APPROVAL</span>
+              With {approval.collectors
+                ? <a href={'/collectors/' + approval.collectors.id}>{[approval.collectors.first_name, approval.collectors.last_name].filter(Boolean).join(' ')}</a>
+                : (approval.out_to || 'someone')}
+              {approval.expires_at ? ', due back ' + new Date(approval.expires_at).toLocaleDateString() : ''}
+            </div>
+            <div style={{display:'flex', gap:12, flexWrap:'wrap', alignItems:'flex-end'}}>
+              {approvalDoc && <DocPreview url={approvalDoc.pdf_url} label="On approval agreement"/>}
+              <form method="POST" action="/api/act">
+                <input type="hidden" name="action" value="agreement_pdf"/>
+                <input type="hidden" name="kind" value="approval"/>
+                <input type="hidden" name="id" value={approval.id}/>
+                <input type="hidden" name="back" value={back}/>
+                <button className="btn mini quiet">{approvalDoc ? 'New approval agreement' : 'Approval agreement'}</button>
+              </form>
+            </div>
           </div>}
         </div>
         {!priced && <div className="card">

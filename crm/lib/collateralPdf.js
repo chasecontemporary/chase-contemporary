@@ -1,14 +1,21 @@
-// Collateral: tear sheet + certificate of authenticity — the invoice brand system, per work.
+// Collateral: tear sheet + certificate of authenticity, the invoice brand system, per work.
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import fs from 'fs';
 import path from 'path';
+import { yearOf, bareTitle, inventoryNo } from './agreementsPdf';
 
 const INK = rgb(0, 0, 0);
 const GRAY = rgb(0.42, 0.42, 0.45);
 const HAIR = rgb(0.91, 0.91, 0.93);
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const asset = (p) => fs.readFileSync(path.join(process.cwd(), 'assets', p));
+const assetPath = (p) => path.join(process.cwd(), 'assets', p);
+const WHITE = rgb(1, 1, 1);
+const longDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+// Bernie's signature, when it has been dropped in. See docs/AGREEMENT-TEMPLATES.md.
+const SIGNATURE_PNG = 'img/signature.png';
+const hasSignature = () => { try { return fs.existsSync(assetPath(SIGNATURE_PNG)); } catch { return false; } };
 
 function tracked(page, text, { x, y, size, font, color = INK, spacing = 1.6 }) {
   let cx = x;
@@ -93,33 +100,49 @@ export async function buildCoa(a) {
   let y = 792 - M - 44 - 52;
   const img = a.image_url ? await embedImage(doc, a.image_url) : null;
   if (img) {
-    const maxW = 300, maxH = 260;
+    const maxW = 280, maxH = 190;
     const s = Math.min(maxW / img.width, maxH / img.height);
     const w = img.width * s, h = img.height * s;
     page.drawImage(img, { x: (612 - w) / 2, y: y - h, width: w, height: h });
-    y -= h + 30;
+    y -= h + 26;
   }
+  const issuedOn = new Date();
+  const certNo = 'COA-' + (inventoryNo(a) || String(a.id || '').replace(/-/g, '').slice(0, 8).toUpperCase() || 'NEW');
   const rows = [
-    ['ARTIST', a.artist], ['TITLE', a.title],
+    ['ARTIST', a.artist], ['TITLE', bareTitle(a)], ['YEAR', yearOf(a)],
     ['MEDIUM', a.medium], ['DIMENSIONS', a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null],
     ['EDITION', a.edition],
-    ['INVENTORY №', a.artcloud_id && !String(a.artcloud_id).includes(':') ? a.artcloud_id : null],
+    ['INVENTORY NO.', inventoryNo(a)],
+    ['ISSUED', longDate(issuedOn)],
+    ['CERTIFICATE NO.', certNo],
   ].filter(r => r[1]);
   for (const [k, v] of rows) {
     tracked(page, k, { x: M, y, size: 7.5, font: semibold, color: GRAY, spacing: 1.8 });
     const lines = String(v);
     page.drawText(lines, { x: M + 130, y, size: 10, font: medium, maxWidth: 612 - M - 130 - M, lineHeight: 13 });
-    y -= 13 * Math.max(1, Math.ceil(medium.widthOfTextAtSize(lines, 10) / (612 - M - 130 - M))) + 9;
+    y -= 13 * Math.max(1, Math.ceil(medium.widthOfTextAtSize(lines, 10) / (612 - M - 130 - M))) + 4;
   }
   y -= 14;
   page.drawLine({ start: { x: M, y }, end: { x: 612 - M, y }, thickness: 0.5, color: HAIR });
   y -= 22;
   const att = 'Chase Contemporary certifies that the work described above is an authentic and original work by the artist named, and that the details stated are accurate to the best of the gallery’s knowledge and records.';
   page.drawText(att, { x: M, y, size: 9.5, font: regular, color: INK, maxWidth: 612 - M * 2, lineHeight: 15 });
-  y -= 15 * Math.ceil(regular.widthOfTextAtSize(att, 9.5) / (612 - M * 2)) + 48;
-  // signature + date lines
+  y -= 15 * Math.ceil(regular.widthOfTextAtSize(att, 9.5) / (612 - M * 2)) + 46;
+  // The signature block never rides down into the footer, however long the details run.
+  y = Math.max(y, M + 86);
+  // Bernie's signature above the line when the PNG is on disk; otherwise the line stays blank.
+  if (hasSignature()) {
+    try {
+      const sig = await doc.embedPng(asset(SIGNATURE_PNG));
+      const sw = 150, sh = (sig.height / sig.width) * sw;
+      page.drawImage(sig, { x: M + 6, y: y + 6, width: sw, height: Math.min(sh, 54) });
+    } catch { /* an unreadable file just leaves the line blank */ }
+  }
   page.drawLine({ start: { x: M, y }, end: { x: M + 200, y }, thickness: 0.7, color: INK });
+  // DocuSign countersigner anchor (lib/docusign.js): invisible on paper, present in the text layer.
+  page.drawText('GALLERY SIGNATURE', { x: M, y: y - 8, size: 1, font: regular, color: WHITE });
   tracked(page, 'AUTHORIZED SIGNATURE', { x: M, y: y - 14, size: 7, font: semibold, color: GRAY, spacing: 1.6 });
+  page.drawText('Bernie Chase, Owner', { x: M, y: y - 27, size: 9, font: regular, color: INK });
   page.drawLine({ start: { x: 612 - M - 160, y }, end: { x: 612 - M, y }, thickness: 0.7, color: INK });
   tracked(page, 'DATE', { x: 612 - M - 160, y: y - 14, size: 7, font: semibold, color: GRAY, spacing: 1.6 });
   const fy = M;

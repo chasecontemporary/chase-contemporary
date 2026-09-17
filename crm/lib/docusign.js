@@ -72,11 +72,14 @@ export async function createEnvelope({ pdfBytes, name, subject, message, signer,
     email: signer.email, name: signer.name || signer.email, recipientId: '1', routingOrder: '1',
     tabs: { signHereTabs: (anchors?.signer || ['AUTHORIZED SIGNATURE', 'TOTAL DUE', 'ACCEPTED BY']).map((a, i) => ({
       anchorString: a, anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: i === 0 ? '-28' : '18', anchorIgnoreIfNotPresent: 'true' })),
-      dateSignedTabs: [{ anchorString: 'DATE', anchorUnits: 'pixels', anchorYOffset: '-28', anchorIgnoreIfNotPresent: 'true' }] },
+      dateSignedTabs: [{ anchorString: 'DATE', anchorUnits: 'pixels', anchorYOffset: '-28',
+        anchorCaseSensitive: 'true', anchorIgnoreIfNotPresent: 'true' }] },
   }] };
   if (countersigner?.email) recipients.signers.push({
     email: countersigner.email, name: countersigner.name || 'Chase Contemporary', recipientId: '2', routingOrder: '2',
-    tabs: { signHereTabs: [{ anchorString: 'GALLERY SIGNATURE', anchorUnits: 'pixels', anchorYOffset: '-28', anchorIgnoreIfNotPresent: 'true' }] },
+    tabs: { signHereTabs: [{ anchorString: 'GALLERY SIGNATURE', anchorUnits: 'pixels', anchorYOffset: '-28', anchorIgnoreIfNotPresent: 'true' }],
+      dateSignedTabs: [{ anchorString: 'COUNTERSIGNED ON', anchorUnits: 'pixels', anchorYOffset: '-28',
+        anchorCaseSensitive: 'true', anchorIgnoreIfNotPresent: 'true' }] },
   });
   const env = await api('/envelopes', 'POST', {
     emailSubject: subject || `${name} from Chase Contemporary`,

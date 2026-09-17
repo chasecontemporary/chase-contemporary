@@ -109,6 +109,7 @@ Switches on: the suggested tax in the sale wizard's review step. The rep confirm
 | Variable | Notes |
 |---|---|
 | `WIRE_INSTRUCTIONS` | The full wire block printed on every invoice: bank, ABA, account, beneficiary Zenzeba Group Inc (Kristine) |
+| `AGREEMENTS_REVIEWED` | Set to `1` once counsel has signed off on the agreement templates. Until then every purchase agreement and on approval agreement carries a grey DRAFT watermark on each page plus the footer line "This template has not yet been reviewed by counsel." Anything else, including unset, keeps the watermark on. Clauses and constants: docs/AGREEMENT-TEMPLATES.md |
 
 ## Stripe (parked)
 

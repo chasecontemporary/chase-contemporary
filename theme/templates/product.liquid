@@ -1,3 +1,34 @@
+{%- comment -%}
+  The description carries two different things: the spec lines (medium, dimensions) and,
+  on the works that have one, the gallery's written piece about the work. Shopify separates
+  them with an empty paragraph. The spec stays in the small type beside the image; the
+  writing gets a readable measure of its own below, because it used to be cut off at 200
+  characters and nobody could read past the first sentence.
+{%- endcomment -%}
+{%- assign w_spec = '' -%}
+{%- assign w_note = '' -%}
+{%- assign w_in_note = false -%}
+{%- assign w_chunks = product.description | split: '</p>' -%}
+{%- for w_chunk in w_chunks -%}
+  {%- assign w_txt = w_chunk | strip_html | strip -%}
+  {%- comment -%} an empty paragraph is the separator; Shopify fills it with a non-breaking space {%- endcomment -%}
+  {%- if w_txt.size < 2 -%}
+    {%- if w_spec != blank -%}{%- assign w_in_note = true -%}{%- endif -%}
+  {%- elsif w_in_note -%}
+    {%- assign w_note = w_note | append: w_txt | append: '||' -%}
+  {%- else -%}
+    {%- assign w_spec = w_spec | append: w_txt | append: '||' -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- comment -%} no separator, but far too long for the small type: keep the first line, the rest reads below {%- endcomment -%}
+{%- if w_note == blank and w_spec.size > 220 -%}
+  {%- assign w_first = w_spec | split: '||' | first -%}
+  {%- assign w_note = w_spec | remove_first: w_first | remove_first: '||' -%}
+  {%- assign w_spec = w_first | append: '||' -%}
+{%- endif -%}
+{%- assign w_spec_lines = w_spec | split: '||' -%}
+{%- assign w_note_paras = w_note | split: '||' -%}
+
 {%- assign is_edition = false -%}
 {%- if product.type == 'Print' and product.price > 0 -%}{%- assign is_edition = true -%}{%- endif -%}
 {%- assign vhandle = product.vendor | handleize -%}
@@ -23,7 +54,7 @@
         {%- else -%}{{ product.vendor }}{%- endif -%}
       </div>
       <div class="title">{{ product.title }}</div>
-      <div class="meta">{{ product.description | strip_html | truncate: 200 | replace: '—', ',' | replace: '–', ',' }}</div>
+      <div class="meta">{% for w_line in w_spec_lines %}{{ w_line | replace: ' — ', ', ' | replace: '—', ', ' }}{% unless forloop.last %}<br>{% endunless %}{% endfor %}</div>
       <div class="price">{% if is_edition %}{{ product.price | money_without_trailing_zeros }}{% else %}Price on request{% endif %}</div>
       <div class="status">{% if product.available %}AVAILABLE{% else %}SOLD{% endif %}</div>
       <button class="btn-inq" id="inqbtn" aria-expanded="false" aria-haspopup="dialog" onclick="inq()">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}</button>
@@ -39,6 +70,16 @@
       {%- endif -%}
     </div>
   </div>
+  {%- if w_note_paras.size > 0 -%}
+  <div class="wnote r in">
+    <div class="section-label">ABOUT THIS WORK</div>
+    <div class="wnote-body">
+      {%- for w_para in w_note_paras -%}
+      <p>{{ w_para | replace: ' — ', ', ' | replace: '—', ', ' }}</p>
+      {%- endfor -%}
+    </div>
+  </div>
+  {%- endif -%}
   {%- if collections[vhandle] != blank and collections[vhandle].products_count > 1 -%}
   <div class="rel">
     <div class="section-label r">MORE FROM {{ product.vendor | upcase }}</div>

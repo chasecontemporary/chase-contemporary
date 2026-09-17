@@ -57,12 +57,31 @@ a lawyer's read before first use (we assemble, counsel blesses).
 
 ## Build order
 
-1. ✅ Invoice PDF engine (done — Blob store `chase-engine-docs`, `invoice_pdf` action).
-2. COA generator (pure generation, no signature needed; per-artwork from inventory data).
-3. `documents` table + Documents surfaces in the engine.
-4. Kristine/Sara answers → draft purchase-agreement + on-approval templates → legal review.
-5. DocuSign account (Devyn/Wyatt) → JWT app + Connect webhook → envelope send + status
-   tracking + executed-copy storage.
+1. Invoice PDF engine. DONE. `crm/lib/invoicePdf.js`, Blob store `chase-engine-docs`,
+   `invoice_pdf` action, preview and download on the Finance row.
+2. COA generator. DONE, upgraded 9/17. `buildCoa` in `crm/lib/collateralPdf.js`: image,
+   artist, title, year, medium, dimensions, edition, inventory number, issue date and a
+   certificate number `COA-<inventory number>`, gallery attestation, signature and date lines.
+   Bernie's signature image prints when `crm/assets/img/signature.png` exists. Generated from
+   the inventory unit page; `coa_refresh` also files it in `documents`.
+3. `documents` table plus the Documents surfaces. DONE. Table in `db/migrations/0042-stack.sql`;
+   surfaces: the Documents block on the Finance invoice row, the Documents card on the
+   inventory unit page, and the Messages and documents list on the collector card (thumbnail,
+   what the document is, who it is for, status).
+4. Purchase agreement and on approval agreement templates. BUILT 9/17, NOT YET REVIEWED.
+   `crm/lib/agreementsPdf.js`, actions `agreement_pdf` (kind purchase or approval) in
+   `crm/app/api/act/agreements.js`. Clauses, constants and the counsel questions live in
+   docs/AGREEMENT-TEMPLATES.md. Every page prints a DRAFT watermark until `AGREEMENTS_REVIEWED=1`.
+   Still open: Kristine and Sara's answers, then counsel's read, then the variable.
+5. DocuSign anchors. DONE in the paper. Signature lines carry invisible anchor text
+   (white, 1pt): `AUTHORIZED SIGNATURE` and `DATE` for the collector, `GALLERY SIGNATURE` and
+   `GALLERY DATE` for the countersigner, matching `createEnvelope` in `crm/lib/docusign.js`.
+   The certificate carries the gallery anchor on its signature line.
+6. DocuSign account (Devyn/Wyatt): JWT app, consent, Connect webhook, then Send for signature
+   turns on by itself (`docusignReady()` gates the button) and executed copies land back on
+   the collector record. NOT DONE, waiting on keys.
+7. Payment-plan addendum and consignment agreement: not built, not needed until Bernie says
+   otherwise.
 
 ## The details link (built 8/26 — the customer-facing gathering system)
 

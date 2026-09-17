@@ -128,7 +128,9 @@ export async function buildInvoicePdf({ invoice, collector, items, payments = []
     for (const pmt of payments) {
       const lbl = 'Received' + (pmt.settled_at ? ' ' + new Date(pmt.settled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '') + (pmt.method ? ' · ' + pmt.method : '');
       page.drawText(lbl, { x: tx, y, size: 9, font: regular, color: GRAY });
-      const pv = '\u2212' + usd(pmt.amount_cents);
+      // A plain hyphen, not U+2212: Nimbus has no glyph for the typographic minus, so the
+      // money simply printed without its sign.
+      const pv = '-' + usd(pmt.amount_cents);
       page.drawText(pv, { x: 612 - M - regular.widthOfTextAtSize(pv, 9), y, size: 9, font: regular, color: GRAY });
       y -= 14;
     }
