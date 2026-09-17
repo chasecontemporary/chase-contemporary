@@ -40,6 +40,12 @@ export default async function Finance({ searchParams }) {
     db.from('payments').select('invoice_id, amount_cents, method, settled_at').eq('status', 'settled').not('invoice_id', 'is', null).order('settled_at').limit(1000),
     db.from('sale_items').select('sale_id, title, artworks(tearsheet_url, coa_url, title)').not('sale_id', 'is', null).limit(400),
   ]);
+  // These three name the invoices every block below works from, so they are declared before
+  // any of them. They used to sit further down, under code that already read them, and the
+  // whole page threw before it rendered a single row.
+  const all = invs || [];
+  const open = all.filter(i => i.status === 'open');
+  const paid = all.filter(i => i.status === 'paid');
   // fulfilment for every paid sale on screen
   const paidSaleIds = all.filter(i => i.status === 'paid' && i.sale_id).map(i => i.sale_id);
   const [{ data: fSales }, { data: fItems }, { data: fShips }] = paidSaleIds.length ? await Promise.all([
@@ -53,11 +59,12 @@ export default async function Finance({ searchParams }) {
   const openIds = open.map(i => i.id);
   const { data: openLines } = openIds.length ? await db.from('invoice_lines').select('*').in('invoice_id', openIds).order('sort') : { data: [] };
   const linesBy = {}; (openLines || []).forEach(l => (linesBy[l.invoice_id] = linesBy[l.invoice_id] || []).push(l));
-  const { data: signedDocs } = await db.from('documents').select('invoice_id, kind, status, signed_pdf_url').not('invoice_id', 'is', null).limit(500);
+  const { data: signedDocs } = await db.from('documents').select('invoice_id, kind, status, signed_pdf_url, pdf_url, created_at')
+    .not('invoice_id', 'is', null).order('created_at', { ascending: false }).limit(500);
   const signedBy = {}; (signedDocs || []).forEach(d => { if (d.status === 'completed' && d.signed_pdf_url) signedBy[d.invoice_id + ':' + d.kind] = d.signed_pdf_url; });
-  const all = invs || [];
-  const open = all.filter(i => i.status === 'open');
-  const paid = all.filter(i => i.status === 'paid');
+  // the newest purchase agreement per invoice (the list is newest first, so the first one wins)
+  const agreementBy = {};
+  (signedDocs || []).forEach(d => { if (d.kind === 'purchase_agreement' && d.pdf_url && !agreementBy[d.invoice_id]) agreementBy[d.invoice_id] = d; });
   const tot = (i) => i.amount_cents + (i.tax_cents || 0) + (i.shipping_cents || 0);
   // Balances come from the database, not from summing a capped payments fetch in here —
   // past a thousand payments that sum silently went wrong and the money on screen drifted.
@@ -282,6 +289,23 @@ export default async function Finance({ searchParams }) {
                     <input type="hidden" name="id" value={i.id}/>
                     <input type="hidden" name="back" value="/finance"/>
                     <button className="btn mini quiet">{i.pdf_url ? 'Regenerate PDF' : 'Generate PDF'}</button>
+                  </form>
+                </div>
+                <div style={{display:'flex', flexDirection:'column', gap:8, alignItems:'center'}}>
+                  {agreementBy[i.id]
+                    ? <DocPreview url={agreementBy[i.id].pdf_url} label="Purchase agreement"
+                        sign={{ kind: 'purchase_agreement', invoiceId: i.id, collectorId: c?.id || null, ready: canSign }}
+                        signed={agreementBy[i.id].status === 'completed' ? (agreementBy[i.id].signed_pdf_url || null) : null}/>
+                    : <div style={{width:110, height:143, borderRadius:2, border:'1px dashed #cccdc4',
+                        display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', padding:8,
+                        fontSize:11, color:'#73736c'}}>No agreement yet</div>}
+                  <form method="POST" action="/api/act">
+                    <input type="hidden" name="action" value="agreement_pdf"/>
+                    <input type="hidden" name="kind" value="purchase"/>
+                    <input type="hidden" name="id" value={i.id}/>
+                    <input type="hidden" name="back" value="/finance"/>
+                    <ConfirmButton className="btn mini quiet" busyLabel="Making…">
+                      {agreementBy[i.id] ? 'New purchase agreement' : 'Purchase agreement'}</ConfirmButton>
                   </form>
                 </div>
                 {(docsBySale[i.sale_id] || []).map((doc, ix) => <DocPreview key={ix} url={doc.url} label={doc.label}/>)}
