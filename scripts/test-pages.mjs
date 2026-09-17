@@ -28,7 +28,7 @@ const [col] = await get('collectors?select=id&order=created_at.desc&limit=1');
 const [camp] = await get('campaigns?select=id&limit=1');
 
 const pages = [
-  ['/today', 'Today'], ['/pipeline', 'Sales pipeline'], ['/finance', 'Finance'],
+  ['/today', 'Today'], ['/pipeline', 'Sales pipeline'], ['/finance', 'Finance'], ['/signing', 'Signing'],
   ['/collectors', 'Collectors'], ['/inventory', 'Inventory'], ['/artists', 'Artists'],
   ['/artists/portfolio', 'Portfolio'], ['/commissions', 'Commissions'], ['/team', 'Team'],
   ['/audiences', 'Audiences'], ['/campaigns', 'Campaigns'], ['/p/thanks', 'Thanks'],

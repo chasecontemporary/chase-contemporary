@@ -90,6 +90,17 @@ export async function createEnvelope({ pdfBytes, name, subject, message, signer,
   return { envelopeId: env.envelopeId, status: env.status };
 }
 
+// Nudge a signer who has not signed yet. DocuSign resends the invitation to the recipients
+// who still have to act; it never re-sends to someone who has already signed.
+export async function remindEnvelope(envelopeId) {
+  return api(`/envelopes/${envelopeId}/recipients?resend_envelope=true`, 'PUT', { signers: [] });
+}
+
+// Pull an envelope out of circulation. The collector's link stops working.
+export async function voidEnvelope(envelopeId, reason) {
+  return api(`/envelopes/${envelopeId}`, 'PUT', { status: 'voided', voidedReason: (reason || 'Superseded by the gallery').slice(0, 200) });
+}
+
 export async function envelopeStatus(envelopeId) {
   return api(`/envelopes/${envelopeId}`);
 }

@@ -4,6 +4,7 @@ import Omnisearch from '../../components/Omnisearch';
 import { db } from '../../lib/db';
 import { whoami } from '../../lib/identity';
 import { dbReachable, listSpill, readAllSpill } from '../../lib/spill';
+import { signingBoard, missingPaper, DOC_LABEL } from '../../lib/signing';
 export const dynamic = 'force-dynamic';
 
 // The landing page. Three jobs, in order: what changed since you were last here,
@@ -193,7 +194,14 @@ export default async function Today() {
   const dueToday = buying.filter(r => r.next_action_at && r.next_action_at <= todayStr && (!personal || r.owner === viewer))
     .sort((a, b) => a.next_action_at.localeCompare(b.next_action_at));
   const shipping = (toShip || []).filter(s => !personal || s.owner === viewer);
-  const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length + holdsOut.length + otherMessages.length + shipping.length;
+  // Paper the gallery is waiting on. A sale with no signed agreement is a sale that cannot
+  // ship, so it belongs beside the other things that decay if nobody looks.
+  const [signBoard, needPaper] = await Promise.all([signingBoard({ days: 120 }), missingPaper()]);
+  const coldSignatures = signBoard.waiting
+    .filter(d => (Date.now() - new Date(d.sent_at || d.created_at).getTime()) / 86400000 >= 3)
+    .concat(signBoard.stuck);
+  const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length
+    + holdsOut.length + otherMessages.length + shipping.length + needPaper.length + coldSignatures.length;
 
   // ---- the numbers ----
   const collectedMonth = (paysMonth || []).reduce((s, p) => s + Number(p.amount_cents), 0);
@@ -346,6 +354,33 @@ export default async function Today() {
             </span>
             <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>{ago(r.created_at)}</span>
           </div>; })}
+      </div>
+    </>}
+
+    {(needPaper.length > 0 || coldSignatures.length > 0) && <>
+      <div style={sec}>Paper the gallery is waiting on</div>
+      <div style={card}>
+        {needPaper.map((i, n) => <a key={i.id} href="/signing" style={rowSt(n)}>
+          <span style={{fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
+            color: '#9a551a', width: 104, flex: '0 0 auto'}}>No agreement</span>
+          <span style={{flex: 1, minWidth: 0}}>
+            <b>No. {String(i.invoice_number).padStart(4, '0')}</b>
+            <span style={{marginLeft: 8}}>{nameOf(i.collectors)}</span>
+            <span style={{color: '#73736c', marginLeft: 8}}>{usd(i.total_cents)}, {i.why}</span>
+          </span>
+          <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>{i.state}</span>
+        </a>)}
+        {coldSignatures.map((d, n) => <a key={d.id} href="/signing" style={rowSt(n + needPaper.length)}>
+          <span style={{fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
+            color: d.status === 'declined' || d.status === 'voided' ? '#a3372f' : '#9a551a',
+            width: 104, flex: '0 0 auto'}}>
+            {d.status === 'declined' ? 'Declined' : d.status === 'voided' ? 'Voided' : 'Unsigned'}</span>
+          <span style={{flex: 1, minWidth: 0}}>
+            <b>{d.signer_name || d.signer_email || 'A collector'}</b>
+            <span style={{color: '#73736c', marginLeft: 8}}>{DOC_LABEL[d.kind] || d.kind}</span>
+          </span>
+          <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>sent {ago(d.sent_at || d.created_at)}</span>
+        </a>)}
       </div>
     </>}
 

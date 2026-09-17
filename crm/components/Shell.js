@@ -10,7 +10,8 @@ export default async function Shell({ active, children, counts = {} }) {
   if (!(await isStaff())) return <NotStaff email={me.email}/>;
   const emailOpen = ['audiences', 'campaigns'].includes(active);
   const items = [['today','Today'],['pipeline','Sales pipeline'],['collectors','Collectors'],
-                 ['inventory','Inventory'],['artists','Artists'],['finance','Finance'],['commissions','Commissions'],
+                 ['inventory','Inventory'],['artists','Artists'],['finance','Finance'],['signing','Signing'],
+                 ['commissions','Commissions'],
                  ['EMAIL_GROUP'],['team','Team']];
   return <div className="shell">
     <aside className="side">

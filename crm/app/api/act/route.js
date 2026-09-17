@@ -16,7 +16,7 @@ import { sendMail, fetchAttachment, mailReady, senderFor } from '../../../lib/ma
 import { sendSms } from '../../../lib/sms';
 import { renderTemplate } from '../../../lib/templates';
 import { buildContext } from '../../../lib/emailContext';
-import { sendForSignature } from '../../../lib/docusign';
+import { sendForSignature, remindEnvelope, voidEnvelope } from '../../../lib/docusign';
 import { showProduct, shopifyReady as shopReady } from '../../../lib/shopify';
 
 // Every action runs inside this wrapper. If the database rejects a write, the user
@@ -650,6 +650,23 @@ async function handle(req, form) {
     const r = await sendForSignature({ kind, pdfUrl: url, name, collector, invoiceId, saleId, artworkId, actor: rep,
       message: form.get('message') || 'Please review and sign. Reply to this email with any questions.' });
     if (form.get('back') === 'json') return Response.json({ ok: true, ...r });
+  } else if (action === 'doc_remind') {
+    // Nudge a signer. DocuSign only re-invites the people who still have to act.
+    const { data: doc } = await db.from('documents').select('*, collectors(id)').eq('id', id).single();
+    if (!doc?.envelope_id) throw new Error('That document was never sent for signature.');
+    if (doc.status === 'completed') throw new Error('That one is already signed.');
+    await remindEnvelope(doc.envelope_id);
+    must(await db.from('documents').update({ reminded_at: new Date().toISOString() }).eq('id', id));
+    if (doc.collector_id) await db.from('activities').insert({ entity_type: 'collector', entity_id: doc.collector_id,
+      kind: 'signature_reminded', body: doc.kind, actor: rep });
+  } else if (action === 'doc_void') {
+    const { data: doc } = await db.from('documents').select('*').eq('id', id).single();
+    if (!doc?.envelope_id) throw new Error('That document was never sent for signature.');
+    if (doc.status === 'completed') throw new Error('That one is already signed and cannot be voided here.');
+    await voidEnvelope(doc.envelope_id, form.get('reason'));
+    must(await db.from('documents').update({ status: 'voided' }).eq('id', id));
+    if (doc.collector_id) await db.from('activities').insert({ entity_type: 'collector', entity_id: doc.collector_id,
+      kind: 'signature_voided', body: doc.kind, actor: rep });
   } else if (action === 'team_phone') {
     must(await db.from('team_members').update({ phone: form.get('phone') || null, email: form.get('email') || null }).eq('id', id));
   } else if (action === 'artwork_relist') {
