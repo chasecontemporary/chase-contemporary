@@ -10,6 +10,7 @@
   </div>
   <div class="cform r in">
   {% form 'contact', id: 'cf' %}
+    <div class="hp" aria-hidden="true"><label for="c-web">Website</label><input id="c-web" name="contact[website]" tabindex="-1" autocomplete="off"></div>
     {%- if form.posted_successfully? -%}
       <div class="inq-done show">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     {%- else -%}

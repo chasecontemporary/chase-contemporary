@@ -13,7 +13,7 @@ Set with: `cd crm && vercel env add NAME production` (paste value) then `vercel 
 |---|---|---|
 | `SLACK_BOT_TOKEN` + `SLACK_CHANNEL` | Floor channel via the Chase Engine app (chat.postMessage: threads, buttons, survives a rename). SET 9/7: app B0C034VDAFQ, channel C0C06NXK2AV | api.slack.com/apps, OAuth & Permissions, Bot User OAuth Token; channel id from the channel's About panel |
 | `SLACK_WEBHOOK_URL` | Fallback lane if no bot token | Slack: Incoming Webhooks |
-| `SLACK_SIGNING_SECRET` | Verifies the Claim button posts to `/api/slack/action` (workstream C) | Basic Information, Signing Secret |
+| `SLACK_SIGNING_SECRET` | Verifies the Claim button posts to `/api/slack/action`. Until it is set the route answers 503 and the button does nothing. The app also needs the bot scopes `users:read` + `users:read.email` (docs/slack-app-manifest.json) so a press can be matched to a team member by their Slack email; after adding scopes, REINSTALL the app to the workspace (OAuth & Permissions, Reinstall) and confirm Interactivity is on with Request URL `https://chase-engine.vercel.app/api/slack/action`. A rep can also paste their Slack member ID on the Team page | api.slack.com/apps, Chase Engine, Basic Information, Signing Secret |
 | `CRON_SECRET` | The two cron jobs (`/api/cron/escalate` every 10 min, `/api/cron/digest` 08:00 ET Mon to Sat). Vercel sends it as `Authorization: Bearer` | Any long random string; Vercel reads the same variable |
 | `APP_URL` | Links inside alerts and emails (default https://chase-engine.vercel.app) | Set when the engine gets its own domain |
 

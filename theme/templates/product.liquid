@@ -60,6 +60,7 @@
   <button class="dx" onclick="closeInq()">CLOSE</button>
   {% form 'contact', id: 'inq', class: 'inq' %}
     <div class="fhead">{% if is_edition %}ACQUIRE{% else %}INQUIRE{% endif %}<br>{{ product.title }}</div>
+    <div class="hp" aria-hidden="true"><label for="f-web">Website</label><input id="f-web" name="contact[website]" tabindex="-1" autocomplete="off"></div>
     {%- if form.posted_successfully? -%}
       <div class="inq-done show">RECEIVED.<br>A MEMBER OF THE GALLERY WILL BE IN TOUCH SHORTLY.</div>
     {%- else -%}

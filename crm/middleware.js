@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-// Public: collector-facing pages, the capture endpoints the live site posts to, and the
-// health check an uptime monitor watches.
+// Public: collector-facing pages, the capture endpoints the live site posts to, the
+// health check an uptime monitor watches, and the signed webhooks (Slack, DocuSign,
+// Shopify, Stripe) that verify themselves.
 const isPublic = (p) =>
   p.startsWith('/d/') || p.startsWith('/o/') || p.startsWith('/p/') ||
   p.startsWith('/api/details') || p.startsWith('/api/offer') ||
@@ -10,6 +11,7 @@ const isPublic = (p) =>
   p.startsWith('/api/health') ||
   p.startsWith('/api/shopify-webhook') || p.startsWith('/api/stripe-webhook') ||
   p.startsWith('/api/docusign-webhook') || p.startsWith('/api/cron/') ||
+  p.startsWith('/api/slack/action') ||
   p.startsWith('/login') || p.startsWith('/api/login') ||
   p.startsWith('/sign-in') || p.startsWith('/sign-up') || p.startsWith('/fonts') ||
   p === '/';

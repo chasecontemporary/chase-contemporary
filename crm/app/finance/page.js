@@ -118,9 +118,11 @@ export default async function Finance({ searchParams }) {
     </div>
 
     {(() => {
-      const thisMonth = new Date(); thisMonth.setDate(1);
-      const mKey = thisMonth.toISOString().slice(0, 7);
-      const collThis = M.filter(m => String(m.month).slice(0, 7) === mKey).reduce((s, m) => s + Number(m.collected_cents), 0);
+      // Same definition as Today's "Collected this month": settled payments, tax and
+      // shipping included. The monthly view (purchases, art only) is a different question.
+      const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0, 0, 0, 0);
+      const collThis = (payRows || []).filter(p => p.settled_at && new Date(p.settled_at) >= thisMonth)
+        .reduce((s, p) => s + Number(p.amount_cents || 0), 0);
       const paidWithDates = paid.filter(p => p.paid_at);
       const avgDays = paidWithDates.length
         ? Math.round(paidWithDates.reduce((s, p) => s + (new Date(p.paid_at) - new Date(p.issued_at)) / 86400000, 0) / paidWithDates.length)

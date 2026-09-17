@@ -1,4 +1,5 @@
 import { db } from './db';
+import { applyRouting } from './routing';
 
 // The real write. Throws on any failure so the caller can fall back to the spill store.
 // Unauthenticated callers reach this. Cap every stored string and refuse non-strings, so
@@ -54,11 +55,29 @@ export async function persist(p, email) {
     return { collector, inquiry: null, subscribed: true };
   }
 
+  // The same person sending the same form again within half an hour (a double tap, a
+  // browser retry, a script hammering Submit) is one inquiry, not six. It is noted on the
+  // first one and nothing new is announced.
+  const handle = cap(p.artwork_handle, 200) || null;
+  const msg = cap(p.body || p.message, 5000) || null;
+  let dupQ = db.from('inquiries').select('id, status, owner, kind, created_at')
+    .eq('collector_id', collector.id)
+    .gte('created_at', new Date(Date.now() - 30 * 60000).toISOString())
+    .order('created_at', { ascending: false }).limit(1);
+  dupQ = handle ? dupQ.eq('artwork_handle', handle) : dupQ.is('artwork_handle', null);
+  dupQ = msg ? dupQ.eq('message', msg) : dupQ.is('message', null);
+  const { data: prev } = await dupQ.maybeSingle();
+  if (prev) {
+    await db.from('activities').insert({ entity_type: 'inquiry', entity_id: prev.id,
+      kind: 'inquiry_repeated', body: 'the same form was submitted again', actor: 'system' });
+    return { collector, inquiry: prev, repeated: true };
+  }
+
   const { data: inquiry, error: iErr } = await db
     .from('inquiries')
     .insert({
       collector_id: collector.id,
-      artwork_handle: cap(p.artwork_handle, 200),
+      artwork_handle: handle,
       artwork_title: p.artwork_title || p.artwork || null,
       artist: cap(p.artist || p.artist_interest, 200),
       price_band: cap(p.price_band, 60),
@@ -67,7 +86,7 @@ export async function persist(p, email) {
       outlet: cap(p.outlet, 80),
       budget_range: cap(p.budget_range, 60),
       timeframe: cap(p.timeframe, 80),
-      message: cap(p.body || p.message, 5000),
+      message: msg,
       source: cap(p.source, 80),
       page_journey: cap(p.page_journey, 2000),
       referrer: cap(p.referrer, 500),
@@ -84,6 +103,11 @@ export async function persist(p, email) {
     .select()
     .single();
   if (iErr || !inquiry) throw new Error(iErr?.message || 'inquiry insert failed');
+
+  // Routing rules (Team page) may hand the lead to a rep straight away; with no matching
+  // rule it stays unclaimed for the floor. The announcement then goes to the right person.
+  const routed = await applyRouting({ inquiry, collector });
+  if (routed?.owner) inquiry.owner = routed.owner;
 
   // identity moment: stitch this browser's anonymous trail to the collector —
   // past AND future page views from this visitor land on their record

@@ -3,6 +3,23 @@ import { spillInquiry } from '../../../lib/spill';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { persist, emailFor } from '../../../lib/capture';
 import { announceInquiry } from '../../../lib/notify';
+import { spamScore } from '../../../lib/spam';
+import { createHash } from 'crypto';
+
+// A submission that scores as a bot is parked, not stored as a lead: it never reaches the
+// book, the board or the floor channel. Today lists it with a one-click rescue. The caller
+// still gets a 200, so a script learns nothing from the response.
+async function quarantine(p, verdict, req) {
+  const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  await db.from('spam_submissions').insert({
+    payload: JSON.parse(JSON.stringify(p).slice(0, 20000)),
+    email: String(p.email || '').slice(0, 200) || null,
+    name: [p.first_name, p.last_name].filter(Boolean).join(' ').slice(0, 160) || null,
+    about: String(p.artwork_title || p.artwork || p.purpose || '').slice(0, 200) || null,
+    score: verdict.score, reasons: verdict.reasons,
+    ip_hash: ip ? createHash('sha256').update(ip).digest('hex').slice(0, 16) : null,
+  });
+}
 
 const ORIGINS = [
   'https://www.chasecontemporary.com',
@@ -42,9 +59,16 @@ export async function POST(req) {
   const email = emailFor(p);
   if (!email) return json({ error: 'email or phone required' }, 400);
 
+  const verdict = spamScore(p);
+  if (verdict.spam) {
+    await quarantine(p, verdict, req).catch(() => {});
+    return json({ ok: true });
+  }
+
   try {
     const result = await persist(p, email);
     if (result.subscribed) return json({ ok: true, subscribed: true });
+    if (result.repeated) return json({ ok: true, inquiry_id: result.inquiry.id, repeated: true });
     announceInquiry({ inquiry: result.inquiry, collector: result.collector, payload: p }).catch(() => {});
     return json({ ok: true, inquiry_id: result.inquiry.id });
   } catch (e) {

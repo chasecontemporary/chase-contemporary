@@ -594,3 +594,6 @@ html[style*="--pagein-skip"] body { animation: none; }
 .cleft .ig { display: block; margin-top: 16px; font-size: 10.5px; letter-spacing: .04em; color: var(--mute); }
 .cleft .ig:hover { color: var(--ink); }
 @media (max-width: 880px) { .csplit { grid-template-columns: 1fr; } .cleft { position: static; } }
+
+/* honeypot: a field no person sees or tabs to; a script that fills it is quarantined by the engine */
+.hp { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }

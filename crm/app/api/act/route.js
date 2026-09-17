@@ -1,5 +1,8 @@
 import { db } from '../../../lib/db';
 import { actorName, isStaff } from '../../../lib/identity';
+import { persist, emailFor } from '../../../lib/capture';
+import { announceInquiry } from '../../../lib/notify';
+import { handleRouting } from './routing';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
@@ -59,6 +62,9 @@ async function handle(req, form) {
   const action = form.get('action');
   const id = form.get('id');
   const back = form.get('back') || '/today';
+  // Workstreams that keep their actions in their own file. Each returns true when it
+  // handled the action, so the long chain below stays about the core.
+  if (await handleRouting({ action, form, id, rep, db, must })) return null;
   if (action === 'assign') {
     const owner = form.get('owner') || null;
     must(await db.from('inquiries').update({ owner }).eq('id', id));
@@ -852,6 +858,18 @@ async function handle(req, form) {
       body: `absorbed ${[D.first_name, D.last_name].filter(Boolean).join(' ') || D.email}${D.email ? ' · ' + D.email : ''}`, actor: rep });
     if (form.get('back') === 'json') return Response.json({ ok: true, id: keep });
     return Response.redirect(new URL('/collectors/' + keep, req.url), 303);
+  } else if (action === 'spam_rescue') {
+    // A person looked at a quarantined submission and says it is real: it goes through the
+    // normal capture path, lands on the board and is announced like any other inquiry.
+    const { data: s } = must(await db.from('spam_submissions').select('*').eq('id', id).is('rescued_at', null).single());
+    const email = emailFor(s.payload || {});
+    if (!email) throw new Error('That submission has no email or phone to rescue.');
+    const result = await persist(s.payload, email);
+    must(await db.from('spam_submissions').update({ rescued_at: new Date().toISOString(), rescued_by: rep }).eq('id', id));
+    if (result.inquiry && !result.repeated)
+      announceInquiry({ inquiry: result.inquiry, collector: result.collector, payload: s.payload }).catch(() => {});
+  } else if (action === 'spam_dismiss') {
+    must(await db.from('spam_submissions').update({ dismissed_at: new Date().toISOString() }).eq('id', id));
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
   }

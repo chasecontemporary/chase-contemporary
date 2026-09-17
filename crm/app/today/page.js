@@ -92,6 +92,7 @@ export default async function Today() {
     { data: offersViewed },
     { data: chaseInv }, { data: openInv }, { data: paysAll }, { data: paysMonth },
     { data: respRows }, { data: reserveRows }, { data: toShip }, { data: agingRows },
+    { data: spamRows },
   ] = await Promise.all([
     db.from('team_members').select('name, role'),
     db.from('inquiries')
@@ -117,6 +118,9 @@ export default async function Today() {
     db.from('artworks').select('id, title, artist, price_cents, internal_value_cents, image_url, acquired_at')
       .eq('available', true).lt('acquired_at', cutoff)
       .order('price_cents', { ascending: false, nullsFirst: false }).limit(6),
+    db.from('spam_submissions').select('id, name, email, about, score, reasons, created_at')
+      .is('rescued_at', null).is('dismissed_at', null).gte('created_at', D30)
+      .order('created_at', { ascending: false }).limit(40),
   ]);
 
   const personal = (team || []).find(t => t.name === viewer)?.role === 'rep';
@@ -344,6 +348,28 @@ export default async function Today() {
           </div>; })}
       </div>
     </>}
+
+    {(spamRows || []).length > 0 && <details style={{...card, marginTop: 30}}>
+      <summary style={{padding: '12px 16px', fontSize: 13, cursor: 'pointer', color: '#73736c', listStyle: 'none'}}>
+        <span style={{fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', marginRight: 10}}>Quarantined</span>
+        {spamRows.length} form submission{spamRows.length === 1 ? '' : 's'} kept off the board as bot traffic in the last 30 days.
+        Open to check them; none of them {spamRows.length === 1 ? 'is' : 'are'} in the book.</summary>
+      {spamRows.map((s, i) => <div key={s.id} style={{ ...rowSt(i), borderTop: '1px solid #f0f0eb', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <span style={{flex: 1, minWidth: 220}}>
+          <b>{s.name || 'No name'}</b>
+          {s.email && <span style={{color: '#73736c', marginLeft: 8}}>{s.email}</span>}
+          {s.about && <span style={{color: '#73736c', marginLeft: 8}}>· {s.about}</span>}
+          <div style={{fontSize: 12, color: '#9a551a', marginTop: 3}}>{(s.reasons || []).join(' · ')}</div>
+        </span>
+        <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto', paddingTop: 2}}>{ago(s.created_at)}</span>
+        <span style={{display: 'flex', gap: 6, flex: '0 0 auto'}}>
+          <form method="POST" action="/api/act"><input type="hidden" name="action" value="spam_rescue"/><input type="hidden" name="id" value={s.id}/><input type="hidden" name="back" value="/today"/>
+            <button className="btn mini" style={{background: '#fff', color: '#111', border: '1px solid #111'}}>Not spam</button></form>
+          <form method="POST" action="/api/act"><input type="hidden" name="action" value="spam_dismiss"/><input type="hidden" name="id" value={s.id}/><input type="hidden" name="back" value="/today"/>
+            <button className="btn mini" style={{background: '#fff', color: '#73736c', border: '1px solid #e3e3dd'}}>Dismiss</button></form>
+        </span>
+      </div>)}
+    </details>}
 
     <div style={sec}>Where the money stands</div>
     <div className="stats" style={{marginTop: 0}}>

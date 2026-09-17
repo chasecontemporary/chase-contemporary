@@ -30,6 +30,7 @@
   <div class="col news"><b>NEWSLETTER</b>
     {% form 'customer', class: 'nlform' %}
       <input type="hidden" name="contact[tags]" value="newsletter">
+      <div class="hp" aria-hidden="true"><label for="n-web">Website</label><input id="n-web" name="contact[website]" tabindex="-1" autocomplete="off"></div>
       <input type="email" name="contact[email]" placeholder="Email address" aria-label="Email address" required>
       <button aria-label="Subscribe">&rarr;</button>
     {% endform %}

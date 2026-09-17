@@ -15,14 +15,14 @@ const APP = () => process.env.APP_URL || 'https://chase-engine.vercel.app';
 // Post to the floor channel. Prefers the bot token (chat.postMessage: threads, buttons, a
 // channel id that survives renames); falls back to an incoming webhook. Returns the
 // message ts when the API gave one, so a follow-up can land in the thread.
-export async function slack(text, blocks, { thread_ts } = {}) {
+export async function slack(text, blocks, { thread_ts, channel } = {}) {
   if (!slackReady()) return false;
   try {
     let ok = false, ts = null, err = null;
     if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL) {
       const r = await fetch('https://slack.com/api/chat.postMessage', { method: 'POST',
         headers: { Authorization: 'Bearer ' + process.env.SLACK_BOT_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel: process.env.SLACK_CHANNEL, text, ...(blocks ? { blocks } : {}), ...(thread_ts ? { thread_ts } : {}), unfurl_links: false }) });
+        body: JSON.stringify({ channel: channel || process.env.SLACK_CHANNEL, text, ...(blocks ? { blocks } : {}), ...(thread_ts ? { thread_ts } : {}), unfurl_links: false }) });
       const j = await r.json().catch(() => ({}));
       ok = !!j.ok; ts = j.ts || null; err = j.error || null;
     } else {
@@ -33,6 +33,18 @@ export async function slack(text, blocks, { thread_ts } = {}) {
     await db.from('messages').insert({ channel: 'slack', template: 'alert', to_addr: 'floor', body: text,
       provider: 'slack', provider_id: ts, status: ok ? 'sent' : 'failed', error: err });
     return ok ? (ts || true) : false;
+  } catch { return false; }
+}
+
+// Rewrite a message the bot posted (the Claim button turns into "Claimed by ..."). Bot token only.
+export async function slackUpdate(ts, text, blocks, channel) {
+  if (!process.env.SLACK_BOT_TOKEN || !ts) return false;
+  try {
+    const r = await fetch('https://slack.com/api/chat.update', { method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.SLACK_BOT_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: channel || process.env.SLACK_CHANNEL, ts, text, ...(blocks ? { blocks } : {}) }) });
+    const j = await r.json().catch(() => ({}));
+    return !!j.ok;
   } catch { return false; }
 }
 
@@ -75,7 +87,14 @@ export async function announceInquiry({ inquiry, collector, payload, offline }) 
   const text = [head, `${name}${email ? ' · ' + email : ''}${phone ? ' · ' + phone : ''}`, line2,
     payload?.body || payload?.message ? `"${String(payload.body || payload.message).slice(0, 240)}"` : '',
     kind === 'buying' ? `Claim it: ${link}` : link].filter(Boolean).join('\n');
-  await slack(text);
+  // Bot token lane gets a Claim button (Block Kit); the webhook lane stays plain text.
+  const canButton = !!process.env.SLACK_BOT_TOKEN && !!process.env.SLACK_CHANNEL && kind === 'buying' && !offline && inquiry?.id;
+  const blocks = canButton ? [
+    { type: 'section', text: { type: 'mrkdwn', text } },
+    { type: 'actions', elements: [{ type: 'button', action_id: 'claim', value: String(inquiry.id), style: 'primary',
+      text: { type: 'plain_text', text: 'Claim this lead' } }] },
+  ] : null;
+  await slack(text, blocks);
   if (kind !== 'buying' || offline) return;
   const who = inquiry?.owner ? await reps(inquiry.owner) : await reps();
   await alertReps({ to: who, subject: `New inquiry: ${name} · ${about}`,
