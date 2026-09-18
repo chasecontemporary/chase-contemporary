@@ -150,9 +150,15 @@ export async function buildInvoicePdf({ invoice, collector, items, payments = []
   // payment
   tracked(page, 'PAYMENT', { x: M, y, size: 7.5, font: semibold, color: GRAY, spacing: 1.8 });
   y -= 15;
+  // Two ways to pay, and the invoice has to say both. A wire is the instrument at these prices;
+  // a card link is for the smaller tickets and for a deposit. Until the gallery's wire block is
+  // in the environment this falls back to the old line, which is honest but makes an invoice
+  // that cannot actually be paid from the invoice.
   const wire = process.env.WIRE_INSTRUCTIONS ||
     'Payment by wire to Zenzeba Group Inc. Wire instructions are provided under separate cover.';
-  const payLines = [wire, `Please reference Invoice ${num.replace('NO. ', 'No. ')} with your payment.`];
+  const payLines = [wire];
+  if (invoice.pay_url) payLines.push(`To pay by card instead, use the secure link sent with this invoice.`);
+  payLines.push(`Please reference Invoice ${num.replace('NO. ', 'No. ')} with your payment.`);
   if (invoice.deposit_cents > 0 && received === 0)
     payLines.unshift(`A deposit of ${usd(invoice.deposit_cents)} reserves the work; the balance is due ${invoice.due_at ? new Date(invoice.due_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'before delivery'}.`);
   for (const line of payLines) {

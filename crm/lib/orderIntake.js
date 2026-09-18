@@ -1,5 +1,5 @@
 import { db } from './db';
-import { settleInvoice } from './settle';
+import { settleInvoice, recordPayment } from './settle';
 import { shopifyReady, showProduct } from './shopify';
 
 // Turning a Shopify order into what the engine already understands: a collector, a sale, an
@@ -210,7 +210,13 @@ export async function handleOrderPaid(order) {
   // Path one: a pay link a rep made. The invoice, the sale and the lines already exist, so this
   // settles what is there and stops. Unchanged from the day the pay link shipped.
   if (paylinkInvoiceId) {
-    await settleInvoice(paylinkInvoiceId, 'card · shopify');
+    // Record what the collector actually paid, not the whole balance. A pay link can be raised
+    // for a deposit, and settling the balance on a deposit payment would mark an invoice paid in
+    // full while most of the money is still owed. recordPayment closes the invoice by itself once
+    // enough has come in, so paying in full still behaves exactly as it did.
+    const paid = cents(order.total_price);
+    if (paid > 0) await recordPayment(paylinkInvoiceId, paid, 'card · shopify');
+    else await settleInvoice(paylinkInvoiceId, 'card · shopify');
     await db.from('activities').insert({
       entity_type: 'invoice', entity_id: paylinkInvoiceId,
       kind: 'paid_online', body: `Shopify order ${order.name || order.id} paid`, actor: 'shopify' });

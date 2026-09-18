@@ -544,10 +544,26 @@ async function handle(req, form) {
       .select('*, collectors(email)').eq('id', id).single();
     if (inv && inv.status === 'open') {
       await ensureWebhook(new URL(req.url).origin);
-      const { url, draftId } = await createPayLink(inv, inv.collectors);
+      // A link can be for the deposit, the balance, or a number the rep types. A gallery takes
+      // a deposit and then a balance, so "the whole invoice" is the exception, not the rule.
+      const total = Number(inv.amount_cents || 0) + Number(inv.tax_cents || 0) + Number(inv.shipping_cents || 0);
+      const { data: paid } = await db.from('payments').select('amount_cents')
+        .eq('invoice_id', id).eq('status', 'settled');
+      const received = (paid || []).reduce((t, p) => t + Number(p.amount_cents), 0);
+      const want = form.get('amount_kind') || 'full';
+      const typed = Math.round(Number(String(form.get('amount') || '').replace(/[$,\s]/g, '')) * 100);
+      const amountCents = want === 'deposit' ? (inv.deposit_cents || Math.round(total / 2))
+        : want === 'balance' ? (total - received)
+        : want === 'custom' ? typed : null;
+      if (amountCents !== null && !(amountCents > 0))
+        throw new Error('Put an amount on the link before sending it.');
+      if (amountCents !== null && amountCents > total - received)
+        throw new Error('That is more than is still owed on this invoice.');
+      const label = want === 'deposit' ? 'Deposit' : want === 'balance' ? 'Balance' : 'Payment';
+      const { url, draftId } = await createPayLink(inv, inv.collectors, { amountCents, label });
       await db.from('invoices').update({ pay_url: url, shopify_draft_id: draftId }).eq('id', id);
       await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
-        kind: 'paylink_created', body: url, actor: rep });
+        kind: 'paylink_created', body: `${label}${amountCents ? ' ' + (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : ' in full'} · ${url}`, actor: rep });
     }
   } else if (action === 'invoice_void') {
     must(await db.from('invoices').update({ status: 'void', void_reason: (form.get('reason') || '').slice(0, 200) || null }).eq('id', id));

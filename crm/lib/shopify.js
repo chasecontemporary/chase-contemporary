@@ -17,11 +17,29 @@ export async function shopify(path, method = 'GET', body) {
 }
 
 // Draft order = the pay link: custom line items, invoice_id carried in note attributes.
-export async function createPayLink(inv, collector) {
-  const line_items = [{ title: (inv.title || 'Artwork') + (inv.artist ? ' · ' + inv.artist : ''),
-    price: (inv.amount_cents / 100).toFixed(2), quantity: 1, requires_shipping: false,
-    taxable: false }];
-  if (inv.shipping_cents) line_items.push({ title: 'Shipping', quantity: 1, taxable: false,
+/**
+ * A link a collector can pay on a card. Shopify is the payment processor, so this raises a
+ * draft order and hands back its invoice URL.
+ *
+ * `amountCents` is the whole point of the options: a gallery takes a deposit and then a
+ * balance, so a link has to be raisable for part of an invoice. Paying part of one is recorded
+ * as part of one, and the invoice closes itself when enough has arrived.
+ *
+ * Card is not always the right answer. At this gallery's prices the processing fee on a large
+ * original is thousands of dollars, so `payLinkAdvice` below exists to say so out loud before
+ * anyone sends one.
+ */
+export async function createPayLink(inv, collector, { amountCents, label } = {}) {
+  const full = Number(inv.amount_cents || 0) + Number(inv.tax_cents || 0) + Number(inv.shipping_cents || 0);
+  const part = Number(amountCents) > 0 && Number(amountCents) < full ? Math.round(Number(amountCents)) : null;
+  const ref = String(inv.invoice_number ?? '').padStart(4, '0');
+  const line_items = part
+    ? [{ title: `${label || 'Part payment'} on invoice ${ref}`, price: (part / 100).toFixed(2),
+        quantity: 1, requires_shipping: false, taxable: false }]
+    : [{ title: (inv.title || 'Artwork') + (inv.artist ? ' · ' + inv.artist : ''),
+        price: (inv.amount_cents / 100).toFixed(2), quantity: 1, requires_shipping: false,
+        taxable: false }];
+  if (!part && inv.shipping_cents) line_items.push({ title: 'Shipping', quantity: 1, taxable: false,
     price: (inv.shipping_cents / 100).toFixed(2), requires_shipping: false });
   const email = collector?.email && !collector.email.endsWith('import.chasecontemporary.com')
     ? collector.email : undefined;
@@ -31,11 +49,24 @@ export async function createPayLink(inv, collector) {
     note: `Chase Engine invoice ${String(inv.invoice_number).padStart(4, '0')}`,
     note_attributes: [{ name: 'engine_invoice_id', value: inv.id }],
     tags: 'chase-engine',
-    ...(inv.tax_cents ? { tax_lines: [{ title: 'Sales tax', rate: 0,
+    ...(!part && inv.tax_cents ? { tax_lines: [{ title: 'Sales tax', rate: 0,
       price: (inv.tax_cents / 100).toFixed(2) }] } : {}),
   } };
   const { draft_order } = await shopify('/draft_orders.json', 'POST', payload);
   return { url: draft_order.invoice_url, draftId: String(draft_order.id) };
+}
+
+// Shopify Payments takes a percentage of every card payment. On a gallery original that is
+// real money, so the engine says the number out loud rather than letting a rep find out in the
+// payout. Above the ceiling a wire is the sane instrument and the UI says so.
+export const CARD_FEE_PCT = Number(process.env.CARD_FEE_PCT || 2.9);
+export const CARD_FEE_FLAT_CENTS = Number(process.env.CARD_FEE_FLAT_CENTS || 30);
+export const CARD_CEILING_CENTS = Number(process.env.CARD_CEILING_CENTS || 2500000);
+export function payLinkAdvice(amountCents) {
+  const amount = Number(amountCents || 0);
+  const fee = Math.round(amount * (CARD_FEE_PCT / 100)) + CARD_FEE_FLAT_CENTS;
+  return { fee, tooBig: amount > CARD_CEILING_CENTS,
+    ceiling: CARD_CEILING_CENTS, pct: CARD_FEE_PCT };
 }
 
 // One-time webhook registration (idempotent) — called on first pay-link creation.

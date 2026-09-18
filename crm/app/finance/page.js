@@ -11,6 +11,7 @@ import InvoiceLines from '../../components/InvoiceLines';
 import { db } from '../../lib/db';
 import { mailReady } from '../../lib/mail';
 import { docusignReady } from '../../lib/docusign';
+import { payLinkAdvice } from '../../lib/shopify';
 export const dynamic = 'force-dynamic';
 const fmtPhone = (p) => {
   const d = String(p || '').replace(/\D/g, '');
@@ -309,12 +310,31 @@ export default async function Finance({ searchParams }) {
                   </form>
                 </div>
                 {(docsBySale[i.sale_id] || []).map((doc, ix) => <DocPreview key={ix} url={doc.url} label={doc.label}/>)}
-                {isOpen && payReady && <form method="POST" action="/api/act" style={{alignSelf:'flex-end'}}>
-                  <input type="hidden" name="action" value="invoice_paylink"/>
-                  <input type="hidden" name="id" value={i.id}/>
-                  <input type="hidden" name="back" value="/finance"/>
-                  <button className="btn mini quiet">{i.pay_url ? 'New pay link' : 'Pay link'}</button>
-                </form>}
+                {isOpen && payReady && (() => {
+                  // A gallery takes a deposit and then a balance, so a link is raised for a part
+                  // of an invoice far more often than for all of it. Card also costs real money
+                  // at these prices, so the fee is named here rather than discovered in a payout.
+                  const totalDue = tot(i);
+                  const owed = balance(i);
+                  const deposit = i.deposit_cents || Math.round(totalDue / 2);
+                  const advice = payLinkAdvice(owed);
+                  const link = (kind, label, amount) => <form key={kind} method="POST" action="/api/act">
+                    <input type="hidden" name="action" value="invoice_paylink"/>
+                    <input type="hidden" name="id" value={i.id}/>
+                    <input type="hidden" name="amount_kind" value={kind}/>
+                    <input type="hidden" name="back" value="/finance"/>
+                    <ConfirmButton style={{background:'#fff', color:'#111', border:'1px solid #111'}}>
+                      {label}{amount ? ' · ' + usd(amount) : ''}</ConfirmButton>
+                  </form>;
+                  return <div style={{alignSelf:'flex-end', display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end'}}>
+                    {advice.tooBig && <span style={{fontSize:11.5, color:'#9a551a', width:'100%', textAlign:'right'}}>
+                      A card payment of {usd(owed)} costs about {usd(advice.fee)} in processing. Take this one by wire.</span>}
+                    {!advice.tooBig && <span style={{fontSize:11.5, color:'#73736c', width:'100%', textAlign:'right'}}>
+                      Card fee on {usd(owed)} is about {usd(advice.fee)}.</span>}
+                    {i.deposit_cents > 0 && paidIn[i.id] === 0 ? link('deposit', 'Deposit link', deposit) : null}
+                    {paidIn[i.id] > 0 ? link('balance', 'Balance link', owed) : null}
+                    {link('full', i.pay_url ? 'New link, in full' : 'Pay link, in full', null)}
+                  </div>; })()}
                 {i.pay_url && <a className="pill blue" style={{alignSelf:'flex-end'}} href={i.pay_url} target="_blank">Pay ↗</a>}
               </div>
             </div>
