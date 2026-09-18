@@ -10,6 +10,7 @@
   {{ 'chase.css' | asset_url | stylesheet_tag }}
   <script src="{{ 'chase.js' | asset_url }}" defer></script>
   {{ content_for_header }}
+  {% render 'structured-data' %}
 </head>
 <body>
 <a class="skip" href="#main">SKIP TO CONTENT</a>

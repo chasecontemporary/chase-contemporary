@@ -1,0 +1,167 @@
+{%- comment -%}
+  What the machines read.
+
+  The site had no structured data at all, which means Google and the AI answer engines were
+  reading every page as undifferentiated HTML: no idea that a page is an artwork, who made it,
+  what it costs, or that the gallery is a gallery. Shopify's stock themes emit this; this one
+  never did.
+
+  Two audiences, one markup. Search engines use it for rich results. Answer engines use it to
+  decide what a page is ABOUT and whether to cite it, which is the whole game for a gallery
+  whose founder wants to be the answer when somebody asks who he is.
+
+  Every fact below comes from the gallery's own records. Nothing is asserted that the site
+  cannot stand behind.
+{%- endcomment -%}
+
+{%- assign gallery_name = 'Chase Contemporary' -%}
+{%- capture gallery_id -%}{{ shop.url }}/#gallery{%- endcapture -%}
+{%- capture founder_id -%}{{ shop.url }}/pages/about#bernie-chase{%- endcapture -%}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ArtGallery",
+  "@id": {{ gallery_id | json }},
+  "name": {{ gallery_name | json }},
+  "url": {{ shop.url | json }},
+  "email": {{ shop.email | default: 'info@chasecontemporary.com' | json }},
+  "image": {{ 'chase-logo-stacked.png' | asset_url | prepend: 'https:' | json }},
+  "description": "Chase Contemporary is a contemporary art gallery founded in 2017 by Bernie Chase, dealing in works by Richard Hambleton, RETNA, Kenny Scharf, Andres Valencia, Raphael Mazzucco and others.",
+  "foundingDate": "2017",
+  "founder": { "@type": "Person", "@id": {{ founder_id | json }}, "name": "Bernie Chase" },
+  "sameAs": ["https://www.instagram.com/chasecontemporary/"]
+}
+</script>
+
+{%- if template contains 'product' -%}
+  {%- assign is_edition = false -%}
+  {%- if product.type == 'Print' and product.price > 0 -%}{%- assign is_edition = true -%}{%- endif -%}
+  {%- comment -%}
+    A work is a VisualArtwork, not a Product. That distinction is the point: it carries the
+    artist, the medium, the dimensions and the year in fields a machine understands, which is
+    how a page becomes an answer rather than a listing. An edition carries a real offer; an
+    original is price on request, so it says so honestly rather than inventing a number.
+  {%- endcomment -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VisualArtwork",
+  "@id": {{ canonical_url | append: '#artwork' | json }},
+  "name": {{ product.title | json }},
+  "url": {{ canonical_url | json }},
+  {% if product.featured_image %}"image": {{ product.featured_image | image_url: width: 1600 | prepend: 'https:' | json }},{% endif %}
+  {% if product.description != blank %}"abstract": {{ product.description | strip_html | truncate: 500 | json }},{% endif %}
+  {%- comment -%}
+    The vendor field is how the shop groups works, and for the photography it is the SUBJECT,
+    not the person who made the picture. Pele did not take the photographs of Pele. Saying he
+    did in markup would put a false fact into search results and into every answer engine that
+    reads this page, so the real creator comes from the artwork.creator metafield when the
+    gallery has recorded one, and the vendor is named as the subject instead.
+  {%- endcomment -%}
+  {%- assign true_creator = product.metafields.artwork.creator | default: '' -%}
+  {%- assign subject = product.metafields.artwork.subject | default: '' -%}
+  {%- if true_creator != blank -%}
+  "creator": { "@type": "Person", "name": {{ true_creator | json }} },
+  {%- elsif product.vendor != blank and subject == blank -%}
+  "creator": {
+    "@type": "Person",
+    "name": {{ product.vendor | json }}
+    {%- assign vh = product.vendor | handleize -%}
+    {%- if collections[vh] != blank -%}, "url": {{ shop.url | append: collections[vh].url | json }}{%- endif -%}
+  },
+  {%- endif -%}
+  {%- if subject != blank -%}
+  "about": { "@type": "Person", "name": {{ subject | json }} },
+  {%- elsif true_creator != blank and product.vendor != blank and product.vendor != true_creator -%}
+  "about": { "@type": "Person", "name": {{ product.vendor | json }} },
+  {%- endif -%}
+  {% if product.type != blank %}"artMedium": {{ product.type | json }},{% endif %}
+  "artform": "{% if is_edition %}Print{% else %}Painting{% endif %}",
+  "isFamilyFriendly": true,
+  {% if is_edition %}
+  "offers": {
+    "@type": "Offer",
+    "url": {{ canonical_url | json }},
+    "price": {{ product.price | divided_by: 100.0 | json }},
+    "priceCurrency": {{ cart.currency.iso_code | json }},
+    "availability": "{% if product.available %}https://schema.org/InStock{% else %}https://schema.org/SoldOut{% endif %}",
+    "seller": { "@id": {{ gallery_id | json }} }
+  },
+  {% else %}
+  "offers": {
+    "@type": "Offer",
+    "url": {{ canonical_url | json }},
+    "availability": "{% if product.available %}https://schema.org/InStock{% else %}https://schema.org/SoldOut{% endif %}",
+    "priceSpecification": { "@type": "PriceSpecification", "priceCurrency": {{ cart.currency.iso_code | json }} },
+    "seller": { "@id": {{ gallery_id | json }} }
+  },
+  {% endif %}
+  "isPartOf": { "@id": {{ gallery_id | json }} }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Artists", "item": {{ shop.url | append: routes.collections_url | json }} },
+    {%- assign vh2 = product.vendor | handleize -%}
+    {%- if collections[vh2] != blank -%}
+    { "@type": "ListItem", "position": 2, "name": {{ product.vendor | json }}, "item": {{ shop.url | append: collections[vh2].url | json }} },
+    { "@type": "ListItem", "position": 3, "name": {{ product.title | json }}, "item": {{ canonical_url | json }} }
+    {%- else -%}
+    { "@type": "ListItem", "position": 2, "name": {{ product.title | json }}, "item": {{ canonical_url | json }} }
+    {%- endif -%}
+  ]
+}
+</script>
+{%- endif -%}
+
+{%- if template contains 'collection' and collection.handle != blank -%}
+  {%- comment -%}
+    A collection here is an artist's body of work, so it is marked up as the person and the
+    works together. This is what lets an engine answer "what does Chase Contemporary have by
+    RETNA" with the gallery as its source.
+  {%- endcomment -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": {{ canonical_url | append: '#collection' | json }},
+  "name": {{ collection.title | json }},
+  "url": {{ canonical_url | json }},
+  {% if collection.description != blank %}"description": {{ collection.description | strip_html | truncate: 400 | json }},{% endif %}
+  "about": { "@type": "Person", "name": {{ collection.title | json }} },
+  "isPartOf": { "@id": {{ gallery_id | json }} },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": {{ collection.products_count }},
+    "itemListElement": [
+      {%- for p in collection.products limit: 24 -%}
+      { "@type": "ListItem", "position": {{ forloop.index }},
+        "url": {{ shop.url | append: p.url | json }}, "name": {{ p.title | json }} }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+}
+</script>
+{%- endif -%}
+
+{%- if template contains 'article' -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "@id": {{ canonical_url | append: '#article' | json }},
+  "headline": {{ article.title | json }},
+  "url": {{ canonical_url | json }},
+  "datePublished": {{ article.published_at | date: '%Y-%m-%d' | json }},
+  {% if article.image %}"image": {{ article.image | image_url: width: 1600 | prepend: 'https:' | json }},{% endif %}
+  {% if article.excerpt != blank %}"description": {{ article.excerpt | strip_html | truncate: 300 | json }},{% endif %}
+  "author": { "@type": "Organization", "@id": {{ gallery_id | json }}, "name": {{ gallery_name | json }} },
+  "publisher": { "@id": {{ gallery_id | json }} },
+  "mainEntityOfPage": {{ canonical_url | json }}
+}
+</script>
+{%- endif -%}
