@@ -1,6 +1,7 @@
 import Shell from '../../components/Shell';
 import BrandSelect from '../../components/BrandSelect';
 import { db } from '../../lib/db';
+import { signedInEmails, pendingInvitations, clerkAdminReady } from '../../lib/clerkAdmin';
 import ConfirmButton from '../../components/ConfirmButton';
 import { RULE_KINDS, describeRule } from '../../lib/routing';
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,9 @@ export default async function Team({ searchParams }) {
     db.from('sales').select('id, owner').limit(2000),
     db.from('routing_rules').select('*').order('sort').order('created_at'),
   ]);
+  // Who has a real sign-in, read live from Clerk rather than stored, because a stale copy of
+  // this is worse than none. Only Wyatt had ever signed in; the rest were on the shared code.
+  const [whoSignedIn, whoInvited] = await Promise.all([signedInEmails(), pendingInvitations()]);
   const saleOwner = {}; (sales || []).forEach(s => saleOwner[s.id] = s.owner);
   const inqOwner = {}; (inqs || []).forEach(q => inqOwner[q.id] = q.owner);
   const invOwner = (i) => saleOwner[i.sale_id] || inqOwner[i.inquiry_id] || null;
@@ -90,6 +94,22 @@ export default async function Team({ searchParams }) {
                 <input name="slack_user_id" defaultValue={m.slack_user_id || ''} placeholder="Slack ID" style={{width:130, fontSize:12, height:30, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
                 <button className="btn mini quiet" style={{height:30}}>Save</button>
               </form>
+              {(() => {
+                const em = (m.email || '').toLowerCase();
+                const signedIn = em ? whoSignedIn[em] : null;
+                const invited = em ? whoInvited[em] : null;
+                if (signedIn) return <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'.05em',
+                  textTransform:'uppercase', color:'#2e6b3f'}}>Has their own sign-in</span>;
+                if (!clerkAdminReady()) return null;
+                return <form method="POST" action="/api/act" style={{display:'flex', gap:6, alignItems:'center'}}>
+                  <input type="hidden" name="action" value="team_invite"/>
+                  <input type="hidden" name="id" value={m.id}/>
+                  <input type="hidden" name="back" value={'/team?days=' + days}/>
+                  <button className="btn mini" style={{height:30, background:'#111', color:'#fff', border:'1px solid #111'}}>
+                    {invited || m.invited_at ? 'Invite again' : 'Invite to sign in'}</button>
+                  {(invited || m.invited_at) && <span style={{fontSize:11.5, color:'#9a551a'}}>
+                    invited, not signed in yet</span>}
+                </form>; })()}
             </div>
             <div style={{fontSize:11, color:'#73736c', fontWeight:400, marginTop:4}}>Slack: profile, three dots, Copy member ID. Off duty reps are skipped by routing.</div></td>
           <td style={td}>{s.open}{s.quiet ? <span style={{display:'block', fontSize:11, color:'#9a551a'}}>{s.quiet} quiet</span> : null}</td>

@@ -5,6 +5,7 @@ import { announceInquiry } from '../../../lib/notify';
 import { handleRouting } from './routing';
 import { handleAgreements } from './agreements';
 import { handlePublishing } from './publishing';
+import { inviteToEngine, revokeInvitation } from '../../../lib/clerkAdmin';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
@@ -694,6 +695,18 @@ async function handle(req, form) {
     must(await db.from('documents').update({ status: 'voided' }).eq('id', id));
     if (doc.collector_id) await db.from('activities').insert({ entity_type: 'collector', entity_id: doc.collector_id,
       kind: 'signature_voided', body: doc.kind, actor: rep });
+  } else if (action === 'team_invite') {
+    // Send someone their own sign-in. The shared code stays alive until all four have one,
+    // so this is the button that eventually lets us delete it.
+    const { data: m } = await db.from('team_members').select('name, email').eq('id', id).single();
+    if (!m?.email) throw new Error('Put an email on this person first, then invite them.');
+    await inviteToEngine(m.email);
+    must(await db.from('team_members').update({ invited_at: new Date().toISOString() }).eq('id', id));
+    await db.from('activities').insert({ entity_type: 'team', entity_id: id, kind: 'invited',
+      body: `${m.name} invited to sign in`, actor: rep });
+  } else if (action === 'team_invite_revoke') {
+    await revokeInvitation(form.get('invitation_id'));
+    must(await db.from('team_members').update({ invited_at: null }).eq('id', id));
   } else if (action === 'team_phone') {
     must(await db.from('team_members').update({ phone: form.get('phone') || null, email: form.get('email') || null }).eq('id', id));
   } else if (action === 'artwork_relist') {
