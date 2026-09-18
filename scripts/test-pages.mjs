@@ -29,13 +29,14 @@ const [camp] = await get('campaigns?select=id&limit=1');
 
 const pages = [
   ['/today', 'Today'], ['/pipeline', 'Sales pipeline'], ['/finance', 'Finance'], ['/signing', 'Signing'],
-  ['/collectors', 'Collectors'], ['/inventory', 'Inventory'], ['/artists', 'Artists'],
+  ['/collectors', 'Collectors'], ['/inventory', 'Inventory'], ['/approvals', 'Approvals'], ['/artists', 'Artists'],
   ['/artists/portfolio', 'Portfolio'], ['/commissions', 'Commissions'], ['/team', 'Team'],
   ['/audiences', 'Audiences'], ['/campaigns', 'Campaigns'], ['/p/thanks', 'Thanks'],
   ['/finance?view=paid', 'Finance, paid'], ['/finance?view=payments', 'Finance, payments'],
   ['/finance?view=all', 'Finance, all'], ['/team?days=90', 'Team, 90 days'],
   ['/inventory?gap=location', 'Inventory, missing location'],
   ['/collectors?dupes=1', 'Collectors, duplicates'],
+  ['/approvals?view=none', 'Approvals, not chosen'], ['/approvals?view=live', 'Approvals, on the site'],
   aw && [`/inventory/${aw.id}`, 'A work'],
   col && [`/collectors/${col.id}`, 'A collector'],
   camp && [`/campaigns/${camp.id}`, 'A campaign'],

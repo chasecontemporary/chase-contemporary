@@ -4,6 +4,7 @@ import { persist, emailFor } from '../../../lib/capture';
 import { announceInquiry } from '../../../lib/notify';
 import { handleRouting } from './routing';
 import { handleAgreements } from './agreements';
+import { handlePublishing } from './publishing';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
@@ -67,6 +68,11 @@ async function handle(req, form) {
   // handled the action, so the long chain below stays about the core.
   if (await handleRouting({ action, form, id, rep, db, must })) return null;
   if (await handleAgreements({ action, form, id, rep, db, must, put })) return null;
+  {
+    const r = await handlePublishing({ action, form, id, rep, db, must });
+    if (r instanceof Response) return r;
+    if (r) return null;
+  }
   if (action === 'assign') {
     const owner = form.get('owner') || null;
     must(await db.from('inquiries').update({ owner }).eq('id', id));
