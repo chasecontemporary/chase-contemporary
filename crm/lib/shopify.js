@@ -70,11 +70,24 @@ export function payLinkAdvice(amountCents) {
 }
 
 // One-time webhook registration (idempotent) — called on first pay-link creation.
+// Every topic the engine actually handles, not just the one the pay link needed. A storefront
+// sale, a refund and a cancellation all have to reach the engine or the books drift from the
+// shop. Idempotent: it only registers what is missing.
+export const WEBHOOK_TOPICS = ['orders/paid', 'orders/create', 'refunds/create', 'orders/cancelled'];
+
 export async function ensureWebhook(origin) {
   const { webhooks } = await shopify('/webhooks.json');
   const address = origin + '/api/shopify-webhook';
-  if ((webhooks || []).some(w => w.address === address && w.topic === 'orders/paid')) return;
-  await shopify('/webhooks.json', 'POST', { webhook: { topic: 'orders/paid', address, format: 'json' } });
+  const have = new Set((webhooks || []).filter(w => w.address === address).map(w => w.topic));
+  const added = [];
+  for (const topic of WEBHOOK_TOPICS) {
+    if (have.has(topic)) continue;
+    try {
+      await shopify('/webhooks.json', 'POST', { webhook: { topic, address, format: 'json' } });
+      added.push(topic);
+    } catch { /* one failing topic must not stop the rest */ }
+  }
+  return added;
 }
 
 // Push an on-hand work to the site as a DRAFT product — invisible until published.
