@@ -26,6 +26,28 @@ export const emailFor = (p) => {
   return d.length >= 7 ? `phone+${d}@import.chasecontemporary.com` : null;
 };
 
+// Which piece of inventory is this about. The site sends the product handle, and since every
+// work the engine publishes carries that same handle, the lead can be tied to the actual work
+// rather than to a title someone might rename. Falls back to an exact title match for anything
+// that reached us another way. Never throws: an unmatched inquiry is still a lead.
+async function resolveArtwork(p) {
+  const handle = cap(p.artwork_handle, 200);
+  const title = p.artwork_title || p.artwork || null;
+  try {
+    if (handle) {
+      const { data } = await db.from('artworks').select('id').eq('handle', handle).limit(1).maybeSingle();
+      if (data) return data.id;
+    }
+    if (title) {
+      let q = db.from('artworks').select('id').eq('title', title);
+      if (p.artist) q = q.eq('artist', p.artist);
+      const { data } = await q.limit(1).maybeSingle();
+      if (data) return data.id;
+    }
+  } catch { /* the lead matters more than the link */ }
+  return null;
+}
+
 export async function persist(p, email) {
   const { data: collector, error: cErr } = await db
     .from('collectors')
@@ -77,6 +99,7 @@ export async function persist(p, email) {
     .from('inquiries')
     .insert({
       collector_id: collector.id,
+      artwork_id: await resolveArtwork(p),
       artwork_handle: handle,
       artwork_title: p.artwork_title || p.artwork || null,
       artist: cap(p.artist || p.artist_interest, 200),

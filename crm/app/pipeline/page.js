@@ -7,7 +7,7 @@ export default async function Pipeline({ searchParams }) {
   const openId = (await searchParams)?.lead || null;
   // Three waves instead of nine sequential round trips. Everything in wave two depends
   // only on the inquiry rows, so it all goes at once; only the reserves need artwork ids.
-  const INQ_FIELDS = 'id, status, kind, collector_id, artwork_handle, artwork_title, purpose, ' +
+  const INQ_FIELDS = 'id, status, kind, collector_id, artwork_id, artwork_handle, artwork_title, purpose, ' +
     'budget_range, timeframe, source, owner, message, page_journey, created_at, ' +
     'stage_changed_at, contacted_at, first_called_at, next_action_at, next_action';
   const ART_FIELDS = 'id, handle, title, artist, price_cents, internal_value_cents, ' +
@@ -23,13 +23,17 @@ export default async function Pipeline({ searchParams }) {
     db.from('team_members').select('name').eq('active', true).order('name'),
   ]);
 
-  const handles = [...new Set((rows || []).map(r => r.artwork_handle).filter(Boolean))];
-  const titles = [...new Set((rows || []).map(r => r.artwork_title).filter(Boolean))];
+  // The lead records which work it is about now, resolved at capture. Handle and title
+  // matching stays as the fallback for anything captured before that.
+  const artIdsDirect = [...new Set((rows || []).map(r => r.artwork_id).filter(Boolean))];
+  const handles = [...new Set((rows || []).filter(r => !r.artwork_id).map(r => r.artwork_handle).filter(Boolean))];
+  const titles = [...new Set((rows || []).filter(r => !r.artwork_id).map(r => r.artwork_title).filter(Boolean))];
   const collectorIds = [...new Set((rows || []).map(r => r.collector_id).filter(Boolean))];
   const none = Promise.resolve({ data: [] });
 
-  const [{ data: byHandle }, { data: byTitle }, { data: sales }, { data: idx },
+  const [{ data: byIdRows }, { data: byHandle }, { data: byTitle }, { data: sales }, { data: idx },
          { data: jn }, { data: openInv }] = await Promise.all([
+    artIdsDirect.length ? db.from('artworks').select(ART_FIELDS).in('id', artIdsDirect) : none,
     handles.length ? db.from('artworks').select(ART_FIELDS).in('handle', handles) : none,
     titles.length  ? db.from('artworks').select(ART_FIELDS).in('title', titles)  : none,
     collectorIds.length ? db.from('sales').select('*, sale_items(*)').eq('status', 'open').in('collector_id', collectorIds) : none,
@@ -40,7 +44,8 @@ export default async function Pipeline({ searchParams }) {
       .eq('status', 'open').in('collector_id', collectorIds) : none,
   ]);
 
-  const artMap = {}, titleMap = {}, saleMap = {}, ltvMap = {}, journeyMap = {}, invoiceMap = {};
+  const byId = {}, artMap = {}, titleMap = {}, saleMap = {}, ltvMap = {}, journeyMap = {}, invoiceMap = {};
+  (byIdRows || []).forEach(a => { byId[a.id] = a; });
   (byHandle || []).forEach(a => { artMap[a.handle] = a; });
   (byTitle  || []).forEach(a => { titleMap[a.title] = a; });
   (sales    || []).forEach(x => { saleMap[x.collector_id] = x; });
@@ -49,7 +54,7 @@ export default async function Pipeline({ searchParams }) {
   (openInv  || []).forEach(i => { invoiceMap[i.collector_id] = i; });
 
   // reserves are the only thing that needs the artwork ids
-  const artIds = [...new Set([...Object.values(artMap), ...Object.values(titleMap)].map(a => a.id))];
+  const artIds = [...new Set([...Object.values(byId), ...Object.values(artMap), ...Object.values(titleMap)].map(a => a.id))];
   const reserveMap = {};
   if (artIds.length) {
     const { data: res } = await db.from('artwork_reserves').select('*').in('artwork_id', artIds);
@@ -75,15 +80,15 @@ export default async function Pipeline({ searchParams }) {
           stage: committed.status } : null };
     });
   });
+  const workFor = (r) => byId[r.artwork_id] || artMap[r.artwork_handle] || titleMap[r.artwork_title] || null;
   const leads = (rows || []).map(r => ({ ...r,
-    artwork: artMap[r.artwork_handle] || titleMap[r.artwork_title] || null,
+    artwork: workFor(r),
     openSale: saleMap[r.collector_id] || null, inquiryCount: counts[r.collector_id] || 1,
     ltv: Number(ltvMap[r.collector_id]?.spend_cents || 0), worksOwned: Number(ltvMap[r.collector_id]?.works || 0),
     vip: (ltvMap[r.collector_id]?.tags || []).includes('VIP list'),
     openInvoice: invoiceMap[r.collector_id] || null,
     journey: journeyMap[r.collector_id] || null,
-    reserve: (artMap[r.artwork_handle] || titleMap[r.artwork_title])
-      ? reserveMap[(artMap[r.artwork_handle] || titleMap[r.artwork_title]).id] || null : null,
+    reserve: workFor(r) ? reserveMap[workFor(r).id] || null : null,
     competition: competition[r.id] || { others: 0, committed: null } }));
 
   // the owner's read of the board, in four numbers

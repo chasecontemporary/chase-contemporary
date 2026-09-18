@@ -5,6 +5,7 @@ import { db } from '../../lib/db';
 import { whoami } from '../../lib/identity';
 import { dbReachable, listSpill, readAllSpill } from '../../lib/spill';
 import { signingBoard, missingPaper, DOC_LABEL } from '../../lib/signing';
+import { ordersNeedingReview } from '../../lib/orderIntake';
 export const dynamic = 'force-dynamic';
 
 // The landing page. Three jobs, in order: what changed since you were last here,
@@ -196,12 +197,14 @@ export default async function Today() {
   const shipping = (toShip || []).filter(s => !personal || s.owner === viewer);
   // Paper the gallery is waiting on. A sale with no signed agreement is a sale that cannot
   // ship, so it belongs beside the other things that decay if nobody looks.
-  const [signBoard, needPaper] = await Promise.all([signingBoard({ days: 120 }), missingPaper()]);
+  const [signBoard, needPaper, shopifyReview] = await Promise.all([
+    signingBoard({ days: 120 }), missingPaper(), ordersNeedingReview()]);
   const coldSignatures = signBoard.waiting
     .filter(d => (Date.now() - new Date(d.sent_at || d.created_at).getTime()) / 86400000 >= 3)
     .concat(signBoard.stuck);
   const attentionCount = answerNow.length + dueToday.length + quiet.length + chase.length
-    + holdsOut.length + otherMessages.length + shipping.length + needPaper.length + coldSignatures.length;
+    + holdsOut.length + otherMessages.length + shipping.length + needPaper.length + coldSignatures.length
+    + shopifyReview.length;
 
   // ---- the numbers ----
   const collectedMonth = (paysMonth || []).reduce((s, p) => s + Number(p.amount_cents), 0);
@@ -354,6 +357,25 @@ export default async function Today() {
             </span>
             <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>{ago(r.created_at)}</span>
           </div>; })}
+      </div>
+    </>}
+
+    {shopifyReview.length > 0 && <>
+      <div style={sec}>Website orders that need a person</div>
+      <div style={card}>
+        {shopifyReview.map((o, i) => <a key={o.id}
+          href={o.collector_id ? `/collectors/${o.collector_id}` : '/finance'}
+          style={{...rowSt(i), alignItems: 'flex-start'}}>
+          <span style={{fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
+            color: '#8f1f18', width: 104, flex: '0 0 auto', paddingTop: 2}}>Check now</span>
+          <span style={{flex: 1, minWidth: 0}}>
+            <b>{o.order_name || o.shopify_order_id}</b>
+            <span style={{color: '#73736c', marginLeft: 8}}>{usd(o.total_cents)}</span>
+            {o.collectors && <span style={{marginLeft: 8}}>{[o.collectors.first_name, o.collectors.last_name].filter(Boolean).join(' ')}</span>}
+            <div style={{color: '#3a3a35', marginTop: 3, lineHeight: 1.5}}>{o.review_reason}</div>
+          </span>
+          <span style={{fontSize: 12, color: '#73736c', flex: '0 0 auto'}}>{ago(o.created_at)}</span>
+        </a>)}
       </div>
     </>}
 
