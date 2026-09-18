@@ -336,6 +336,36 @@ async function handle(req, form) {
       .eq('person', form.get('person')).eq('period', form.get('period')).is('paid_at', null);
     await db.from('activities').insert({ entity_type: 'commission', entity_id: id || '00000000-0000-0000-0000-000000000000',
       kind: 'payout_complete', body: `${form.get('person')} · ${form.get('period')}`, actor: rep });
+  } else if (action === 'comm_plan_set') {
+    // How much of every payment becomes commission at all. Dated, so changing it never
+    // rewrites what has already been earned.
+    const pct = Number(String(form.get('pool_pct') || '').replace(/[%\s]/g, ''));
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error('The pool has to be a percentage between 0 and 100.');
+    must(await db.from('commission_plan').update({ active: false }).eq('active', true));
+    must(await db.from('commission_plan').insert({ pool_pct: pct, note: form.get('note') || null }));
+    await db.from('activities').insert({ entity_type: 'team', entity_id: id || null, kind: 'commission_plan',
+      body: `pool set to ${pct}%`, actor: rep });
+  } else if (action === 'comm_share_set') {
+    const person = (form.get('person') || '').trim();
+    const pct = Number(String(form.get('share_pct') || '').replace(/[%\s]/g, ''));
+    if (!person) throw new Error('Name the person who shares in the pool.');
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error('A share has to be between 0 and 100.');
+    // one active share per person: supersede rather than accumulate
+    must(await db.from('commission_shares').update({ active: false }).eq('person', person).eq('active', true));
+    must(await db.from('commission_shares').insert({ person, share_pct: pct }));
+    await db.from('activities').insert({ entity_type: 'team', entity_id: id || null, kind: 'commission_share',
+      body: `${person} set to ${pct}% of the pool`, actor: rep });
+  } else if (action === 'comm_share_del') {
+    must(await db.from('commission_shares').update({ active: false }).eq('id', id));
+  } else if (action === 'comm_period_pay') {
+    // Mark a person's month as paid out. The rows stay, so a statement can always be re-read.
+    const person = form.get('person');
+    const period = form.get('period');
+    if (!person || !period) throw new Error('Pick the person and the month.');
+    must(await db.from('commissions').update({ settled: true, paid_at: new Date().toISOString(),
+      paid_note: form.get('note') || null }).eq('person', person).eq('period', period).eq('settled', false));
+    await db.from('activities').insert({ entity_type: 'team', entity_id: id || null, kind: 'commission_paid',
+      body: `${person} paid for ${period}`, actor: rep });
   } else if (action === 'rule_add') {
     await db.from('commission_rules').insert({ person: form.get('person'), pct: Number(form.get('pct')) });
   } else if (action === 'rule_toggle') {
@@ -931,6 +961,11 @@ async function handle(req, form) {
     must(await db.from('spam_submissions').update({ dismissed_at: new Date().toISOString() }).eq('id', id));
   } else if (action === 'note') {
     must(await db.from('activities').insert({ entity_type: form.get('entity_type') || 'collector', entity_id: id, kind: 'note', body: form.get('body'), actor: rep }));
+  } else {
+    // An action nobody handles used to fall out of here and report success. That is how a
+    // typo, or a form posted at a deployment that does not have the action yet, looks exactly
+    // like a save that worked. It says so now.
+    throw new Error(`The engine does not know how to do "${String(action || '').slice(0, 40)}". Nothing was saved.`);
   }
   return null;
 }

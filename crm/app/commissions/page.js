@@ -1,6 +1,7 @@
 import Shell from '../../components/Shell';
 import { db } from '../../lib/db';
 import { whoami, clerkReady } from '../../lib/identity';
+import ConfirmButton from '../../components/ConfirmButton';
 export const dynamic = 'force-dynamic';
 const usd = (c) => '$' + Math.round((c || 0) / 100).toLocaleString();
 const monthName = (d) => new Date(String(d).slice(0, 7) + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -9,12 +10,19 @@ const monthShort = (d) => new Date(String(d).slice(0, 7) + '-02').toLocaleDateSt
 export default async function Commissions() {
   const me = await whoami();
   const viewer = me.name || '';
-  const [{ data: rules }, { data: team }, { data: rows }, { data: invMap }] = await Promise.all([
+  const [{ data: rules }, { data: team }, { data: rows }, { data: invMap },
+         { data: planRows }, { data: shareRows }, { data: statement }] = await Promise.all([
     db.from('commission_rules').select('*').order('person'),
     db.from('team_members').select('name, role'),
     db.from('commissions').select('*').order('created_at', { ascending: false }).limit(800),
     db.from('invoices').select('id, invoice_number, title, collectors(first_name, last_name)').limit(300),
+    db.from('commission_plan').select('*').eq('active', true).order('effective_from', { ascending: false }).limit(1),
+    db.from('commission_shares').select('*').eq('active', true).order('person'),
+    db.from('commission_statement').select('*').order('period', { ascending: false }).limit(200),
   ]);
+  const plan = (planRows || [])[0] || null;
+  const shares = shareRows || [];
+  const shareTotal = shares.reduce((t, x) => t + Number(x.share_pct || 0), 0);
   // Seeing everyone's pay requires a verified owner. An unverified session (the shared
   // code, no sign-in) sees nothing at all — pay is never shown on an unproven identity.
   const role = me.role;
@@ -127,8 +135,93 @@ export default async function Commissions() {
   return <Shell active="commissions">
     <div className="h1">{personal ? 'Your commissions' : 'Commissions'}</div>
     <div className="sub">{personal
-      ? `${viewer} — your rate on every dollar you collect, paid on the 8th for the month before`
-      : 'Each salesperson earns their rate on the money they collect — computed the moment cash lands, paid on the 8th for the month before'}</div>
+      ? `${viewer}, your share of the commission pool, paid on the 8th for the month before`
+      : `${plan ? plan.pool_pct + '% of every payment received' : 'A share of every payment received'} becomes the pool, divided on agreed shares and settled monthly`}</div>
+
+    {!personal && <div className="card" style={{marginTop:18}}>
+      <div style={{fontSize:11, fontWeight:650, letterSpacing:'.07em', textTransform:'uppercase', color:'#73736c'}}>
+        The arrangement</div>
+      <p style={{fontSize:13.5, lineHeight:1.6, color:'#3a3a35', margin:'8px 0 14px', maxWidth:620}}>
+        Commission is one pool, not a personal rate. A share of every payment the gallery receives
+        goes into it, and the pool is divided between the people below. It accrues on money
+        received, so a deposit earns its share when it lands and the balance earns the rest when
+        that lands. Changing either number from here on never rewrites what has already been earned.</p>
+
+      <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', marginBottom:16}}>
+        <input type="hidden" name="action" value="comm_plan_set"/>
+        <input type="hidden" name="back" value="/commissions"/>
+        <label style={{fontSize:13}}>The pool is</label>
+        <input name="pool_pct" defaultValue={plan ? plan.pool_pct : 15} inputMode="decimal"
+          style={{width:70, fontSize:13, height:32, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
+        <label style={{fontSize:13}}>percent of every payment received</label>
+        <ConfirmButton message="Change the commission pool from here on?"
+          style={{background:'#111', color:'#fff', border:'1px solid #111'}}>Set</ConfirmButton>
+      </form>
+
+      <div style={{fontSize:11, fontWeight:650, letterSpacing:'.07em', textTransform:'uppercase', color:'#73736c', marginBottom:8}}>
+        Who divides it</div>
+      {shares.length === 0
+        ? <p style={{fontSize:13.5, color:'#9a551a', margin:'0 0 12px', fontWeight:600}}>
+            Nobody is in the pool yet, so no commission is being recorded on any sale. Add the
+            people below before the first sale closes.</p>
+        : <table className="tbl" style={{marginBottom:12}}><tbody>
+            {shares.map(x => <tr key={x.id}>
+              <td style={{fontWeight:600}}>{x.person}</td>
+              <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums'}}>{x.share_pct}% of the pool</td>
+              <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums', color:'#73736c'}}>
+                {plan ? (Math.round(plan.pool_pct * x.share_pct) / 100) + '% of a sale' : ''}</td>
+              <td style={{textAlign:'right'}}>
+                <form method="POST" action="/api/act">
+                  <input type="hidden" name="action" value="comm_share_del"/>
+                  <input type="hidden" name="id" value={x.id}/>
+                  <input type="hidden" name="back" value="/commissions"/>
+                  <ConfirmButton message={`Take ${x.person} out of the pool from here on?`}
+                    style={{background:'#fff', color:'#73736c', border:'1px solid #e3e3dd'}}>Remove</ConfirmButton>
+                </form></td>
+            </tr>)}
+          </tbody></table>}
+      {shares.length > 0 && shareTotal !== 100 && <p style={{fontSize:13, color:'#a3372f', fontWeight:600, margin:'0 0 12px'}}>
+        The shares add up to {shareTotal}%, not 100%. {shareTotal < 100
+          ? `${100 - shareTotal}% of every pool is going nowhere.`
+          : 'More is being paid out than the pool holds.'}</p>}
+
+      <form method="POST" action="/api/act" style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+        <input type="hidden" name="action" value="comm_share_set"/>
+        <input type="hidden" name="back" value="/commissions"/>
+        <input name="person" list="team-names" placeholder="Name"
+          style={{width:170, fontSize:13, height:32, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
+        <datalist id="team-names">{(team || []).map(t => <option key={t.name} value={t.name}/>)}</datalist>
+        <input name="share_pct" placeholder="50" inputMode="decimal"
+          style={{width:70, fontSize:13, height:32, border:'1px solid #e3e3dd', borderRadius:2, padding:'0 8px', fontFamily:'inherit'}}/>
+        <label style={{fontSize:13}}>percent of the pool</label>
+        <button className="btn mini" style={{height:32, background:'#111', color:'#fff', border:'1px solid #111'}}>Add or update</button>
+      </form>
+    </div>}
+
+    {!personal && (statement || []).some(r => Number(r.owed_cents) > 0 && r.period < thisPeriod) && <>
+      <div style={{fontSize:11, fontWeight:650, letterSpacing:'.07em', textTransform:'uppercase',
+        color:'#73736c', margin:'30px 0 10px'}}>Owed, by month</div>
+      <div className="tblcard"><table className="tbl"><thead><tr>
+        <th>Person</th><th style={{textAlign:'right'}}>Month</th><th style={{textAlign:'right'}}>Earned</th>
+        <th style={{textAlign:'right'}}>Still owed</th><th/></tr></thead><tbody>
+        {(statement || []).filter(r => Number(r.owed_cents) > 0 && r.period < thisPeriod)
+          .map(r => <tr key={r.person + r.period}>
+            <td style={{fontWeight:600}}>{r.person}</td>
+            <td style={{textAlign:'right'}}>{monthName(r.period)}</td>
+            <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums'}}>{usd(r.amount_cents)}</td>
+            <td style={{textAlign:'right', fontVariantNumeric:'tabular-nums', fontWeight:700}}>{usd(r.owed_cents)}</td>
+            <td style={{textAlign:'right'}}>
+              <form method="POST" action="/api/act">
+                <input type="hidden" name="action" value="comm_period_pay"/>
+                <input type="hidden" name="person" value={r.person}/>
+                <input type="hidden" name="period" value={r.period}/>
+                <input type="hidden" name="back" value="/commissions"/>
+                <ConfirmButton message={`Mark ${monthName(r.period)} as paid to ${r.person}?`}
+                  style={{background:'#111', color:'#fff', border:'1px solid #111'}}>Mark paid</ConfirmButton>
+              </form></td>
+          </tr>)}
+      </tbody></table></div>
+    </>}
 
     <div className="stats">
       <div className="stat"><div className="n" style={{color:'#2257c5'}}>{usd(sum(accruing))}</div>
