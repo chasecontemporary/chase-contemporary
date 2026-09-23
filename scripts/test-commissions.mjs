@@ -34,8 +34,23 @@ const shareBefore = await get('commission_shares?select=*&active=eq.true');
 const [planNow] = await get('commission_plan?select=*&active=eq.true&order=effective_from.desc&limit=1');
 ok('a pool percentage is set', !!planNow, planNow ? planNow.pool_pct + '% of every payment' : 'none');
 
-// a temporary two person split so the maths is checkable
+// A known pool, so the arithmetic is checkable. The gallery's real shares are stood down for
+// the length of the run and put back afterwards however it ends, because the pool cannot hold
+// more than a hundred percent and the real people already fill it.
 const A = 'ZZ Test Alpha', B = 'ZZ Test Beta';
+let arrangementRestored = false;
+const standDown = async () => {
+  for (const s of shareBefore) await rest(`commission_shares?id=eq.${s.id}`, { method: 'PATCH', body: JSON.stringify({ active: false }) });
+};
+const putArrangementBack = async () => {
+  if (arrangementRestored) return; arrangementRestored = true;
+  await rest(`commission_shares?person=in.("${A}","${B}")`, { method: 'DELETE' }).catch(() => {});
+  for (const s of shareBefore) await rest(`commission_shares?id=eq.${s.id}`, { method: 'PATCH', body: JSON.stringify({ active: true }) }).catch(() => {});
+};
+for (const sig of ['uncaughtException', 'unhandledRejection']) {
+  process.on(sig, async (e) => { await putArrangementBack(); console.error('\n  run failed, the real commission arrangement was put back\n', e); process.exit(1); });
+}
+await standDown();
 for (const [person, pct] of [[A, 50], [B, 50]]) {
   const r = await act({ action: 'comm_share_set', person, share_pct: String(pct) });
   ok(`${person} takes ${pct}% of the pool`, r.status === 200, JSON.stringify(r.body).slice(0, 120));
@@ -106,13 +121,14 @@ await rest(`purchases?collector_id=eq.${collector.id}`, { method: 'DELETE' });
 await rest(`activities?entity_type=eq.collector&entity_id=eq.${collector.id}`, { method: 'DELETE' });
 await rest(`collectors?id=eq.${collector.id}`, { method: 'DELETE' });
 await rest(`artworks?id=eq.${work.id}`, { method: 'PATCH', body: JSON.stringify({ available: true }) });
-await rest(`commission_shares?person=in.("${A}","${B}")`, { method: 'DELETE' });
+await putArrangementBack();
 
-const sharesAfter = await get('commission_shares?select=person&active=eq.true');
+const sharesAfter = await get('commission_shares?select=person,share_pct&active=eq.true');
 const left = await get(`commissions?select=id&invoice_id=eq.${invRow.id}`);
-ok('teardown clean and the real arrangement is untouched',
-  left.length === 0 && sharesAfter.length === shareBefore.length,
-  `${sharesAfter.length} real share row(s)`);
+ok('teardown clean and the real arrangement is back',
+  left.length === 0 && sharesAfter.length === shareBefore.length
+  && sharesAfter.every(s => shareBefore.some(b => b.person === s.person)),
+  `${sharesAfter.map(s => s.person).join(', ') || 'none'}`);
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

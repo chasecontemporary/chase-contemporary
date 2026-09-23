@@ -352,6 +352,13 @@ async function handle(req, form) {
     if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error('A share has to be between 0 and 100.');
     // one active share per person: supersede rather than accumulate
     must(await db.from('commission_shares').update({ active: false }).eq('person', person).eq('active', true));
+    // The shares divide one pool, so they cannot add up to more than it. Without this, two
+    // people on fifty percent each plus a third pays out more money than the pool holds, and
+    // nothing in the database would have stopped it.
+    const { data: others } = await db.from('commission_shares').select('person, share_pct').eq('active', true);
+    const already = (others || []).reduce((t, x) => t + Number(x.share_pct || 0), 0);
+    if (already + pct > 100.0001)
+      throw new Error(`That would share out ${already + pct}% of the pool. ${already}% is already allocated, so ${Math.max(0, 100 - already)}% is left.`);
     must(await db.from('commission_shares').insert({ person, share_pct: pct }));
     await db.from('activities').insert({ entity_type: 'team', entity_id: id || null, kind: 'commission_share',
       body: `${person} set to ${pct}% of the pool`, actor: rep });

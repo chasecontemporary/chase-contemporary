@@ -114,7 +114,7 @@ await act({ action: 'invoice_paid', id: inv.id, method: 'Wire' });
 const settled = await rest(`invoices?id=eq.${inv.id}&select=status`);
 const artAfter = await rest(`artworks?id=eq.${work.id}&select=available`);
 const purch = await rest(`purchases?collector_id=eq.${collector.id}&select=id`);
-const comm  = await rest(`commissions?invoice_id=eq.${inv.id}&select=id,amount_cents`);
+const comm  = await rest(`commissions?invoice_id=eq.${inv.id}&select=id,amount_cents,person`);
 check('settling closes the invoice', settled[0].status === 'paid');
 check('settling marks the work sold', artAfter[0].available === false);
 check('settling books the purchase', purch.length === 1);
@@ -126,7 +126,11 @@ if (shares.length === 0) {
   check('settling writes no commission while nobody is in the pool', comm.length === 0);
   console.log('  NOTE  no commission is being recorded on any sale: the pool has no members yet');
 } else {
-  check('settling writes a commission for everyone in the pool', comm.length === shares.length);
+  // commission accrues on every payment, and this chain pays twice, so the row count is a
+  // multiple of the pool. What must hold is that everybody in the pool is represented.
+  const people = new Set(comm.map(c => c.person));
+  check('settling writes a commission for everyone in the pool',
+    people.size === shares.length && comm.length % shares.length === 0);
 }
 const leadAfter = await rest(`inquiries?id=eq.${lead.id}&select=status`);
 check('settling closes the lead (D1)', leadAfter[0]?.status === 'paid', `status ${leadAfter[0]?.status}`);
