@@ -5,6 +5,51 @@ the idea lands HERE (and the Google Doc mirror) immediately — nothing gets ski
 Status: QUEUED (accepted, unbuilt) · IN FLIGHT · NEEDS KEY (blocked on account/credential) · PARKED (decision pending).
 
 ## Shipped since last update
+- 9/23 FULL PASS, SELL TODAY. Everything below is live on production and green:
+  pages 26/26, money chain 25/25, order intake 31/31, capture 15/15, signing 14/14,
+  commissions 15/15, invoice flow 16/16 (the pay link is proven in a real browser: Shopify
+  checkout, card, Amex, PayPal, right total; curl cannot finish the Shop Pay handshake so the
+  test asserts the redirect it can see).
+  * COMMISSION SET: 20% of every payment received, Devyn 50% / Wyatt 50% of the pool = 10% of a
+    sale each. Accrues on money received. Shares can no longer total more than 100% (they could,
+    and the engine would have paid out more than the pool).
+  * CERTIFICATE rebuilt from the gallery's own signed template: their wordmark and Bernie's
+    signature lifted from the PDF (vector, rendered at 300dpi, alpha), field order Artist/Title/
+    Edition/Year/Size, artist repeated above the rule. The engine signs every COA automatically,
+    which is how they issue them by hand today; delete crm/assets/img/signature.png to revert.
+  * VOID / RE-ISSUE / NEW LINK now kill the previous Shopify draft order, so a cancelled invoice
+    cannot be paid from an old email and a deposit link and a full link cannot both be live.
+  * SHIPPING TELLS THE SHOP: marking a work shipped raises the fulfilment on the Shopify order
+    with carrier + tracking (fulfilment orders API), records the ids for refunds, optional
+    collector email via a tick box on the work (on by default). Migration 0057.
+  * PUBLISHING PROVEN LIVE: a real Liu Shuishi queued -> drained by /api/cron/publish -> private
+    draft on Shopify -> public URL 404s. pg_cron 'engine-publish' every 2 min, 20/run (0058).
+    Then two guards, both from real data: (a) TWINS: the book holds the same painting twice in
+    places (two imports); 158 unpublished works already exist on the site by artist+title and
+    305 duplicate each other. The queue holds twins under Sent back with the reason. The drain
+    test work WAS a twin (Abjectly Initiative = Abjectly Initiative, 2011, same 69.9x139.76) and
+    is held. (b) PHOTOS: 417 of 1,231 unpublished photos are under 1200px (some 126px); the
+    drain holds those with the width on the work.
+  * READINESS, honest numbers (unpublished, available): 1,251 works; 1,231 photos; 786 photos
+    >=1200px; 1,110 with medium; 1,146 with dims; ONLY 96 with a description; 11 with a year;
+    0 editions (all 10 editions already on the site). Gate passes 1,213; described 95.
+  * TEST HYGIENE: a crashed order-intake run had left a real Cottingham edition pointing at a
+    fake Shopify product id (repaired; restore now armed before the borrow). Suites read the
+    pool rather than assuming per-rep rates. Capture test scoped to its own rows (4 real bot
+    submissions were caught on 9/19, honeypot filled, none reached the board).
+  * OUTAGE 9/19 19:15 -> 9/21: Vercel Hobby FAIR_USE_LIMITS_EXCEEDED on blobTotalAdvancedRequests
+    took the whole engine down for 40h (DEPLOYMENT_DISABLED on every route, inquiry capture
+    included; Shopify contact email to info@ and the browser outbox were the only safety nets).
+    Fixed by upgrading the chase-contemporary Vercel team to Pro (wyatt@ is sole owner). My PDF
+    regeneration in tests contributed. STILL NEEDED: an external uptime monitor on /api/health.
+  * SHOPIFY TOKEN: lives only in Vercel (sensitive, unreadable). Local copy was lost with the
+    scratchpad. Recovery = re-run the install as Wyatt (SECRETS.local.md has the steps).
+  STILL WAITING ON PEOPLE: WIRE_INSTRUCTIONS text (Kristine/Bernie); the 3 GoDaddy DNS records
+  for Resend then MAIL_FROM (the connected Chrome held Devyn's own GoDaddy account, not the
+  "Wyatt logged in as Kristine" delegate session, so it could not be done from here 9/23);
+  SLACK_SIGNING_SECRET + app reinstall (Claim button); Sara + Bernie Clerk sign-ins (Invite
+  button live on Team); which artist Bernie wants first; Bernie email draft unsent in Drafts.
+
 - 9/17 FINANCE WAS DOWN AND NOBODY KNEW. /finance returned a 500 on every view (open, paid,
   payments, all) since the fulfilment work shipped on 9/7: the page read `all`, `open` and
   `paid` in the fulfilment and invoice-lines blocks placed ABOVE the lines that declared
