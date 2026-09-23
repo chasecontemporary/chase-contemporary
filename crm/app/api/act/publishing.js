@@ -19,11 +19,35 @@ export async function handlePublishing({ action, form, id, rep, db, must }) {
     const ready = (rows || []).filter(a => publishReadiness(a).ok);
     if (!ready.length) throw new Error('Nothing in that set is ready for the site yet. Check the gaps in Inventory.');
     const now = new Date().toISOString();
+
+    // The book was built from two imports and holds the same painting twice in places: 158 of
+    // the unpublished works already exist on the site under the same artist and title, and 305
+    // duplicate each other. Queuing blindly would put the same painting on the site twice, and
+    // selling one row would not mark its twin sold. So anything that looks like a twin is held
+    // with the reason written on it, for a person to confirm it is a different work, and only
+    // the first of each name in a batch is queued.
+    const norm = (v) => String(v || '').toLowerCase().replace(/,?\s*(19|20)\d{2}\s*\)?\s*$/, '').replace(/[^a-z0-9]/g, '');
+    const key = (a) => norm(a.artist) + '|' + norm(a.title);
+    const { data: onSite } = await db.from('artworks').select('id, title, artist')
+      .not('shopify_product_id', 'is', null).limit(5000);
+    const already = new Map(); (onSite || []).forEach(a => { if (!already.has(key(a))) already.set(key(a), a); });
+    const seen = new Set();
+    const toQueue = [], toHold = [];
+    for (const a of ready) {
+      const k = key(a);
+      const twin = already.get(k);
+      if (twin) { toHold.push({ id: a.id, note: `Looks like the same painting as "${twin.title}", which is already on the site. Confirm it is a different work before it goes up.` }); continue; }
+      if (seen.has(k)) { toHold.push({ id: a.id, note: `Looks like a second copy of "${a.title}" in this batch. Confirm it is a different work before it goes up.` }); continue; }
+      seen.add(k); toQueue.push(a);
+    }
+    for (const h of toHold)
+      must(await db.from('artworks').update({ site_status: 'held', review_note: h.note, publish_error: null }).eq('id', h.id));
+    if (!toQueue.length) throw new Error(`Every work in that set looks like a twin of one already on the site. ${toHold.length} held for review.`);
     must(await db.from('artworks').update({ site_status: 'queued', queued_at: now, publish_error: null })
-      .in('id', ready.map(a => a.id)));
-    await db.from('activities').insert({ entity_type: 'artwork', entity_id: ready[0].id, kind: 'queued_for_site',
-      body: `${ready.length} work${ready.length === 1 ? '' : 's'} queued${artist ? ' for ' + artist : ''}`, actor: rep });
-    if (form.get('back') === 'json') return Response.json({ ok: true, queued: ready.length });
+      .in('id', toQueue.map(a => a.id)));
+    await db.from('activities').insert({ entity_type: 'artwork', entity_id: toQueue[0].id, kind: 'queued_for_site',
+      body: `${toQueue.length} work${toQueue.length === 1 ? '' : 's'} queued${artist ? ' for ' + artist : ''}${toHold.length ? `, ${toHold.length} held as possible twins` : ''}`, actor: rep });
+    if (form.get('back') === 'json') return Response.json({ ok: true, queued: toQueue.length, held: toHold.length });
     return true;
   }
 

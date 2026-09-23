@@ -9,7 +9,7 @@ import { inviteToEngine, revokeInvitation } from '../../../lib/clerkAdmin';
 import { buildInvoicePdf } from '../../../lib/invoicePdf';
 import { put } from '@vercel/blob';
 import { settleInvoice, recordPayment } from '../../../lib/settle';
-import { shopifyReady, createPayLink, ensureWebhook } from '../../../lib/shopify';
+import { shopifyReady, createPayLink, ensureWebhook, cancelPayLink } from '../../../lib/shopify';
 import { klaviyoReady, ensureList, syncMembers, pushCampaign } from '../../../lib/klaviyo';
 import { renderCampaignEmail } from '../../../lib/email';
 import { listingGaps, probeImageWidth, MIN_IMAGE_PX } from '../../../lib/readiness';
@@ -598,13 +598,21 @@ async function handle(req, form) {
       if (amountCents !== null && amountCents > total - received)
         throw new Error('That is more than is still owed on this invoice.');
       const label = want === 'deposit' ? 'Deposit' : want === 'balance' ? 'Balance' : 'Payment';
+      // one live link per invoice: the previous draft order goes before the new one is raised,
+      // otherwise a collector could pay a deposit link and a full link both
+      if (inv.shopify_draft_id) { try { await cancelPayLink(inv.shopify_draft_id); } catch {} }
       const { url, draftId } = await createPayLink(inv, inv.collectors, { amountCents, label });
       await db.from('invoices').update({ pay_url: url, shopify_draft_id: draftId }).eq('id', id);
       await db.from('activities').insert({ entity_type: 'invoice', entity_id: id,
         kind: 'paylink_created', body: `${label}${amountCents ? ' ' + (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : ' in full'} · ${url}`, actor: rep });
     }
   } else if (action === 'invoice_void') {
-    must(await db.from('invoices').update({ status: 'void', void_reason: (form.get('reason') || '').slice(0, 200) || null }).eq('id', id));
+    // A voided invoice must not stay payable. Kill its pay link before the record changes,
+    // so a collector holding the old email cannot pay something the gallery cancelled.
+    const { data: v } = await db.from('invoices').select('shopify_draft_id').eq('id', id).single();
+    if (v?.shopify_draft_id) { try { await cancelPayLink(v.shopify_draft_id); } catch {} }
+    must(await db.from('invoices').update({ status: 'void', pay_url: null, shopify_draft_id: null,
+      void_reason: (form.get('reason') || '').slice(0, 200) || null }).eq('id', id));
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'voided', body: form.get('reason') || null, actor: rep });
   } else if (action === 'purchase_add') {
     await db.from('purchases').insert({
@@ -621,6 +629,9 @@ async function handle(req, form) {
       collectorId: form.get('collector_id') || null, invoiceId: form.get('invoice_id') || null,
       note: form.get('note') || '' });
     if (!ctx.collector) throw new Error('No collector to write to.');
+    // a letter about an invoice needs the invoice; say so in words rather than crashing
+    if (['invoice', 'receipt', 'shipping_confirmation', 'delivered_thank_you'].includes(template) && !ctx.invoice)
+      throw new Error('That letter is about an invoice, and none was chosen.');
     const out = renderTemplate(template, ctx);
     const subject = form.get('subject') || out.subject;
     const attachments = [];
@@ -931,7 +942,9 @@ async function handle(req, form) {
       replaces_invoice_id: inv.id }).select().single();
     if (nErr || !nu) throw new Error('Could not create the new invoice.');
     if (lines?.length) await db.from('invoice_lines').insert(lines.map(l => ({ invoice_id: nu.id, kind: l.kind, artwork_id: l.artwork_id, title: l.title, artist: l.artist, amount_cents: l.amount_cents, sort: l.sort, note: l.note })));
-    must(await db.from('invoices').update({ status: 'void', void_reason: `re-issued as ${String(nu.invoice_number).padStart(4, '0')}` }).eq('id', id));
+    if (inv.shopify_draft_id) { try { await cancelPayLink(inv.shopify_draft_id); } catch {} }
+    must(await db.from('invoices').update({ status: 'void', pay_url: null, shopify_draft_id: null,
+      void_reason: `re-issued as ${String(nu.invoice_number).padStart(4, '0')}` }).eq('id', id));
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: id, kind: 'reissued', body: `as No. ${String(nu.invoice_number).padStart(4, '0')}`, actor: rep });
     await db.from('activities').insert({ entity_type: 'invoice', entity_id: nu.id, kind: 'issued', body: `replaces No. ${String(inv.invoice_number).padStart(4, '0')}`, actor: rep });
     if (form.get('back') === 'json') return Response.json({ ok: true, invoice_number: nu.invoice_number });

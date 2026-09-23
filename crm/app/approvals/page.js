@@ -69,7 +69,9 @@ export default async function Approvals({ searchParams }) {
     {view === 'none' && counts.none > 0 && <div style={{ ...card, marginTop: 16, padding: '14px 16px' }}>
       <div style={{ fontSize: 13.5, marginBottom: 10 }}>
         <b>{counts.none} works are not on the website and have never been considered.</b> Choosing
-        them stages a private draft for each one. Nothing becomes public until you approve it here.</div>
+        them stages a private draft for each one. Nothing becomes public until you approve it here.
+        A work that looks like a twin of one already on the site, or whose photo is too small
+        for a gallery wall, is held under Sent back with the reason, for you to decide.</div>
       <form method="POST" action="/api/act" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <input type="hidden" name="action" value="publish_queue"/>
         <input type="hidden" name="back" value="/approvals?view=queued"/>

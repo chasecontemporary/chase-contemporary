@@ -95,6 +95,17 @@ export async function drain({ limit = 20 } = {}) {
     .eq('site_status', 'queued').order('queued_at').limit(limit);
   for (const a of queued || []) {
     try {
+      // The photo is the product. A probe of every unpublished image found 417 of 1,231 under
+      // the 1200px floor, some of them 126px thumbnails. Those must not reach a gallery wall on
+      // the site, so a small image is held with the reason written on the work, where Bernie
+      // sees it, rather than pushed and hoped for.
+      const img = await imageCheck(a.image_url);
+      if (!img.ok) {
+        await db.from('artworks').update({ site_status: 'held', publish_error: null,
+          review_note: `Photo is ${img.note}. Needs a better image before it goes up.` }).eq('id', a.id);
+        done.failed++;
+        continue;
+      }
       const { productId, handle } = await pushOne(a);
       await db.from('artworks').update({
         shopify_product_id: String(productId), handle: handle || a.handle,

@@ -13,7 +13,9 @@ export async function shopify(path, method = 'GET', body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`Shopify ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  return res.json();
+  // a DELETE answers with nothing, and nothing is not JSON
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
 }
 
 // Draft order = the pay link: custom line items, invoice_id carried in note attributes.
@@ -67,6 +69,21 @@ export function payLinkAdvice(amountCents) {
   const fee = Math.round(amount * (CARD_FEE_PCT / 100)) + CARD_FEE_FLAT_CENTS;
   return { fee, tooBig: amount > CARD_CEILING_CENTS,
     ceiling: CARD_CEILING_CENTS, pct: CARD_FEE_PCT };
+}
+
+// A pay link that must stop working. Voiding an invoice, re-issuing it, or raising a fresh
+// link all used to leave the old draft order sitting in Shopify, still payable. A collector who
+// kept the first email could pay an invoice the gallery had cancelled. Deleting the draft order
+// kills the link. Best effort and idempotent: a draft already gone is the outcome we wanted.
+export async function cancelPayLink(draftId) {
+  if (!shopifyReady() || !draftId) return { ok: false };
+  try {
+    await shopify(`/draft_orders/${draftId}.json`, 'DELETE');
+    return { ok: true };
+  } catch (e) {
+    if (/404/.test(String(e?.message))) return { ok: true, already: true };
+    throw e;
+  }
 }
 
 // One-time webhook registration (idempotent) — called on first pay-link creation.
