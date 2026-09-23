@@ -122,3 +122,25 @@ All five live at the top of `crm/lib/agreementsPdf.js`, each marked "confirm wit
    number>` compatible with anything already issued?
 6. Wire instructions text for `WIRE_INSTRUCTIONS`, so the agreement stops saying "as stated on
    the invoice".
+
+## The certificate of authenticity, as the gallery actually issues it
+
+Rebuilt 2026-09-23 from the gallery's own signed template (`Signed Chase Contemporary COA
+Template -1.pdf`), measured off the PDF so the layout is theirs to the point: wordmark top left,
+gallery line top right, rule, "Certificate of Authenticity", the work, then Artist, Title,
+Edition, Year and Size, then the artist's name again above the signature rule, signature left and
+date right, website centred in the footer.
+
+Two assets were lifted straight out of that template and live in `crm/assets/img`:
+- `wordmark.png`, their CHASE CONTEMPORARY mark with its transparency intact.
+- `signature.png`, the signature itself. It is vector art in their PDF, so it was rendered at 300
+  dpi, cropped to the ink, and given an alpha channel.
+
+**The signature is applied automatically to every certificate the engine issues.** That is how
+the gallery does it today: one pre signed copy, filled in per work, confirmed by Devyn on
+2026-09-23. It is the only place in the engine that signs anything on anybody's behalf, and it is
+deliberate rather than incidental. If that ever changes, remove `crm/assets/img/signature.png`
+and the certificate falls back to a blank signature line with no other change.
+
+Fields come from the artwork record. Year is blank when the work has no year on file, because
+`artworks` has no year column and the value is derived from a trailing year in the title.

@@ -3,7 +3,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import fs from 'fs';
 import path from 'path';
-import { yearOf, bareTitle, inventoryNo } from './agreementsPdf';
+import { yearOf, bareTitle, inventoryNo } from './agreementsPdf.js';
 
 const INK = rgb(0, 0, 0);
 const GRAY = rgb(0.42, 0.42, 0.45);
@@ -94,61 +94,94 @@ export async function buildTearSheet(a) {
   return await doc.save();
 }
 
-export async function buildCoa(a) {
-  const ctx = await base('CERTIFICATE OF AUTHENTICITY');
-  const { doc, page, M, regular, medium, semibold } = ctx;
-  let y = 792 - M - 44 - 52;
+export async function buildCoa(a, opts = {}) {
+  // The gallery's own certificate, rebuilt from the signed template they actually issue.
+  // Layout, wording and field order are theirs, measured off the PDF: the wordmark top left,
+  // the gallery line top right, a rule, "Certificate of Authenticity", the work, then Artist,
+  // Title, Edition, Year and Size, then the artist's name again above the signature rule.
+  //
+  // The signature is theirs too, lifted from the template they sign. That is how they issue a
+  // certificate today: one pre signed copy, filled in per work. It is applied here only because
+  // the gallery asked for it; nothing else in the engine signs anything on anyone's behalf.
+  const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
+  const regular = await doc.embedFont(asset('fonts/nimbus-sans-novus-regular.ttf'));
+  const medium = await doc.embedFont(asset('fonts/nimbus-sans-novus-medium.ttf'));
+  const page = doc.addPage([612, 792]);
+  const M = 52.3;                      // their left margin, to the point
+  const top = (yFromTop) => 792 - yFromTop;
+
+  // wordmark, top left, at the size it sits on their template
+  try {
+    const wm = await doc.embedPng(asset('img/wordmark.png'));
+    const w = 176, h = w * (wm.height / wm.width);
+    page.drawImage(wm, { x: M, y: top(52 + h), width: w, height: h });
+  } catch {
+    page.drawText('CHASE CONTEMPORARY', { x: M, y: top(96), size: 20, font: medium });
+  }
+
+  // the gallery, top right
+  const right = 612 - M;
+  const nm = 'Chase Contemporary';
+  page.drawText(nm, { x: right - medium.widthOfTextAtSize(nm, 9.5), y: top(63.1), size: 9.5, font: medium });
+  const site = 'www.chasecontemporary.com';
+  page.drawText(site, { x: right - regular.widthOfTextAtSize(site, 7), y: top(74.1), size: 7, font: regular, color: GRAY });
+
+  page.drawLine({ start: { x: M, y: top(110) }, end: { x: right, y: top(110) }, thickness: 0.6, color: rgb(0.6, 0.6, 0.62) });
+
+  page.drawText('Certificate of Authenticity', { x: M, y: top(131.6), size: 9.5, font: regular });
+
+  // the work
   const img = a.image_url ? await embedImage(doc, a.image_url) : null;
   if (img) {
-    const maxW = 280, maxH = 190;
+    const maxW = 200, maxH = 108;
     const s = Math.min(maxW / img.width, maxH / img.height);
-    const w = img.width * s, h = img.height * s;
-    page.drawImage(img, { x: (612 - w) / 2, y: y - h, width: w, height: h });
-    y -= h + 26;
+    page.drawImage(img, { x: M, y: top(248), width: img.width * s, height: img.height * s });
   }
-  const issuedOn = new Date();
-  const certNo = 'COA-' + (inventoryNo(a) || String(a.id || '').replace(/-/g, '').slice(0, 8).toUpperCase() || 'NEW');
+
+  // the fields, in their order, at their positions
+  const year = yearOf(a);
+  const size = (a.dims_h_in && a.dims_w_in) ? `${a.dims_h_in} x ${a.dims_w_in} in` : null;
   const rows = [
-    ['ARTIST', a.artist], ['TITLE', bareTitle(a)], ['YEAR', yearOf(a)],
-    ['MEDIUM', a.medium], ['DIMENSIONS', a.dims_h_in ? `${a.dims_h_in} × ${a.dims_w_in} in` : null],
-    ['EDITION', a.edition],
-    ['INVENTORY NO.', inventoryNo(a)],
-    ['ISSUED', longDate(issuedOn)],
-    ['CERTIFICATE NO.', certNo],
-  ].filter(r => r[1]);
-  for (const [k, v] of rows) {
-    tracked(page, k, { x: M, y, size: 7.5, font: semibold, color: GRAY, spacing: 1.8 });
-    const lines = String(v);
-    page.drawText(lines, { x: M + 130, y, size: 10, font: medium, maxWidth: 612 - M - 130 - M, lineHeight: 13 });
-    y -= 13 * Math.max(1, Math.ceil(medium.widthOfTextAtSize(lines, 10) / (612 - M - 130 - M))) + 4;
+    ['Artist:', a.artist],
+    ['Title:', bareTitle(a) || a.title],
+    ['Edition:', a.edition],
+    ['Year:', year],
+    ['Size:', size],
+  ];
+  let y = 263.7;
+  for (const [label, value] of rows) {
+    page.drawText(label, { x: M, y: top(y), size: 9.5, font: regular });
+    if (value) page.drawText(String(value), { x: 115.3, y: top(y), size: 9.5, font: regular });
+    y += 11.9;
   }
-  y -= 14;
-  page.drawLine({ start: { x: M, y }, end: { x: 612 - M, y }, thickness: 0.5, color: HAIR });
-  y -= 22;
-  const att = 'Chase Contemporary certifies that the work described above is an authentic and original work by the artist named, and that the details stated are accurate to the best of the gallery’s knowledge and records.';
-  page.drawText(att, { x: M, y, size: 9.5, font: regular, color: INK, maxWidth: 612 - M * 2, lineHeight: 15 });
-  y -= 15 * Math.ceil(regular.widthOfTextAtSize(att, 9.5) / (612 - M * 2)) + 46;
-  // The signature block never rides down into the footer, however long the details run.
-  y = Math.max(y, M + 86);
-  // Bernie's signature above the line when the PNG is on disk; otherwise the line stays blank.
+
+  // the artist again, above the signature, as their template has it
+  if (a.artist) page.drawText(String(a.artist), { x: M, y: top(467.8), size: 9.5, font: regular });
+
+  page.drawLine({ start: { x: M, y: top(486) }, end: { x: right, y: top(486) }, thickness: 0.6, color: rgb(0.6, 0.6, 0.62) });
+
+  // signature and date
+  page.drawText('Signature:', { x: M, y: top(505.8), size: 9.5, font: regular });
+  const sigLineY = top(509);
+  page.drawLine({ start: { x: 105, y: sigLineY }, end: { x: 340, y: sigLineY }, thickness: 0.8, color: INK });
   if (hasSignature()) {
     try {
+      // sized and seated to sit on the rule the way it does on their signed template,
+      // where the tall loop rises just short of the artist's name above it
       const sig = await doc.embedPng(asset(SIGNATURE_PNG));
-      const sw = 150, sh = (sig.height / sig.width) * sw;
-      page.drawImage(sig, { x: M + 6, y: y + 6, width: sw, height: Math.min(sh, 54) });
-    } catch { /* an unreadable file just leaves the line blank */ }
+      const w = 68, h = w * (sig.height / sig.width);
+      page.drawImage(sig, { x: 110, y: sigLineY + 1.5, width: w, height: h });
+    } catch { /* the line stands on its own if the image will not embed */ }
   }
-  page.drawLine({ start: { x: M, y }, end: { x: M + 200, y }, thickness: 0.7, color: INK });
-  // DocuSign countersigner anchor (lib/docusign.js): invisible on paper, present in the text layer.
-  page.drawText('GALLERY SIGNATURE', { x: M, y: y - 8, size: 1, font: regular, color: WHITE });
-  tracked(page, 'AUTHORIZED SIGNATURE', { x: M, y: y - 14, size: 7, font: semibold, color: GRAY, spacing: 1.6 });
-  page.drawText('Bernie Chase, Owner', { x: M, y: y - 27, size: 9, font: regular, color: INK });
-  page.drawLine({ start: { x: 612 - M - 160, y }, end: { x: 612 - M, y }, thickness: 0.7, color: INK });
-  tracked(page, 'DATE', { x: 612 - M - 160, y: y - 14, size: 7, font: semibold, color: GRAY, spacing: 1.6 });
-  const fy = M;
-  const wm = 'CHASE CONTEMPORARY';
-  tracked(page, wm, { x: (612 - trackedWidth(semibold, wm, 8, 2.6)) / 2, y: fy + 12, size: 8, font: semibold, spacing: 2.6 });
-  const contact = 'info@chasecontemporary.com · chasecontemporary.com';
-  page.drawText(contact, { x: (612 - regular.widthOfTextAtSize(contact, 7)) / 2, y: fy, size: 7, font: regular, color: GRAY });
+  page.drawText('Date:', { x: 382.2, y: top(505.8), size: 9.5, font: regular });
+  const dateY = top(509);
+  page.drawLine({ start: { x: 412, y: dateY }, end: { x: right, y: dateY }, thickness: 0.8, color: INK });
+  const issued = opts.issuedAt ? longDate(opts.issuedAt) : longDate(new Date());
+  page.drawText(issued, { x: 414, y: dateY + 4, size: 9.5, font: regular });
+
+  const foot = 'www.chasecontemporary.com';
+  page.drawText(foot, { x: (612 - regular.widthOfTextAtSize(foot, 7.5)) / 2, y: top(780.6), size: 7.5, font: regular, color: GRAY });
+
   return await doc.save();
 }
