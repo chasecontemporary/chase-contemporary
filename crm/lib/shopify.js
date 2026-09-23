@@ -90,6 +90,43 @@ export async function ensureWebhook(origin) {
   return added;
 }
 
+// Telling the shop that a work has shipped.
+//
+// An edition bought on the site creates the sale in the engine, and until now nothing ever went
+// back the other way: the Shopify order stayed unfulfilled for good, the collector never got the
+// tracking email the shop would normally send, and the store's own order list was wrong.
+//
+// Shopify wants fulfilment expressed against fulfilment orders rather than the order itself on
+// current API versions, so this reads them first and fulfils whatever is still open.
+export async function fulfillShopifyOrder(orderId, { trackingNumber, trackingCompany, trackingUrl, notifyCustomer = false } = {}) {
+  if (!shopifyReady() || !orderId) return { ok: false, reason: 'not connected' };
+  const { fulfillment_orders: fos } = await shopify(`/orders/${orderId}/fulfillment_orders.json`);
+  const open = (fos || []).filter(f => ['open', 'in_progress', 'scheduled'].includes(f.status));
+  if (!open.length) return { ok: true, already: true };
+  const done = [];
+  for (const fo of open) {
+    const body = { fulfillment: {
+      line_items_by_fulfillment_order: [{ fulfillment_order_id: fo.id }],
+      notify_customer: !!notifyCustomer,
+      ...(trackingNumber ? { tracking_info: {
+        number: trackingNumber,
+        company: trackingCompany || undefined,
+        url: trackingUrl || undefined,
+      } } : {}),
+    } };
+    const r = await shopify('/fulfillments.json', 'POST', body);
+    if (r?.fulfillment?.id) done.push(r.fulfillment.id);
+  }
+  return { ok: true, fulfillments: done };
+}
+
+// A refund or a cancellation should not leave a fulfilment claiming the work is on its way.
+export async function cancelShopifyFulfillment(fulfillmentId) {
+  if (!shopifyReady() || !fulfillmentId) return { ok: false };
+  await shopify(`/fulfillments/${fulfillmentId}/cancel.json`, 'POST', {});
+  return { ok: true };
+}
+
 // Push an on-hand work to the site as a DRAFT product — invisible until published.
 // Needs write_products scope on the custom app token.
 export async function pushProduct(a) {

@@ -66,7 +66,9 @@ export default function Fulfilment({ sale, invoice, collector, works = [], shipm
           <span style={{display:'flex', gap:4}}>
             {STEPS.map(([k, l], i) => <button key={k} type="button" className="btn mini quiet"
               disabled={!!busy} onClick={() => post({ action:'shipment_set', sale_id: sale.id, invoice_id: invoice?.id || '', artwork_id: w.id,
-                status: k, carrier, quote, tracking, eta })}
+                status: k, carrier, quote, tracking, eta,
+                // only the shipped step tells anyone anything, and only if it is still ticked
+                notify: (k === 'shipped' && e.notify !== false) ? '1' : '' })}
               style={{height:26, fontSize:11, padding:'0 9px', ...(i <= stepIdx ? {background:'#1a1a18', color:'#fff'} : {})}}>
               {i < stepIdx ? '✓ ' : ''}{l}</button>)}
           </span>
@@ -87,6 +89,11 @@ export default function Fulfilment({ sale, invoice, collector, works = [], shipm
               status: s.status || 'pending', carrier, quote, tracking, eta })}>{busy === w.id ? 'Saving…' : 'Save'}</button>
         </div>
         <div style={{display:'flex', gap:14, alignItems:'center', marginTop:8, fontSize:12, color:'#73736c', flexWrap:'wrap'}}>
+          <label style={{display:'flex', gap:5, alignItems:'center'}}>
+            <input type="checkbox" checked={e.notify !== false}
+              onChange={ev => setEdit(x => ({ ...x, [w.id]: { ...e, notify: ev.target.checked } }))}/>
+            email the collector tracking when it ships
+          </label>
           {url && <a href={url} target="_blank" style={{color:'#2257c5', fontWeight:650}}>Track ↗</a>}
           {s.shipped_at && <span>shipped {new Date(s.shipped_at).toLocaleDateString()}</span>}
           {s.delivered_at && <span style={{color:'#2e6b3f', fontWeight:650}}>delivered {new Date(s.delivered_at).toLocaleDateString()}</span>}

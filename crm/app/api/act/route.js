@@ -19,7 +19,7 @@ import { sendSms } from '../../../lib/sms';
 import { renderTemplate } from '../../../lib/templates';
 import { buildContext } from '../../../lib/emailContext';
 import { sendForSignature, remindEnvelope, voidEnvelope } from '../../../lib/docusign';
-import { showProduct, shopifyReady as shopReady } from '../../../lib/shopify';
+import { showProduct, shopifyReady as shopReady, fulfillShopifyOrder } from '../../../lib/shopify';
 
 // Every action runs inside this wrapper. If the database rejects a write, the user
 // lands back on their page with a red banner saying so — never a silent success.
@@ -806,6 +806,35 @@ async function handle(req, form) {
     if (sale.fulfilment_status !== 'done') await db.from('sales').update({ fulfilment_status: fs }).eq('id', saleId);
     await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id, kind: 'shipment_' + status,
       body: `${art?.title || 'the work'}${patch.carrier ? ' · ' + patch.carrier : ''}${tracking ? ' · ' + tracking : ''}`, actor: rep });
+
+    // If this sale came from the website, tell the shop it has shipped. Without this the order
+    // stays unfulfilled in Shopify for good, the collector never gets the tracking email the
+    // shop would normally send, and the store's own order list is wrong. Best effort: a shipment
+    // is recorded either way, and a failure here is logged rather than thrown, because losing
+    // the shipping record over a Shopify hiccup would be the worse outcome.
+    if (stamps.shipped_at) {
+      const { data: link } = await db.from('shopify_orders').select('shopify_order_id, fulfillment_ids')
+        .eq('sale_id', saleId).maybeSingle();
+      if (link?.shopify_order_id && shopReady()) {
+        try {
+          const r = await fulfillShopifyOrder(link.shopify_order_id, {
+            trackingNumber: patch.tracking && !/^https?:\/\//.test(patch.tracking) ? patch.tracking : null,
+            trackingCompany: patch.carrier || null,
+            trackingUrl: patch.tracking_url || null,
+            // the collector hears from the shop only because a person pressed shipped
+            notifyCustomer: form.get('notify') === '1',
+          });
+          if (r.fulfillments?.length) {
+            await db.from('shopify_orders').update({ fulfillment_ids: r.fulfillments }).eq('sale_id', saleId);
+            await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id,
+              kind: 'shopify_fulfilled', body: `order marked shipped on the website${form.get('notify') === '1' ? ', collector notified' : ''}`, actor: rep });
+          }
+        } catch (e) {
+          await db.from('activities').insert({ entity_type: 'collector', entity_id: sale.collector_id,
+            kind: 'shopify_fulfil_failed', body: String(e?.message || e).slice(0, 200), actor: 'system' });
+        }
+      }
+    }
     if (form.get('back') === 'json') return Response.json({ ok: true, fulfilment_status: fs });
   } else if (action === 'coa_mark') {
     const what = form.get('what');
