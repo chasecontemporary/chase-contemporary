@@ -65,6 +65,27 @@ const restore = [
   { id: edition.id,  shopify_product_id: edition.shopify_product_id,  site_status: edition.site_status },
   { id: original.id, shopify_product_id: original.shopify_product_id, site_status: original.site_status },
 ];
+// These two lines point a REAL work at a fake Shopify product for the duration of the test.
+// If the run dies before teardown, that work is left pointing at a product that does not exist,
+// and sold-sync would then fail silently on a real sale. It happened. So the restore is armed
+// before the damage is done, and runs however the process ends.
+let restored = false;
+const putBack = async () => {
+  if (restored) return; restored = true;
+for (const r of restore) {
+    await patch(`artworks?id=eq.${r.id}`, {
+      shopify_product_id: r.shopify_product_id ?? null,
+      site_status: r.site_status ?? null,
+      available: true,
+    }).catch(() => {});
+  }
+};
+for (const sig of ['uncaughtException', 'unhandledRejection']) {
+  process.on(sig, async (e) => { await putBack(); console.error('\n  the run failed, borrowed works restored\n', e); process.exit(1); });
+}
+process.on('SIGINT', async () => { await putBack(); process.exit(130); });
+process.on('exit', () => { if (!restored) console.error('  WARNING: borrowed works may not have been restored'); });
+
 await patch(`artworks?id=eq.${edition.id}`,  { shopify_product_id: PID_EDITION });
 await patch(`artworks?id=eq.${original.id}`, { shopify_product_id: PID_ORIGINAL });
 console.log(`\n  edition:  ${edition.title}\n  original: ${original.title}\n`);
@@ -114,7 +135,10 @@ check('the sale carries the work that was bought', items1.length === 1 && items1
 const purch1 = await rest(`purchases?collector_id=eq.${c.id}&select=id,artwork_id`);
 check('the purchase is booked on the collector', purch1.length === 1 && purch1[0].artwork_id === edition.id);
 const comm1 = await rest(`commissions?invoice_id=eq.${row1.invoice_id}&select=id,person`);
-check('a commission is written', comm1.length >= 1, JSON.stringify(comm1));
+  // Commission is a pool: one row per person in it, none at all while it is empty. Both are
+  // correct, so assert what the arrangement actually says rather than that somebody got paid.
+  const poolShares = await rest("commission_shares?select=person&active=eq.true");
+check(poolShares.length ? 'a commission is written for everyone in the pool' : 'no commission is written while the pool is empty', comm1.length === poolShares.length, JSON.stringify(comm1));
 check('the work is marked sold', (await artRow(edition.id))?.available === false);
 const acts1 = await rest(`activities?entity_id=eq.${c.id}&select=kind,actor`);
 check('the collector timeline says it was bought online',
@@ -211,6 +235,7 @@ if (sales?.length) {
 await del(`messages?collector_id=in.(${ids})`);
 await del(`purchases?collector_id=in.(${ids})`);
 await del(`activities?entity_id=in.(${ids})`);
+restored = true;
 for (const r of restore) {
   await del(`activities?entity_id=eq.${r.id}`);
   await patch(`artworks?id=eq.${r.id}`, { available: true,

@@ -97,9 +97,13 @@ for (const id of ids) {
   await rest(`collectors?id=eq.${id}`, { method: 'DELETE' });
 }
 await rest(`spam_submissions?email=in.("${BOT}","${HP}")`, { method: 'DELETE' });
-const left = await get('spam_submissions?select=id');
+// Only this test's rows. Asserting the whole table is empty makes real bot traffic, which is
+// the thing working, look like a failure.
+const left = await get(`spam_submissions?select=id&email=in.("${BOT}","${HP}")`);
 const leftC = await get(`collectors?select=id&or=(email.eq.${encodeURIComponent(BOT)},email.eq.${encodeURIComponent(REAL)},email.eq.${encodeURIComponent(HP)})`);
 ok('teardown left nothing behind', left.length === 0 && leftC.length === 0, `${left.length} quarantine, ${leftC.length} collectors`);
+const caught = await get('spam_submissions?select=id&rescued_at=is.null&dismissed_at=is.null');
+console.log(`  note   ${caught.length} real submission(s) currently held in quarantine`);
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

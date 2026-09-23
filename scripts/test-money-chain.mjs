@@ -118,7 +118,16 @@ const comm  = await rest(`commissions?invoice_id=eq.${inv.id}&select=id,amount_c
 check('settling closes the invoice', settled[0].status === 'paid');
 check('settling marks the work sold', artAfter[0].available === false);
 check('settling books the purchase', purch.length === 1);
-check('settling writes a commission', comm.length >= 1);
+// Commission is a pool now, not a personal rate: settlement writes one row per person in
+// the pool, and none at all while the pool is empty. Both are correct, so the check is that
+// the engine did what the arrangement says, and it says out loud when nobody is being paid.
+const shares = await rest('commission_shares?select=person,share_pct&active=eq.true');
+if (shares.length === 0) {
+  check('settling writes no commission while nobody is in the pool', comm.length === 0);
+  console.log('  NOTE  no commission is being recorded on any sale: the pool has no members yet');
+} else {
+  check('settling writes a commission for everyone in the pool', comm.length === shares.length);
+}
 const leadAfter = await rest(`inquiries?id=eq.${lead.id}&select=status`);
 check('settling closes the lead (D1)', leadAfter[0]?.status === 'paid', `status ${leadAfter[0]?.status}`);
 
