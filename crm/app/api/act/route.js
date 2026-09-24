@@ -91,9 +91,10 @@ async function handle(req, form) {
       const { data: ids } = await db.rpc('audience_ids', { def: aud.definition });
       const memberIds = (ids || []).map(x => typeof x === 'string' ? x : x.audience_ids || x.id).filter(Boolean);
       let members = [];
-      for (let i = 0; i < memberIds.length; i += 500) {
-        const { data: chunk } = await db.from('collectors').select('email, first_name, last_name, city')
-          .in('id', memberIds.slice(i, i + 500));
+      // 150 ids a request: 500 uuids is an 18,000 character URL and PostgREST refuses it
+      for (let i = 0; i < memberIds.length; i += 150) {
+        const { data: chunk } = await db.from('collectors').select('email, first_name, last_name, city, newsletter')
+          .in('id', memberIds.slice(i, i + 150));
         members = members.concat((chunk || []).filter(m => m.email && !m.email.endsWith('import.chasecontemporary.com')));
       }
       const n = await syncMembers(listId, members);
