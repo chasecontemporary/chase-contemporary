@@ -1,5 +1,8 @@
 // Branded email renderer — the website's design language translated to email-safe HTML.
 // Optic white, black, caps with tracking, wall-label captions, INQUIRE buttons.
+// Prices follow the site's rule, which is the gallery's decision: an edition shows its price,
+// an original reads PRICE ON REQUEST. The internal price on an original must never reach a
+// mass email by accident.
 // Placeholders resolved at send time by the provider layer: {{first_name}}, {{unsubscribe}}, {{mailing_address}}
 const SITE = 'https://www.chasecontemporary.com';
 const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
@@ -15,7 +18,7 @@ export function renderCampaignEmail({ campaign, artworks = [] }) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:14px 0 0">
         <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#000">${esc(a.artist || '')}</div>
         <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;font-style:italic;color:#000;padding-top:3px">${esc(a.title)}</div>
-        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.04em;color:#000;padding-top:3px">${(a.price_cents || 0) > 0 ? usd(a.price_cents) : 'PRICE ON REQUEST'}</div>
+        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.04em;color:#000;padding-top:3px">${a.is_edition && (a.price_cents || 0) > 0 ? usd(a.price_cents) : 'PRICE ON REQUEST'}</div>
       </td><td align="right" style="vertical-align:bottom">
         <a href="${url}" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.1em;color:#ffffff;background:#000000;text-decoration:none;padding:10px 22px;display:inline-block">INQUIRE</a>
       </td></tr></table>
